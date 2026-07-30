@@ -16,15 +16,34 @@ foreach ($iconSize in $iconSizes) {
     $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
     $graphics.Clear([System.Drawing.Color]::Transparent)
 
-    $accentBrush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 109, 142, 255))
-    $markPen = New-Object System.Drawing.Pen([System.Drawing.Color]::White, [Math]::Max(1.25, $iconSize * 0.072))
+    $outerMargin = $iconSize * 0.046875
+    $markBounds = [System.Drawing.RectangleF]::new(
+        [single]$outerMargin,
+        [single]$outerMargin,
+        [single]($iconSize - 2 * $outerMargin),
+        [single]($iconSize - 2 * $outerMargin)
+    )
+    $backgroundBrush = [System.Drawing.Drawing2D.LinearGradientBrush]::new(
+        $markBounds,
+        [System.Drawing.Color]::FromArgb(255, 120, 152, 255),
+        [System.Drawing.Color]::FromArgb(255, 82, 111, 232),
+        [single]48
+    )
+    $markPath = [System.Drawing.Drawing2D.GraphicsPath]::new()
+    $cornerDiameter = $iconSize * 0.53125
+    $markPath.AddArc($markBounds.Left, $markBounds.Top, $cornerDiameter, $cornerDiameter, 180, 90)
+    $markPath.AddArc($markBounds.Right - $cornerDiameter, $markBounds.Top, $cornerDiameter, $cornerDiameter, 270, 90)
+    $markPath.AddArc($markBounds.Right - $cornerDiameter, $markBounds.Bottom - $cornerDiameter, $cornerDiameter, $cornerDiameter, 0, 90)
+    $markPath.AddArc($markBounds.Left, $markBounds.Bottom - $cornerDiameter, $cornerDiameter, $cornerDiameter, 90, 90)
+    $markPath.CloseFigure()
+
+    $markPen = [System.Drawing.Pen]::new([System.Drawing.Color]::White, [single][Math]::Max(1.5, $iconSize * 0.09375))
     $markPen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
     $markPen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
 
-    $outerMargin = $iconSize * 0.0625
-    $graphics.FillEllipse($accentBrush, $outerMargin, $outerMargin, $iconSize - 2 * $outerMargin, $iconSize - 2 * $outerMargin)
-    $graphics.DrawArc($markPen, $iconSize * 0.25, $iconSize * 0.25, $iconSize * 0.5, $iconSize * 0.5, -80, 285)
-    $graphics.DrawLine($markPen, $iconSize * 0.5, $iconSize * 0.5, $iconSize * 0.69, $iconSize * 0.34)
+    $graphics.FillPath($backgroundBrush, $markPath)
+    $graphics.DrawEllipse($markPen, $iconSize * 0.1953125, $iconSize * 0.3359375, $iconSize * 0.453125, $iconSize * 0.453125)
+    $graphics.DrawLine($markPen, $iconSize * 0.6484375, $iconSize * 0.2109375, $iconSize * 0.6484375, $iconSize * 0.5625)
 
     $pngStream = New-Object System.IO.MemoryStream
     $bitmap.Save($pngStream, [System.Drawing.Imaging.ImageFormat]::Png)
@@ -32,7 +51,8 @@ foreach ($iconSize in $iconSizes) {
 
     $pngStream.Dispose()
     $markPen.Dispose()
-    $accentBrush.Dispose()
+    $markPath.Dispose()
+    $backgroundBrush.Dispose()
     $graphics.Dispose()
     $bitmap.Dispose()
 }

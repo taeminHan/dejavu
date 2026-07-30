@@ -36,56 +36,6 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
         </Style>
-        <Style x:Key="ScrollRepeatButton" TargetType="RepeatButton">
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="Template">
-                <Setter.Value><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent" /></ControlTemplate></Setter.Value>
-            </Setter>
-        </Style>
-        <Style x:Key="VerticalScrollThumb" TargetType="Thumb">
-            <Setter Property="MinHeight" Value="44" />
-            <Setter Property="Width" Value="14" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Thumb">
-                        <Border x:Name="ThumbChrome" Width="8" Margin="0,2" HorizontalAlignment="Center"
-                                Background="#62626D" CornerRadius="4" />
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="ThumbChrome" Property="Width" Value="10" />
-                                <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource AccentBrush}" />
-                            </Trigger>
-                            <Trigger Property="IsDragging" Value="True">
-                                <Setter TargetName="ThumbChrome" Property="Width" Value="10" />
-                                <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource AccentBrush}" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <Style TargetType="ScrollBar">
-            <Setter Property="Width" Value="14" />
-            <Setter Property="MinWidth" Value="14" />
-            <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ScrollBar">
-                        <Border Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="7">
-                            <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Style="{StaticResource ScrollRepeatButton}" Command="ScrollBar.PageUpCommand" />
-                                </Track.DecreaseRepeatButton>
-                                <Track.Thumb><Thumb Style="{StaticResource VerticalScrollThumb}" /></Track.Thumb>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Style="{StaticResource ScrollRepeatButton}" Command="ScrollBar.PageDownCommand" />
-                                </Track.IncreaseRepeatButton>
-                            </Track>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
     </Window.Resources>
 
     <Grid>

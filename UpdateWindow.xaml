@@ -36,7 +36,7 @@
                            Foreground="{DynamicResource AccentBrush}" FontWeight="SemiBold"/>
                 <Border Grid.Row="2" Margin="0,18" Padding="15" CornerRadius="10"
                         Background="{DynamicResource BackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ScrollViewer Padding="0,0,6,0" VerticalScrollBarVisibility="Auto">
                         <TextBlock x:Name="NotesText" TextWrapping="Wrap" LineHeight="20"
                                    Foreground="{DynamicResource MutedTextBrush}"/>
                     </ScrollViewer>
@@ -49,9 +49,9 @@
                     <ProgressBar x:Name="DownloadProgress" Style="{StaticResource UsageProgress}" Height="6"/>
                 </StackPanel>
                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button x:Name="LaterButton" Style="{StaticResource GhostButton}" Content="나중에" Click="OnLaterClick"/>
+                    <Button x:Name="LaterButton" MinWidth="76" Style="{StaticResource GhostButton}" Content="나중에" Click="OnLaterClick"/>
                     <Button x:Name="InstallButton" Style="{StaticResource PrimaryButton}" Content="지금 업데이트"
-                            Margin="8,0,0,0" Click="OnInstallClick"/>
+                            MinWidth="112" Margin="8,0,0,0" Click="OnInstallClick"/>
                 </StackPanel>
             </Grid>
         </Grid>

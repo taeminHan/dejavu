@@ -7,6 +7,66 @@
     <Border x:Name="WidgetCard" Style="{StaticResource CardBorder}" CornerRadius="14" Padding="14,11"
             MouseLeftButtonDown="OnWidgetMouseDown" MouseRightButtonUp="OnWidgetRightClick">
         <Grid>
+            <!-- Small: every metric uses the same 48 px cell and the same 30 px ring. -->
+            <Grid x:Name="SmallPanel" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="SmallStatusColumn" Width="10" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Ellipse x:Name="SmallStatusDot" Width="6" Height="6" HorizontalAlignment="Left"
+                         VerticalAlignment="Center" Fill="{DynamicResource AccentBrush}" />
+                <StackPanel x:Name="SmallProviderPanel" Grid.Column="1" Orientation="Horizontal">
+                    <StackPanel x:Name="SmallClaudePanel" Orientation="Horizontal">
+                        <StackPanel Width="48">
+                            <TextBlock Text="5H" FontSize="9" TextAlignment="Center" Foreground="{DynamicResource MutedTextBrush}" />
+                            <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <Ellipse x:Name="SmallFiveHourTrack" Stroke="{DynamicResource SurfaceRaisedBrush}" StrokeThickness="3" />
+                                <Path x:Name="SmallFiveHourArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <TextBlock x:Name="SmallFiveHourValue" Text="--%" FontSize="8.5" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Width="48">
+                            <TextBlock Text="주간" FontSize="9" TextAlignment="Center" Foreground="{DynamicResource MutedTextBrush}" />
+                            <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <Ellipse x:Name="SmallWeeklyTrack" Stroke="{DynamicResource SurfaceRaisedBrush}" StrokeThickness="3" />
+                                <Path x:Name="SmallWeeklyArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <TextBlock x:Name="SmallWeeklyValue" Text="--%" FontSize="8.5" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Width="48">
+                            <TextBlock Text="Fable" FontSize="9" TextAlignment="Center" Foreground="{DynamicResource MutedTextBrush}" />
+                            <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <Ellipse x:Name="SmallFableTrack" Stroke="{DynamicResource SurfaceRaisedBrush}" StrokeThickness="3" />
+                                <Path x:Name="SmallFableArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <TextBlock x:Name="SmallFableValue" Text="--%" FontSize="8.5" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="SmallCodexPanel" Width="48" Margin="8,0,0,0">
+                        <TextBlock Text="Codex" FontSize="9" TextAlignment="Center" Foreground="{DynamicResource MutedTextBrush}" />
+                        <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                            <Ellipse x:Name="SmallCodexTrack" Stroke="{DynamicResource SurfaceRaisedBrush}" StrokeThickness="3" />
+                            <Path x:Name="SmallCodexArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                            <TextBlock x:Name="SmallCodexValue" Text="--%" FontSize="8.5" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                        <Border Margin="0,3,0,0" Padding="4,2" HorizontalAlignment="Center"
+                                Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="5">
+                            <TextBlock x:Name="SmallCodexCredits" Text="초기화권 --" FontSize="8"
+                                       TextAlignment="Center" Foreground="{DynamicResource MutedTextBrush}" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- Linear one-row layout: all visible metrics receive an equal-width column. -->
             <Grid x:Name="CompactPanel">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition x:Name="CompactStatusColumn" Width="14" />
@@ -16,67 +76,114 @@
                     <ColumnDefinition x:Name="CompactClaudeGapTwo" Width="10" />
                     <ColumnDefinition x:Name="CompactClaudeFableColumn" Width="*" />
                     <ColumnDefinition x:Name="CompactProviderGap" Width="10" />
-                    <ColumnDefinition x:Name="CompactCodexColumn" Width="1.35*" />
+                    <ColumnDefinition x:Name="CompactCodexColumn" Width="*" />
                 </Grid.ColumnDefinitions>
                 <Ellipse x:Name="CompactStatusDot" Width="6" Height="6" HorizontalAlignment="Left"
                          VerticalAlignment="Center" Fill="{DynamicResource AccentBrush}" />
                 <StackPanel x:Name="CompactClaudeFivePanel" Grid.Column="1">
-                    <Grid><TextBlock Text="5H" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CompactFiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold"/></Grid>
-                    <ProgressBar x:Name="CompactFiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0"/>
+                    <Grid>
+                        <TextBlock x:Name="CompactFiveHourLabel" Text="5H" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" />
+                        <TextBlock x:Name="CompactFiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
+                    </Grid>
+                    <ProgressBar x:Name="CompactFiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
                 </StackPanel>
                 <StackPanel x:Name="CompactClaudeWeeklyPanel" Grid.Column="3">
-                    <Grid><TextBlock Text="주간" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CompactWeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold"/></Grid>
-                    <ProgressBar x:Name="CompactWeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0"/>
+                    <Grid>
+                        <TextBlock x:Name="CompactWeeklyLabel" Text="주간" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" />
+                        <TextBlock x:Name="CompactWeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
+                    </Grid>
+                    <ProgressBar x:Name="CompactWeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
                 </StackPanel>
                 <StackPanel x:Name="CompactClaudeFablePanel" Grid.Column="5">
-                    <Grid><TextBlock Text="Fable" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CompactFableValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold"/></Grid>
-                    <ProgressBar x:Name="CompactFableBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0"/>
+                    <Grid>
+                        <TextBlock x:Name="CompactFableLabel" Text="Fable" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" />
+                        <TextBlock x:Name="CompactFableValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
+                    </Grid>
+                    <ProgressBar x:Name="CompactFableBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
                 </StackPanel>
                 <StackPanel x:Name="CompactCodexPanel" Grid.Column="7">
                     <Grid>
-                        <TextBlock Text="Codex" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/>
-                        <TextBlock x:Name="CompactCodexValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold"/>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="CompactCodexLabel" Text="Codex" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" />
+                        <Border Grid.Column="1" Margin="6,0" Padding="4,1" HorizontalAlignment="Right"
+                                Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="4">
+                            <TextBlock x:Name="CompactCodexCredits" Text="초기화권 --" FontSize="8.5"
+                                       Foreground="{DynamicResource MutedTextBrush}" />
+                        </Border>
+                        <TextBlock x:Name="CompactCodexValue" Grid.Column="2" Text="--%" HorizontalAlignment="Right"
+                                   FontSize="12" FontWeight="SemiBold" />
                     </Grid>
-                    <Grid Margin="0,5,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <ProgressBar x:Name="CompactCodexBar" Style="{StaticResource UsageProgress}"/>
-                        <TextBlock x:Name="CompactCodexCredits" Grid.Column="1" Text="" Margin="6,-4,0,0" FontSize="9" Foreground="{DynamicResource MutedTextBrush}"/>
-                    </Grid>
+                    <ProgressBar x:Name="CompactCodexBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
                 </StackPanel>
             </Grid>
 
             <Grid x:Name="CompactMessagePanel" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Ellipse x:Name="CompactMessageDot" Width="6" Height="6" Margin="0,0,8,0" Fill="{DynamicResource AccentBrush}"/>
+                    <Ellipse x:Name="CompactMessageDot" Width="6" Height="6" Margin="0,0,8,0" Fill="{DynamicResource AccentBrush}" />
                     <TextBlock x:Name="CompactMessageText" FontSize="11" VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" Foreground="{DynamicResource MutedTextBrush}"/>
+                               TextTrimming="CharacterEllipsis" Foreground="{DynamicResource MutedTextBrush}" />
                 </StackPanel>
             </Grid>
 
+            <!-- Linear two-row layout: Codex and Claude use the same header/bar rhythm. -->
             <Grid x:Name="ComfortablePanel" Visibility="Collapsed">
-                <Grid.RowDefinitions><RowDefinition x:Name="HeaderRow" Height="18"/><RowDefinition x:Name="CodexRow" Height="Auto"/><RowDefinition x:Name="ClaudeRow" Height="Auto"/></Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="HeaderRow" Height="18" />
+                    <RowDefinition x:Name="CodexRow" Height="Auto" />
+                    <RowDefinition x:Name="ClaudeRow" Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid x:Name="HeaderPanel">
-                    <TextBlock Text="dejavu" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Top"/>
+                    <TextBlock Text="dejavu" FontSize="12" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Top" />
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Ellipse x:Name="StatusDot" Width="6" Height="6" Margin="0,4,7,0" Fill="{DynamicResource AccentBrush}"/>
-                        <TextBlock x:Name="HeaderStatus" Text="확인 중" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
+                        <Ellipse x:Name="StatusDot" Width="6" Height="6" Margin="0,4,7,0" Fill="{DynamicResource AccentBrush}" />
+                        <TextBlock x:Name="HeaderStatus" Text="확인 중" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
                     </StackPanel>
                 </Grid>
-                <Grid x:Name="CodexPanel" Grid.Row="1" Margin="0,7,0,0">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="82"/><ColumnDefinition Width="48"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                    <TextBlock Text="Codex 주간" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/>
-                    <TextBlock x:Name="CodexValue" Grid.Column="1" Text="--%" FontSize="12" FontWeight="SemiBold"/>
-                    <ProgressBar x:Name="CodexBar" Grid.Column="2" Style="{StaticResource UsageProgress}" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="CodexCredits" Grid.Column="3" Margin="10,0,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/>
-                </Grid>
+                <StackPanel x:Name="CodexPanel" Grid.Row="1" Margin="0,7,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="CodexLabel" Text="Codex 주간" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
+                        <Border Grid.Column="1" Margin="8,0" Padding="5,1" HorizontalAlignment="Right"
+                                Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="4">
+                            <TextBlock x:Name="CodexCredits" Text="초기화권 --" FontSize="9"
+                                       Foreground="{DynamicResource MutedTextBrush}" />
+                        </Border>
+                        <TextBlock x:Name="CodexValue" Grid.Column="2" Text="--%" FontSize="13" FontWeight="SemiBold" />
+                    </Grid>
+                    <ProgressBar x:Name="CodexBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                </StackPanel>
                 <Grid x:Name="MetricsPanel" Grid.Row="2" Margin="0,10,0,0">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0"><Grid><TextBlock Text="5시간" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="FiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold"/></Grid><ProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/></StackPanel>
-                    <StackPanel Grid.Column="2"><Grid><TextBlock Text="주간 전체" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="WeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold"/></Grid><ProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/></StackPanel>
-                    <StackPanel Grid.Column="4"><Grid><TextBlock Text="주간 Fable" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="FableValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold"/></Grid><ProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/></StackPanel>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <Grid><TextBlock x:Name="FiveHourLabel" Text="5시간" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" /><TextBlock x:Name="FiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
+                        <ProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <Grid><TextBlock x:Name="WeeklyLabel" Text="주간 전체" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" /><TextBlock x:Name="WeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
+                        <ProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <Grid><TextBlock x:Name="FableLabel" Text="주간 Fable" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" /><TextBlock x:Name="FableValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
+                        <ProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                    </StackPanel>
                 </Grid>
                 <Grid x:Name="MessagePanel" Grid.Row="1" Visibility="Collapsed" Margin="0,5,0,0">
-                    <TextBlock x:Name="MessageText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource MutedTextBrush}"/>
+                    <TextBlock x:Name="MessageText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource MutedTextBrush}" />
                 </Grid>
             </Grid>
         </Grid>

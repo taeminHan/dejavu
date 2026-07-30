@@ -7,14 +7,14 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 ### 리센느 화이팅
 
-현재 공개 배포 버전은 `0.9.0-rc.4`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.5`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
 [공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [최신 버전 다운로드](https://github.com/taeminHan/dejavu/releases/latest) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
 - Claude: 5시간, 주간 전체, 주간 Fable 사용률
 - Codex: 5시간 및 주간 사용률, 다음 초기화 시각
 - Codex 초기화권: 보유 개수와 가장 가까운 만료 시각을 읽기 전용으로 표시
-- 한 줄 또는 두 줄(Codex 위 · Claude 아래) 배치, 컴팩트/일반 크기
+- 한 줄 또는 두 줄(Codex 위 · Claude 아래) 배치, 작음/중간/큼 크기
 - 자동 감지(기본), Claude + Codex, Claude만, Codex만 서비스 표시 모드
 - 진행률 막대 또는 퍼센트 표시, 투명도·색상·위치 설정
 - 약 1분마다 자동 갱신하며 마지막 정상 값을 유지

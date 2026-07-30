@@ -28,19 +28,48 @@ public partial class UsageWidgetWindow : Window
         var small = settings.WidgetDensity == WidgetDensity.Small;
         var compact = settings.WidgetDensity != WidgetDensity.Comfortable;
         var singleRow = settings.WidgetLayout == WidgetLayout.SingleRow;
-        CompactPanel.Visibility = singleRow ? Visibility.Visible : Visibility.Collapsed;
-        ComfortablePanel.Visibility = singleRow ? Visibility.Collapsed : Visibility.Visible;
+        SmallPanel.Visibility = small ? Visibility.Visible : Visibility.Collapsed;
+        CompactPanel.Visibility = !small && singleRow ? Visibility.Visible : Visibility.Collapsed;
+        ComfortablePanel.Visibility = !small && !singleRow ? Visibility.Visible : Visibility.Collapsed;
+        SmallProviderPanel.Orientation = singleRow ? System.Windows.Controls.Orientation.Horizontal : System.Windows.Controls.Orientation.Vertical;
+        SmallCodexPanel.Margin = singleRow ? new Thickness(8, 0, 0, 0) : new Thickness(0, 8, 0, 0);
+        SmallStatusDot.Visibility = settings.ShowWidgetHeader ? Visibility.Visible : Visibility.Collapsed;
+        SmallStatusColumn.Width = new GridLength(settings.ShowWidgetHeader ? 10 : 0);
         CompactStatusDot.Visibility = settings.ShowWidgetHeader ? Visibility.Visible : Visibility.Collapsed;
         CompactStatusColumn.Width = new GridLength(settings.ShowWidgetHeader ? small ? 10 : 14 : 0);
         HeaderPanel.Visibility = settings.ShowWidgetHeader ? Visibility.Visible : Visibility.Collapsed;
         HeaderRow.Height = new GridLength(settings.ShowWidgetHeader ? 18 : 0);
         WidgetCard.Padding = small ? new Thickness(7, 6, 7, 6)
-            : compact ? new Thickness(10, 8, 10, 8) : new Thickness(14, 11, 14, 11);
+            : compact ? new Thickness(11, 9, 11, 9) : new Thickness(15, 12, 15, 12);
         WidgetCard.CornerRadius = new CornerRadius(small ? 9 : compact ? 11 : 14);
+        var metricLabelSize = compact ? 10d : 11d;
+        var metricValueSize = compact ? 12d : 13d;
+        var linearBarMargin = compact ? 5d : 7d;
+        foreach (var label in new[] { CompactFiveHourLabel, CompactWeeklyLabel, CompactFableLabel, CompactCodexLabel })
+            label.FontSize = metricLabelSize;
+        foreach (var value in new[] { CompactFiveHourValue, CompactWeeklyValue, CompactFableValue, CompactCodexValue })
+            value.FontSize = metricValueSize;
+        CompactFiveHourLabel.Text = compact ? "5H" : "5시간";
+        CompactWeeklyLabel.Text = compact ? "주간" : "주간 전체";
+        CompactFableLabel.Text = compact ? "Fable" : "주간 Fable";
+        CompactCodexLabel.Text = "Codex";
         foreach (var bar in new[] { CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexBar })
-            bar.Margin = new Thickness(0, small ? 3 : 5, 0, 0);
+            bar.Margin = new Thickness(0, linearBarMargin, 0, 0);
+        foreach (var label in new[] { FiveHourLabel, WeeklyLabel, FableLabel, CodexLabel })
+            label.FontSize = metricLabelSize;
+        foreach (var value in new[] { FiveHourValue, WeeklyValue, FableValue, CodexValue })
+            value.FontSize = metricValueSize;
+        FiveHourLabel.Text = compact ? "5H" : "5시간";
+        WeeklyLabel.Text = compact ? "주간" : "주간 전체";
+        FableLabel.Text = compact ? "Fable" : "주간 Fable";
+        CodexLabel.Text = compact ? "Codex" : "Codex 주간";
+        CodexCredits.FontSize = compact ? 8.5 : 9;
+        foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexBar })
+            bar.Margin = new Thickness(0, linearBarMargin, 0, 0);
         foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexBar, CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexBar })
             bar.Visibility = settings.ShowProgressBars ? Visibility.Visible : Visibility.Collapsed;
+        foreach (var ring in new FrameworkElement[] { SmallFiveHourTrack, SmallFiveHourArc, SmallWeeklyTrack, SmallWeeklyArc, SmallFableTrack, SmallFableArc, SmallCodexTrack, SmallCodexArc })
+            ring.Visibility = settings.ShowProgressBars ? Visibility.Visible : Visibility.Collapsed;
         UpdateState(_state);
     }
 
@@ -64,6 +93,7 @@ public partial class UsageWidgetWindow : Window
             _ => "DangerBrush"
         }) as System.Windows.Media.Brush;
         StatusDot.Fill = statusBrush;
+        SmallStatusDot.Fill = statusBrush;
         CompactStatusDot.Fill = statusBrush;
         CompactMessageDot.Fill = statusBrush;
 
@@ -75,8 +105,10 @@ public partial class UsageWidgetWindow : Window
             MetricsPanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
             CodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
             MessagePanel.Visibility = Visibility.Collapsed;
-            CompactPanel.Visibility = _settings.WidgetLayout == WidgetLayout.SingleRow ? Visibility.Visible : Visibility.Collapsed;
-            ComfortablePanel.Visibility = _settings.WidgetLayout == WidgetLayout.TwoRows ? Visibility.Visible : Visibility.Collapsed;
+            var small = _settings.WidgetDensity == WidgetDensity.Small;
+            SmallPanel.Visibility = small ? Visibility.Visible : Visibility.Collapsed;
+            CompactPanel.Visibility = !small && _settings.WidgetLayout == WidgetLayout.SingleRow ? Visibility.Visible : Visibility.Collapsed;
+            ComfortablePanel.Visibility = !small && _settings.WidgetLayout == WidgetLayout.TwoRows ? Visibility.Visible : Visibility.Collapsed;
             CompactMessagePanel.Visibility = Visibility.Collapsed;
             SetMetric(FiveHourValue, FiveHourBar, state.Snapshot?.FiveHour);
             SetMetric(WeeklyValue, WeeklyBar, state.Snapshot?.Weekly);
@@ -84,16 +116,23 @@ public partial class UsageWidgetWindow : Window
             SetMetric(CompactFiveHourValue, CompactFiveHourBar, state.Snapshot?.FiveHour);
             SetMetric(CompactWeeklyValue, CompactWeeklyBar, state.Snapshot?.Weekly);
             SetMetric(CompactFableValue, CompactFableBar, state.Snapshot?.Fable);
+            SetCircularMetric(SmallFiveHourValue, SmallFiveHourArc, state.Snapshot?.FiveHour);
+            SetCircularMetric(SmallWeeklyValue, SmallWeeklyArc, state.Snapshot?.Weekly);
+            SetCircularMetric(SmallFableValue, SmallFableArc, state.Snapshot?.Fable);
             var codexLimit = state.CodexSnapshot?.Weekly ?? state.CodexSnapshot?.FiveHour;
             SetMetric(CodexValue, CodexBar, codexLimit);
             SetMetric(CompactCodexValue, CompactCodexBar, codexLimit);
-            CodexCredits.Text = FormatCredits(state.CodexSnapshot?.ResetCredits);
-            CompactCodexCredits.Text = state.CodexSnapshot?.ResetCredits is int credits
-                ? _settings.WidgetDensity == WidgetDensity.Small ? $"{credits}회" : $"초기화권 {credits}" : "";
+            SetCircularMetric(SmallCodexValue, SmallCodexArc, codexLimit);
+            CodexCredits.Text = _settings.WidgetDensity == WidgetDensity.Compact
+                ? FormatCompactCredits(state.CodexSnapshot?.ResetCredits)
+                : FormatCredits(state.CodexSnapshot?.ResetCredits);
+            CompactCodexCredits.Text = FormatCompactCredits(state.CodexSnapshot?.ResetCredits);
+            SmallCodexCredits.Text = FormatCompactCredits(state.CodexSnapshot?.ResetCredits);
         }
         else
         {
             MetricsPanel.Visibility = Visibility.Collapsed;
+            SmallPanel.Visibility = Visibility.Collapsed;
             ComfortablePanel.Visibility = Visibility.Collapsed;
             MessagePanel.Visibility = Visibility.Visible;
             MessageText.Text = state.Message;
@@ -109,6 +148,8 @@ public partial class UsageWidgetWindow : Window
         CompactClaudeWeeklyPanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         CompactClaudeFablePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         CompactCodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        SmallClaudePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
+        SmallCodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         CompactClaudeFiveColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
         CompactClaudeWeeklyColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
         CompactClaudeFableColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
@@ -116,46 +157,62 @@ public partial class UsageWidgetWindow : Window
         CompactClaudeGapOne.Width = new GridLength(showClaude ? compactGap : 0);
         CompactClaudeGapTwo.Width = new GridLength(showClaude ? compactGap : 0);
         CompactProviderGap.Width = new GridLength(showClaude && showCodex ? compactGap : 0);
-        CompactCodexColumn.Width = new GridLength(showCodex ? 1.35 : 0, GridUnitType.Star);
+        CompactCodexColumn.Width = new GridLength(showCodex ? 1 : 0, GridUnitType.Star);
         CodexRow.Height = showCodex ? GridLength.Auto : new GridLength(0);
         ClaudeRow.Height = showClaude ? GridLength.Auto : new GridLength(0);
         CodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         MetricsPanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
-        CodexPanel.Margin = new Thickness(0, showCodex ? 7 : 0, 0, 0);
-        MetricsPanel.Margin = new Thickness(0, showClaude && showCodex ? 10 : showClaude ? 7 : 0, 0, 0);
+        var compact = _settings.WidgetDensity == WidgetDensity.Compact;
+        var providerTop = _settings.ShowWidgetHeader ? (compact ? 7 : 9) : 0;
+        var providerGap = compact ? 10 : 12;
+        CodexPanel.Margin = new Thickness(0, showCodex ? providerTop : 0, 0, 0);
+        MetricsPanel.Margin = new Thickness(0, showClaude && showCodex ? providerGap : showClaude ? providerTop : 0, 0, 0);
 
         var small = _settings.WidgetDensity == WidgetDensity.Small;
-        var compact = _settings.WidgetDensity != WidgetDensity.Comfortable;
+        var comfortable = _settings.WidgetDensity == WidgetDensity.Comfortable;
         var singleRow = _settings.WidgetLayout == WidgetLayout.SingleRow;
         var providerCount = (showClaude ? 1 : 0) + (showCodex ? 1 : 0);
         if (providerCount == 0)
         {
-            Width = small ? 250 : compact ? 300 : 360;
-            Height = small ? 34 : compact ? 40 : 48;
+            Width = small ? 250 : comfortable ? 360 : 300;
+            Height = small ? 34 : comfortable ? 48 : 40;
             return;
         }
 
-        Width = small
-            ? singleRow ? showClaude && showCodex ? 400 : showClaude ? 294 : 190
-                        : showClaude && showCodex ? 390 : showClaude ? 340 : 292
-            : compact
-            ? singleRow ? showClaude && showCodex ? 476 : showClaude ? 360 : 220
-                        : showClaude && showCodex ? 452 : showClaude ? 400 : 340
-            : singleRow ? showClaude && showCodex ? 520 : showClaude ? 420 : 280
-                        : showClaude && showCodex ? 520 : 420;
-        Height = singleRow
-            ? small ? (_settings.ShowProgressBars ? 38 : 30) : (_settings.ShowProgressBars ? 46 : 36)
-            : providerCount == 2
-                ? small
-                    ? (_settings.ShowWidgetHeader ? 92 : 74)
-                    : compact
-                    ? (_settings.ShowWidgetHeader ? 104 : 84)
-                    : (_settings.ShowWidgetHeader ? 116 : 96)
-                : small
-                    ? (_settings.ShowWidgetHeader ? 64 : 48)
-                    : compact
-                    ? (_settings.ShowWidgetHeader ? 74 : 56)
-                    : (_settings.ShowWidgetHeader ? 84 : 66);
+        if (small)
+        {
+            Width = showClaude ? 158 : 62;
+            if (singleRow && showClaude && showCodex) Width = 214;
+            Height = singleRow
+                ? showCodex ? 78 : 60
+                : providerCount == 2 ? 130 : showCodex ? 78 : 60;
+            return;
+        }
+
+        if (singleRow)
+        {
+            Width = comfortable
+                ? showClaude && showCodex ? 600 : showClaude ? 456 : 240
+                : showClaude && showCodex ? 520 : showClaude ? 378 : 190;
+            Height = _settings.ShowProgressBars
+                ? comfortable ? 56 : 48
+                : comfortable ? 44 : 38;
+            return;
+        }
+
+        Width = comfortable
+            ? showClaude ? 480 : 340
+            : showClaude ? 400 : 260;
+        var hiddenBarReduction = _settings.ShowProgressBars
+            ? 0
+            : providerCount * (comfortable ? 11 : 9);
+        Height = (providerCount == 2
+            ? comfortable
+                ? (_settings.ShowWidgetHeader ? 124 : 104)
+                : (_settings.ShowWidgetHeader ? 108 : 88)
+            : comfortable
+                ? (_settings.ShowWidgetHeader ? 88 : 68)
+                : (_settings.ShowWidgetHeader ? 76 : 58)) - hiddenBarReduction;
     }
 
     internal void PositionFromSettings(bool forceDefault = false)
@@ -228,7 +285,38 @@ public partial class UsageWidgetWindow : Window
         bar.Foreground = FindResource(brushKey) as System.Windows.Media.Brush;
     }
 
+    private void SetCircularMetric(System.Windows.Controls.TextBlock label, System.Windows.Shapes.Path arc, UsageLimit? limit)
+    {
+        var value = limit is null ? (double?)null : Math.Clamp(limit.Percent, 0, 100);
+        label.Text = value is null ? "--%" : $"{value:0}%";
+        arc.Data = CreateArcGeometry(value ?? 0);
+        var brushKey = _settings.UseThresholdColors && value >= 90 ? "DangerBrush"
+            : _settings.UseThresholdColors && value >= 70 ? "WarningBrush" : "AccentBrush";
+        var brush = FindResource(brushKey) as System.Windows.Media.Brush;
+        label.Foreground = brush;
+        arc.Stroke = brush;
+    }
+
+    private static Geometry CreateArcGeometry(double percent)
+    {
+        const double size = 30;
+        const double radius = 13.5;
+        var center = new System.Windows.Point(size / 2, size / 2);
+        var clamped = Math.Clamp(percent, 0, 100);
+        if (clamped <= 0) return Geometry.Empty;
+
+        var angle = clamped / 100d * 359.999;
+        var start = new System.Windows.Point(center.X, center.Y - radius);
+        var radians = (angle - 90) * Math.PI / 180d;
+        var end = new System.Windows.Point(center.X + radius * Math.Cos(radians), center.Y + radius * Math.Sin(radians));
+        var figure = new PathFigure { StartPoint = start, IsClosed = false };
+        figure.Segments.Add(new ArcSegment(end, new System.Windows.Size(radius, radius), 0, angle > 180,
+            SweepDirection.Clockwise, true));
+        return new PathGeometry([figure]);
+    }
+
     private static string FormatCredits(int? credits) => credits is null ? "초기화권 --" : $"초기화권 {credits}개";
+    private static string FormatCompactCredits(int? credits) => credits is null ? "초기화권 --" : $"초기화권 {credits}";
 }
 
 internal static class PointExtensions

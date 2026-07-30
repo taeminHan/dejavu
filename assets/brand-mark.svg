@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">dejavu</title>
+  <defs>
+    <linearGradient id="dejavu-gradient" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7898FF"/>
+      <stop offset="1" stop-color="#526FE8"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="17" fill="url(#dejavu-gradient)"/>
+  <circle cx="27" cy="36" r="14.5" fill="none" stroke="#fff" stroke-width="6"/>
+  <path d="M41.5 13.5V36" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+</svg>

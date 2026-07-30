@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish app
+        shell: pwsh
+        run: dotnet publish ClaudeUsageTray.csproj -c Release -o publish
+      - name: Assemble portable package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path package
+          Copy-Item publish/dejavu.exe package/
+          Copy-Item README.md,PRIVACY.md,SECURITY.md,CHANGELOG.md package/
+          Compress-Archive -Path package/* -DestinationPath dejavu-win-x64.zip
+          $hash = (Get-FileHash dejavu-win-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content -Path SHA256SUMS.txt -Value "$hash  dejavu-win-x64.zip" -Encoding utf8NoBOM
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dejavu-win-x64.zip
+            SHA256SUMS.txt

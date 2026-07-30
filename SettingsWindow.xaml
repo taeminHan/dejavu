@@ -1,0 +1,240 @@
+<Window x:Class="ClaudeUsageTray.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="dejavu 설정" Width="760" Height="590" MinWidth="700" MinHeight="540"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI Variable Text"
+        WindowStyle="None" ResizeMode="CanResize" ShowInTaskbar="True" Closing="OnClosing">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="12"
+                            GlassFrameThickness="0" UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
+    <Window.Resources>
+        <Style x:Key="SettingRow" TargetType="Border">
+            <Setter Property="Padding" Value="0,15" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="SettingTitle" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,0,0,3" />
+        </Style>
+        <Style x:Key="SettingDescription" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+        </Style>
+        <Style x:Key="CaptionButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Width" Value="44" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="2,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True" />
+        </Style>
+        <Style x:Key="ScrollRepeatButton" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Template">
+                <Setter.Value><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent" /></ControlTemplate></Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="VerticalScrollThumb" TargetType="Thumb">
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Width" Value="14" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="ThumbChrome" Width="8" Margin="0,2" HorizontalAlignment="Center"
+                                Background="#62626D" CornerRadius="4" />
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ThumbChrome" Property="Width" Value="10" />
+                                <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="ThumbChrome" Property="Width" Value="10" />
+                                <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="14" />
+            <Setter Property="MinWidth" Value="14" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Border Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="7">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource ScrollRepeatButton}" Command="ScrollBar.PageUpCommand" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb><Thumb Style="{StaticResource VerticalScrollThumb}" /></Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Style="{StaticResource ScrollRepeatButton}" Command="ScrollBar.PageDownCommand" />
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1" Padding="18,0" MouseLeftButtonDown="OnTitleBarMouseLeftButtonDown">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="32" Height="32" CornerRadius="9" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,11,0">
+                        <TextBlock Text="◒" Foreground="{DynamicResource AccentBrush}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="dejavu" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="설정은 자동으로 저장됩니다" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Border Height="28" VerticalAlignment="Center" Background="{DynamicResource BackgroundBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="11"
+                            Padding="9,0" Margin="0,0,10,0">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="6"/><ColumnDefinition Width="6"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="저장됨" FontSize="10" LineHeight="13"
+                                       LineStackingStrategy="BlockLineHeight" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource MutedTextBrush}" />
+                        </Grid>
+                    </Border>
+                    <Border Width="1" Height="22" Background="{DynamicResource BorderBrush}" Margin="0,0,6,0" />
+                    <Button Style="{StaticResource CaptionButton}" ToolTip="최소화" Click="OnMinimizeClick">
+                        <Path Data="M 1,6 L 11,6" Stroke="{DynamicResource MutedTextBrush}" StrokeThickness="1.4" />
+                    </Button>
+                    <Button Style="{StaticResource CaptionButton}" ToolTip="최대화" Click="OnMaximizeClick">
+                        <Rectangle Width="10" Height="10" Stroke="{DynamicResource MutedTextBrush}" StrokeThickness="1.2" />
+                    </Button>
+                    <Button Style="{StaticResource CaptionButton}" ToolTip="닫기" Click="OnCloseClick">
+                        <Path Data="M 1,1 L 11,11 M 11,1 L 1,11" Stroke="{DynamicResource MutedTextBrush}" StrokeThickness="1.4" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="176"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                    BorderThickness="0,0,1,0" Padding="12,18">
+                <StackPanel>
+                    <RadioButton x:Name="AppearanceNav" Style="{StaticResource NavButton}" IsChecked="True"
+                                 Content="모양" GroupName="SettingsNav" Checked="OnNavigationChanged" />
+                    <RadioButton x:Name="BehaviorNav" Style="{StaticResource NavButton}"
+                                 Content="동작" GroupName="SettingsNav" Checked="OnNavigationChanged" />
+                    <RadioButton x:Name="PrivacyNav" Style="{StaticResource NavButton}"
+                                 Content="데이터 및 정보" GroupName="SettingsNav" Checked="OnNavigationChanged" />
+                </StackPanel>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <ScrollViewer x:Name="AppearancePanel" VerticalScrollBarVisibility="Auto" Padding="28,24">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="모양" />
+                        <TextBlock Text="바탕화면과 작업 흐름에 맞게 위젯을 조절합니다." Margin="0,5,0,18"
+                                   Foreground="{DynamicResource MutedTextBrush}" />
+
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="시스템 테마"/><TextBlock Style="{StaticResource SettingDescription}" Text="Windows 설정을 따르거나 테마를 고정합니다"/></StackPanel>
+                                <ComboBox x:Name="ThemeCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnThemeChanged" /></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="프로그레스 바"/><TextBlock Style="{StaticResource SettingDescription}" Text="끄면 퍼센트 숫자만 표시합니다"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="BarsStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="BarsToggle" Style="{StaticResource ToggleSwitch}" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 헤더"/><TextBlock Style="{StaticResource SettingDescription}" Text="제품명과 마지막 업데이트 시간을 표시합니다"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="HeaderToggleStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="HeaderToggle" Style="{StaticResource ToggleSwitch}" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 크기"/><TextBlock Style="{StaticResource SettingDescription}" Text="컴팩트는 Claude와 Codex 사용량을 한 줄에 표시합니다"/></StackPanel>
+                                <ComboBox x:Name="DensityCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnDensityChanged" /></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 배치"/><TextBlock Style="{StaticResource SettingDescription}" Text="한 줄 또는 Codex 위 · Claude 아래 배치를 선택합니다"/></StackPanel>
+                                <ComboBox x:Name="LayoutCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnLayoutChanged" /></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="표시할 서비스"/><TextBlock Style="{StaticResource SettingDescription}" Text="자동 감지는 사용 가능한 서비스만 표시합니다"/></StackPanel>
+                                <ComboBox x:Name="ServicesCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnServicesChanged" /></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="투명도"/><TextBlock Style="{StaticResource SettingDescription}" Text="상시 표시 위젯의 배경 투명도입니다"/></StackPanel>
+                                <StackPanel Width="210" HorizontalAlignment="Right"><TextBlock x:Name="OpacityValue" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}"/><Slider x:Name="OpacitySlider" Minimum="55" Maximum="100" ValueChanged="OnOpacityChanged" /></StackPanel></Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}" BorderThickness="0">
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="강조 색상"/><TextBlock Style="{StaticResource SettingDescription}" Text="진행률과 활성 상태에 사용할 색상입니다"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#6D8EFF" Click="OnAccentClick"><Ellipse Fill="#6D8EFF"/></Button>
+                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#8B7CF6" Click="OnAccentClick"><Ellipse Fill="#8B7CF6"/></Button>
+                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#D97757" Click="OnAccentClick"><Ellipse Fill="#D97757"/></Button>
+                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#2BA37A" Click="OnAccentClick"><Ellipse Fill="#2BA37A"/></Button>
+                                </StackPanel></Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <ScrollViewer x:Name="BehaviorPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="28,24">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="동작" />
+                        <TextBlock Text="표시 위치와 업데이트 동작을 설정합니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
+                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="기본 표시 위치"/><TextBlock Style="{StaticResource SettingDescription}" Text="직접 이동하면 마지막 위치를 기억합니다"/></StackPanel><ComboBox x:Name="PlacementCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnPlacementChanged"/></Grid></Border>
+                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="자동 갱신"/><TextBlock Style="{StaticResource SettingDescription}" Text="요청 제한 시에는 자동으로 간격을 늘립니다"/></StackPanel><ComboBox x:Name="RefreshCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnRefreshChanged"/></Grid></Border>
+                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="트레이 아이콘"/><TextBlock Style="{StaticResource SettingDescription}" Text="아이콘을 숨겨도 상시 위젯은 유지됩니다"/></StackPanel><ComboBox x:Name="TrayCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnTrayChanged"/></Grid></Border>
+                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="Windows 시작 시 실행"/><TextBlock Style="{StaticResource SettingDescription}" Text="로그인 후 위젯을 자동으로 표시합니다"/></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="StartupStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="StartupToggle" Style="{StaticResource ToggleSwitch}" Checked="OnStartupChanged" Unchecked="OnStartupChanged"/></StackPanel></Grid></Border>
+                        <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+                            <Button Style="{StaticResource AppButton}" Content="위치 초기화" Click="OnResetPosition" />
+                            <Button Style="{StaticResource GhostButton}" Content="모든 설정 기본값 복원" Margin="8,0,0,0" Click="OnRestoreDefaults" />
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <ScrollViewer x:Name="PrivacyPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="28,24">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="데이터 및 정보" />
+                        <TextBlock Text="앱이 읽는 정보와 공개 배포 전 확인할 사항입니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="로컬 Claude 로그인 확인" />
+                                <TextBlock Margin="0,7,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="Claude Code의 로컬 로그인 파일에서 사용량 요청에 필요한 토큰을 일시적으로 읽습니다. 토큰, 대화 내용, 프롬프트는 저장하거나 진단 파일에 기록하지 않습니다." />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="공식 Codex 로컬 인터페이스" />
+                                <TextBlock Margin="0,7,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
+                                           Text="설치된 Codex CLI의 공식 app-server에서 사용률, 초기화 시각, 초기화권 개수와 만료 시각만 읽습니다. 초기화권은 dejavu가 자동으로 사용하지 않습니다." />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock FontWeight="SemiBold" Text="현재 연동 상태" />
+                                <TextBlock Margin="0,7,0,0" TextWrapping="Wrap" Foreground="{DynamicResource WarningBrush}"
+                                           Text="Claude 사용량은 Claude Code의 로컬 로그인을 통해 Anthropic으로 직접 요청합니다. 외부 앱용 공식 API로 문서화된 방식은 아니므로 Claude 업데이트에 따라 작동하지 않을 수 있습니다." />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="진단 상태 파일"/><TextBlock Style="{StaticResource SettingDescription}" Text="토큰 없이 상태와 위젯 위치만 로컬에 기록합니다"/></StackPanel><Button Style="{StaticResource AppButton}" HorizontalAlignment="Right" Content="폴더 열기" Click="OnOpenDiagnostics"/></Grid></Border>
+                        <TextBlock Margin="0,20,0,4" Text="dejavu" FontWeight="SemiBold" />
+                        <TextBlock Text="버전 0.9.0 RC 1 · 공개 릴리스 후보" Foreground="{DynamicResource MutedTextBrush}" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

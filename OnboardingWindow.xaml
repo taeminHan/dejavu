@@ -1,0 +1,74 @@
+<Window x:Class="ClaudeUsageTray.OnboardingWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="dejavu 시작하기" Width="640" Height="620" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI Variable Text" ShowInTaskbar="True">
+    <Grid Margin="34,28">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/><ColumnDefinition Width="8"/><ColumnDefinition/></Grid.ColumnDefinitions>
+            <Border Height="4" CornerRadius="2" Background="{DynamicResource AccentBrush}" />
+            <Border Grid.Column="2" Height="4" CornerRadius="2" Background="{DynamicResource AccentBrush}" />
+            <Border Grid.Column="4" Height="4" CornerRadius="2" Background="{DynamicResource SurfaceRaisedBrush}" />
+        </Grid>
+
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Width="510" Margin="0,34,0,0">
+            <Border Width="58" Height="58" CornerRadius="18" Background="{DynamicResource AccentSoftBrush}" HorizontalAlignment="Center">
+                <TextBlock Text="✓" Foreground="{DynamicResource AccentBrush}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <TextBlock x:Name="TitleText" Text="사용할 서비스를 확인하고 있어요" FontSize="23" FontWeight="SemiBold"
+                       HorizontalAlignment="Center" Margin="0,18,0,0" />
+            <TextBlock Text="브라우저 비밀번호나 대화 내용은 읽지 않습니다.&#10;사용량 요청은 이 PC에서 Anthropic으로 직접 전송되며 dejavu 서버를 거치지 않습니다."
+                       TextAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}" Margin="0,9,0,0" />
+
+            <Border Style="{StaticResource CardBorder}" Padding="15" Margin="0,22,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Ellipse x:Name="ClaudeCredentialDot" Width="9" Height="9" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock x:Name="ClaudeCredentialTitle" Text="Claude 확인 중" FontWeight="SemiBold" />
+                        <TextBlock x:Name="ClaudeCredentialDescription" Text="Claude Code 설치와 로그인을 확인합니다"
+                                   FontSize="11" Foreground="{DynamicResource MutedTextBrush}" Margin="0,3,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource CardBorder}" Padding="15" Margin="0,10,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Ellipse x:Name="CodexCredentialDot" Width="9" Height="9" Fill="{DynamicResource AccentBrush}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock x:Name="CodexCredentialTitle" Text="Codex 확인 중" FontWeight="SemiBold" />
+                        <TextBlock x:Name="CodexCredentialDescription" Text="설치된 Codex CLI를 확인합니다"
+                                   FontSize="11" Foreground="{DynamicResource MutedTextBrush}" Margin="0,3,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Margin="0,18,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center"><TextBlock Text="표시할 서비스" FontWeight="SemiBold"/><TextBlock Text="자동 감지를 권장합니다" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" Margin="0,3,0,0"/></StackPanel>
+                <ComboBox x:Name="ServiceCombo" Grid.Column="1" Style="{StaticResource AppComboBox}" SelectionChanged="OnServiceChanged" />
+            </Grid>
+
+            <Grid Margin="0,14,0,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center"><TextBlock Text="기본 표시 위치" FontWeight="SemiBold"/><TextBlock Text="나중에 설정에서 변경 가능" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" Margin="0,3,0,0"/></StackPanel>
+                <ComboBox x:Name="PlacementCombo" Grid.Column="1" Style="{StaticResource AppComboBox}" SelectionChanged="OnPlacementChanged" />
+            </Grid>
+        </StackPanel>
+
+        <Grid Grid.Row="2" Margin="0,24,0,0">
+            <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Content="개인정보 안내" Click="OnPrivacyClick" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="LoginButton" Style="{StaticResource AppButton}" Content="Claude 로그인 열기"
+                        Visibility="Collapsed" Margin="0,0,8,0" Click="OnLoginClick" />
+                <Button Style="{StaticResource PrimaryButton}" Click="OnContinueClick">
+                    <TextBlock Text="위젯 표시하기"
+                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

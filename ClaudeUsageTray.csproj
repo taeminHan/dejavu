@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>dejavu</AssemblyName>
+    <RootNamespace>ClaudeUsageTray</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>assets\dejavu.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyTitle>dejavu</AssemblyTitle>
+    <Description>Always-on Claude and Codex usage monitor for Windows 11.</Description>
+    <Version>0.9.0-rc.1</Version>
+    <AssemblyVersion>0.9.0.0</AssemblyVersion>
+    <FileVersion>0.9.0.0</FileVersion>
+    <InformationalVersion>0.9.0-rc.1</InformationalVersion>
+    <Product>dejavu</Product>
+    <Company>taeminHan</Company>
+    <Copyright>Copyright © 2026 taeminHan and contributors</Copyright>
+    <NeutralLanguage>ko-KR</NeutralLanguage>
+    <StartupObject>ClaudeUsageTray.Program</StartupObject>
+  </PropertyGroup>
+</Project>

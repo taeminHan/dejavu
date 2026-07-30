@@ -1,0 +1,29 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Website
+website/node_modules/
+website/dist/
+website/.vite/
+
+# Release artifacts and local tools
+outputs/
+*.pfx
+*.p12
+*.cer
+*.snk
+
+# Local settings and diagnostics
+settings.json
+status.json
+crash.log
+
+# Editors and OS
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

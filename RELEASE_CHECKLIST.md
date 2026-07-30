@@ -1,0 +1,22 @@
+# Public release checklist
+
+## Required before public distribution
+
+- [x] 제품 소유자와 MIT 배포 라이선스 확정
+- [ ] `dejavu` 상표 및 제품명 충돌 검토
+- [ ] 신뢰된 코드 서명 인증서로 `dejavu.exe`와 설치 프로그램 서명
+- [ ] 서명 후 SHA-256 체크섬 생성 및 공개
+- [x] GitHub Issues 및 Security Advisory 문의 경로 입력
+- [ ] Claude 사용량 연동에 대한 Anthropic 이용약관 또는 별도 승인 검토
+- [ ] 설치, 업그레이드, 제거, 시작 프로그램, 다중 모니터 동작 검증
+- [ ] Windows 11 100%, 125%, 150%, 200% DPI 검증
+- [ ] Windows Defender 및 SmartScreen 제출 전 검사
+
+## Release artifact checks
+
+- [ ] Release 빌드에 PDB와 개발용 설정이 포함되지 않음
+- [ ] 단일 실행 파일의 제품명, 버전, 저작권 확인
+- [ ] 설치 프로그램이 현재 사용자 권한으로 동작
+- [ ] 제거 시 실행 프로세스를 닫고 사용자 설정 보존 정책을 안내
+- [ ] 압축 파일과 설치 프로그램의 해시가 릴리스 노트와 일치
+- [ ] 깨끗한 Windows 11 VM에서 Claude만, Codex만, 둘 다, 둘 다 없음 검증

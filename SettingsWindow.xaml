@@ -164,7 +164,7 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="HeaderToggleStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="HeaderToggle" Style="{StaticResource ToggleSwitch}" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 크기"/><TextBlock Style="{StaticResource SettingDescription}" Text="컴팩트는 Claude와 Codex 사용량을 한 줄에 표시합니다"/></StackPanel>
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 크기"/><TextBlock Style="{StaticResource SettingDescription}" Text="작음, 중간, 큼 중 화면에 맞는 밀도를 선택합니다"/></StackPanel>
                                 <ComboBox x:Name="DensityCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnDensityChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
@@ -233,8 +233,15 @@
                         </Border>
                         <Border Style="{StaticResource SettingRow}" BorderThickness="0">
                             <Grid>
-                                <StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="수동 확인"/><TextBlock Style="{StaticResource SettingDescription}" Text="GitHub Releases에서 사용 가능한 새 버전을 확인합니다"/></StackPanel>
-                                <Button Style="{StaticResource AppButton}" HorizontalAlignment="Right" Content="업데이트 확인" Click="OnCheckUpdates"/>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource SettingTitle}" Text="수동 확인"/>
+                                    <TextBlock x:Name="UpdateCheckStatus" Style="{StaticResource SettingDescription}" Text="업데이트 확인 버튼을 눌러 현재 상태를 확인하세요."/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <ProgressBar x:Name="UpdateCheckProgress" Width="54" Height="4" Margin="0,0,12,0"
+                                                 IsIndeterminate="True" Visibility="Collapsed" />
+                                    <Button x:Name="CheckUpdatesButton" Style="{StaticResource AppButton}" Content="업데이트 확인" Click="OnCheckUpdates"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
                         <TextBlock Margin="0,18,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"

@@ -25,8 +25,9 @@ public partial class SettingsWindow : Window
         };
         DensityCombo.ItemsSource = new[]
         {
-            new Choice<WidgetDensity>(WidgetDensity.Compact, "컴팩트"),
-            new Choice<WidgetDensity>(WidgetDensity.Comfortable, "여유 있게")
+            new Choice<WidgetDensity>(WidgetDensity.Small, "작음"),
+            new Choice<WidgetDensity>(WidgetDensity.Compact, "중간"),
+            new Choice<WidgetDensity>(WidgetDensity.Comfortable, "큼")
         };
         LayoutCombo.ItemsSource = new[]
         {
@@ -63,6 +64,7 @@ public partial class SettingsWindow : Window
     internal event EventHandler? PositionResetRequested;
     internal event EventHandler<bool>? StartupChanged;
     internal event EventHandler? UpdateCheckRequested;
+    internal event EventHandler? UpdateDetailsRequested;
     internal Func<bool>? StartupStateProvider { get; set; }
 
     internal void ShowAndActivate()
@@ -95,6 +97,7 @@ public partial class SettingsWindow : Window
         CurrentVersionText.Text = currentVersion;
         UpdateChannelText.Text = currentVersion.Contains('-', StringComparison.Ordinal) ? "릴리스 후보 채널" : "안정 채널";
         AboutVersionText.Text = $"버전 {currentVersion}";
+        SetUpdateCheckResult("업데이트 확인 버튼을 눌러 현재 상태를 확인하세요.");
         UpdateStatusLabels();
         _loading = false;
     }
@@ -241,8 +244,35 @@ public partial class SettingsWindow : Window
         SaveAndNotify();
     }
 
-    private void OnCheckUpdates(object sender, RoutedEventArgs e) =>
+    internal void SetUpdateCheckLoading()
+    {
+        UpdateCheckProgress.Visibility = Visibility.Visible;
+        UpdateCheckStatus.Text = "새 버전을 확인하는 중입니다…";
+        CheckUpdatesButton.Content = "확인 중";
+        CheckUpdatesButton.Tag = null;
+        CheckUpdatesButton.IsEnabled = false;
+    }
+
+    internal void SetUpdateCheckResult(string message, bool updateAvailable = false)
+    {
+        UpdateCheckProgress.Visibility = Visibility.Collapsed;
+        UpdateCheckStatus.Text = message;
+        CheckUpdatesButton.Content = updateAvailable ? "업데이트 보기" : "업데이트 확인";
+        CheckUpdatesButton.Tag = updateAvailable ? "details" : null;
+        CheckUpdatesButton.IsEnabled = true;
+    }
+
+    private void OnCheckUpdates(object sender, RoutedEventArgs e)
+    {
+        if (Equals(CheckUpdatesButton.Tag, "details"))
+        {
+            UpdateDetailsRequested?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        SetUpdateCheckLoading();
         UpdateCheckRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     private void OnResetPosition(object sender, RoutedEventArgs e)
     {

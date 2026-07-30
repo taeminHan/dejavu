@@ -4,7 +4,8 @@ namespace ClaudeUsageTray;
 
 internal enum PrimaryMetric { FiveHour, Weekly, Fable, Codex }
 internal enum TrayIconStyle { ClaudeMark, Percentage, Hidden }
-internal enum WidgetDensity { Compact, Comfortable }
+// Keep the existing numeric values so rc.2 settings migrate without changing size.
+internal enum WidgetDensity { Compact = 0, Comfortable = 1, Small = 2 }
 internal enum WidgetLayout { SingleRow, TwoRows }
 internal enum ServiceDisplayMode { AutoDetect, ClaudeAndCodex, ClaudeOnly, CodexOnly }
 internal enum WidgetPlacement { TaskbarRight, TopRight, Custom }

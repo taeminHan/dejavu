@@ -2,7 +2,7 @@
 
 Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 데스크톱 앱입니다.
 
-현재 공개 배포 버전은 `0.9.0-rc.1`이며, `0.9.0-rc.2`에서 Velopack 기반 설치·자동 업데이트로 전환 중입니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.2`이며, `0.9.0-rc.3`을 개발 중입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
 [최신 버전 다운로드](https://github.com/taeminHan/dejavu/releases/latest) · [웹사이트 소스](website) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 

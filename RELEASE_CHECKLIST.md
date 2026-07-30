@@ -21,6 +21,6 @@
 - [ ] `dejavu-desktop-win-Setup.exe`, `dejavu-Setup.exe`, full/delta nupkg, `releases.win.json` 생성 확인
 - [ ] 실행 파일과 설치 프로그램의 제품명, 버전, 저작권 확인
 - [ ] Velopack 설치 프로그램이 현재 사용자 권한으로 동작
-- [ ] 제거 시 실행 프로세스를 닫고 사용자 설정 보존 정책을 안내
+- [ ] 제거 시 실행 프로세스를 닫고 dejavu 사용자 데이터가 완전히 삭제되는지 확인
 - [ ] `SHA256SUMS.txt`가 모든 공개 Velopack 자산의 해시와 일치
 - [ ] 깨끗한 Windows 11 VM에서 Claude만, Codex만, 둘 다, 둘 다 없음 검증

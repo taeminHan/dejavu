@@ -2,9 +2,9 @@
 
 Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 데스크톱 앱입니다.
 
-현재 공개 배포 버전은 `0.9.0-rc.2`이며, `0.9.0-rc.3`을 개발 중입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.3`이며, `0.9.0-rc.4`를 개발 중입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
-[최신 버전 다운로드](https://github.com/taeminHan/dejavu/releases/latest) · [웹사이트 소스](website) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
+[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [최신 버전 다운로드](https://github.com/taeminHan/dejavu/releases/latest) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
 - Claude: 5시간, 주간 전체, 주간 Fable 사용률
 - Codex: 5시간 및 주간 사용률, 다음 초기화 시각
@@ -38,7 +38,7 @@ Codex 표시에는 로컬에서 실행 가능한 Codex CLI가 필요합니다. �
 
 GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에 설치됩니다. 설치 버전은 실행할 때 한 번 GitHub Releases를 확인하며, 새 버전이 있으면 앱 안에서 다운로드·적용한 뒤 재시작할 수 있습니다. 업데이트 확인은 설정에서 끌 수 있습니다.
 
-기존 Inno Setup 기반 `0.9.0-rc.1` 사용자는 첫 Velopack 버전만 설치 프로그램으로 한 번 다시 설치해야 합니다. 그 이후 버전부터는 앱 안에서 업데이트됩니다. Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱·바로가기·시작프로그램 등록이 삭제됩니다. 사용자 설정과 진단 파일은 재설치에 대비해 `%LocalAppData%\dejavu`에 보존되며, 이것까지 지우려면 앱 제거 후 해당 폴더를 삭제합니다.
+기존 Inno Setup 기반 `0.9.0-rc.1` 사용자는 첫 Velopack 버전만 설치 프로그램으로 한 번 다시 설치해야 합니다. 그 이후 버전부터는 앱 안에서 업데이트됩니다. Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱·바로가기·시작프로그램 등록뿐 아니라 `%LocalAppData%\dejavu`의 설정, 위젯 위치, 캐시와 진단 파일도 함께 삭제됩니다. Claude Code와 Codex의 로그인 정보 및 해당 프로그램의 데이터는 삭제하지 않습니다.
 
 Windows SmartScreen의 게시자 경고가 표시되는 서명되지 않은 빌드는 정식 배포본으로 간주하지 않습니다. 배포 파일은 함께 제공되는 `SHA256SUMS.txt`와 대조할 수 있습니다.
 
@@ -63,15 +63,3 @@ PowerShell에서 다음 명령을 실행합니다.
 ```powershell
 .\tools\BuildRelease.ps1 -DownloadPrevious
 ```
-
-## 웹사이트
-
-소개 사이트는 React + Vite 정적 사이트이며 `website` 폴더에 있습니다.
-
-```powershell
-cd website
-pnpm install
-pnpm build
-```
-
-서버에는 `website/dist`의 내용을 배포합니다. 다운로드 버튼은 GitHub Releases의 최신 배포 파일을 자동으로 확인하며, 릴리스가 없을 때는 최신 릴리스 페이지로 연결됩니다.

@@ -99,7 +99,8 @@ internal sealed class DesktopApplicationController : IDisposable
         _settingsWindow.SettingsChanged += (_, _) => ApplySettings();
         _settingsWindow.PositionResetRequested += (_, _) => _widget.PositionFromSettings(forceDefault: true);
         _settingsWindow.StartupChanged += (_, enabled) => SetStartup(enabled);
-        _settingsWindow.UpdateCheckRequested += async (_, _) => await CheckForUpdatesAsync(showIfCurrent: true);
+        _settingsWindow.UpdateCheckRequested += async (_, _) => await CheckForUpdatesFromSettingsAsync();
+        _settingsWindow.UpdateDetailsRequested += (_, _) => ShowPendingUpdate();
 
         _updateWindow.InstallRequested += async (_, _) => await DownloadAndApplyUpdateAsync();
 
@@ -201,39 +202,77 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private async Task CheckForUpdatesAsync(bool showIfCurrent)
     {
-        if (_checkingForUpdate) return;
+        var result = await QueryForUpdatesAsync();
+        switch (result.Status)
+        {
+            case UpdateCheckStatus.Available:
+                ShowPendingUpdate();
+                break;
+            case UpdateCheckStatus.Current when showIfCurrent:
+                _updateWindow.ShowCurrent();
+                break;
+            case UpdateCheckStatus.NotInstalled when showIfCurrent:
+                _updateWindow.ShowStatus("설치 버전에서 확인할 수 있어요",
+                    "자동 업데이트는 Velopack 설치 버전부터 사용할 수 있습니다. 현재 개발용 실행 파일은 업데이트 대상이 아닙니다.");
+                break;
+            case UpdateCheckStatus.Error when showIfCurrent:
+                _updateWindow.ShowStatus("업데이트를 확인하지 못했어요",
+                    "업데이트 서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.");
+                break;
+        }
+    }
+
+    private async Task CheckForUpdatesFromSettingsAsync()
+    {
+        var result = await QueryForUpdatesAsync();
+        switch (result.Status)
+        {
+            case UpdateCheckStatus.Available:
+                _settingsWindow.SetUpdateCheckResult($"{result.Version} 업데이트를 사용할 수 있습니다.", updateAvailable: true);
+                break;
+            case UpdateCheckStatus.Current:
+                _settingsWindow.SetUpdateCheckResult("현재 최신 버전을 사용하고 있습니다.");
+                break;
+            case UpdateCheckStatus.NotInstalled:
+                _settingsWindow.SetUpdateCheckResult("설치 버전에서만 업데이트를 확인할 수 있습니다.");
+                break;
+            case UpdateCheckStatus.Busy:
+                _settingsWindow.SetUpdateCheckResult("이미 업데이트를 확인하고 있습니다. 잠시 후 다시 시도해 주세요.");
+                break;
+            default:
+                _settingsWindow.SetUpdateCheckResult("업데이트 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+                break;
+        }
+    }
+
+    private async Task<UpdateCheckResult> QueryForUpdatesAsync()
+    {
+        if (_checkingForUpdate) return new UpdateCheckResult(UpdateCheckStatus.Busy);
         _checkingForUpdate = true;
         try
         {
-            if (!_updateService.IsInstalled)
-            {
-                if (showIfCurrent)
-                    _updateWindow.ShowStatus("설치 버전에서 확인할 수 있어요",
-                        "자동 업데이트는 Velopack 설치 버전부터 사용할 수 있습니다. 현재 개발용 실행 파일은 업데이트 대상이 아닙니다.");
-                return;
-            }
-
+            if (!_updateService.IsInstalled) return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
             var update = await _updateService.CheckAsync();
-            if (update is null)
-            {
-                if (showIfCurrent) _updateWindow.ShowCurrent();
-                return;
-            }
-
+            if (update is null) return new UpdateCheckResult(UpdateCheckStatus.Current);
             _pendingUpdate = update;
-            _updateWindow.ShowAvailable(update.TargetFullRelease.Version.ToString(),
-                update.TargetFullRelease.NotesMarkdown);
+            return new UpdateCheckResult(UpdateCheckStatus.Available,
+                update.TargetFullRelease.Version.ToString());
         }
-        catch (Exception)
+        catch
         {
-            if (showIfCurrent)
-                _updateWindow.ShowStatus("업데이트를 확인하지 못했어요",
-                    "업데이트 서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.");
+            return new UpdateCheckResult(UpdateCheckStatus.Error);
         }
         finally
         {
             _checkingForUpdate = false;
         }
+    }
+
+    private void ShowPendingUpdate()
+    {
+        if (_pendingUpdate is null) return;
+        _updateWindow.ShowAvailable(_pendingUpdate.TargetFullRelease.Version.ToString(),
+            _pendingUpdate.TargetFullRelease.NotesMarkdown);
     }
 
     private async Task DownloadAndApplyUpdateAsync()
@@ -548,4 +587,6 @@ internal sealed class DesktopApplicationController : IDisposable
     private static extern bool DestroyIcon(IntPtr handle);
 
     private sealed record ProviderResult<T>(UsageStatus Status, T? Snapshot, string Message);
+    private sealed record UpdateCheckResult(UpdateCheckStatus Status, string? Version = null);
+    private enum UpdateCheckStatus { Busy, Current, Available, NotInstalled, Error }
 }

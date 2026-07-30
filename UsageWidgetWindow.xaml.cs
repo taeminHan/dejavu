@@ -25,16 +25,20 @@ public partial class UsageWidgetWindow : Window
     {
         _settings = settings;
         Opacity = settings.WidgetOpacity;
-        var compact = settings.WidgetDensity == WidgetDensity.Compact;
+        var small = settings.WidgetDensity == WidgetDensity.Small;
+        var compact = settings.WidgetDensity != WidgetDensity.Comfortable;
         var singleRow = settings.WidgetLayout == WidgetLayout.SingleRow;
         CompactPanel.Visibility = singleRow ? Visibility.Visible : Visibility.Collapsed;
         ComfortablePanel.Visibility = singleRow ? Visibility.Collapsed : Visibility.Visible;
         CompactStatusDot.Visibility = settings.ShowWidgetHeader ? Visibility.Visible : Visibility.Collapsed;
-        CompactStatusColumn.Width = new GridLength(settings.ShowWidgetHeader ? 14 : 0);
+        CompactStatusColumn.Width = new GridLength(settings.ShowWidgetHeader ? small ? 10 : 14 : 0);
         HeaderPanel.Visibility = settings.ShowWidgetHeader ? Visibility.Visible : Visibility.Collapsed;
         HeaderRow.Height = new GridLength(settings.ShowWidgetHeader ? 18 : 0);
-        WidgetCard.Padding = compact ? new Thickness(10, 8, 10, 8) : new Thickness(14, 11, 14, 11);
-        WidgetCard.CornerRadius = new CornerRadius(compact ? 11 : 14);
+        WidgetCard.Padding = small ? new Thickness(7, 6, 7, 6)
+            : compact ? new Thickness(10, 8, 10, 8) : new Thickness(14, 11, 14, 11);
+        WidgetCard.CornerRadius = new CornerRadius(small ? 9 : compact ? 11 : 14);
+        foreach (var bar in new[] { CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexBar })
+            bar.Margin = new Thickness(0, small ? 3 : 5, 0, 0);
         foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexBar, CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexBar })
             bar.Visibility = settings.ShowProgressBars ? Visibility.Visible : Visibility.Collapsed;
         UpdateState(_state);
@@ -84,7 +88,8 @@ public partial class UsageWidgetWindow : Window
             SetMetric(CodexValue, CodexBar, codexLimit);
             SetMetric(CompactCodexValue, CompactCodexBar, codexLimit);
             CodexCredits.Text = FormatCredits(state.CodexSnapshot?.ResetCredits);
-            CompactCodexCredits.Text = state.CodexSnapshot?.ResetCredits is int credits ? $"초기화권 {credits}" : "";
+            CompactCodexCredits.Text = state.CodexSnapshot?.ResetCredits is int credits
+                ? _settings.WidgetDensity == WidgetDensity.Small ? $"{credits}회" : $"초기화권 {credits}" : "";
         }
         else
         {
@@ -107,9 +112,10 @@ public partial class UsageWidgetWindow : Window
         CompactClaudeFiveColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
         CompactClaudeWeeklyColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
         CompactClaudeFableColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
-        CompactClaudeGapOne.Width = new GridLength(showClaude ? 10 : 0);
-        CompactClaudeGapTwo.Width = new GridLength(showClaude ? 10 : 0);
-        CompactProviderGap.Width = new GridLength(showClaude && showCodex ? 10 : 0);
+        var compactGap = _settings.WidgetDensity == WidgetDensity.Small ? 6 : 10;
+        CompactClaudeGapOne.Width = new GridLength(showClaude ? compactGap : 0);
+        CompactClaudeGapTwo.Width = new GridLength(showClaude ? compactGap : 0);
+        CompactProviderGap.Width = new GridLength(showClaude && showCodex ? compactGap : 0);
         CompactCodexColumn.Width = new GridLength(showCodex ? 1.35 : 0, GridUnitType.Star);
         CodexRow.Height = showCodex ? GridLength.Auto : new GridLength(0);
         ClaudeRow.Height = showClaude ? GridLength.Auto : new GridLength(0);
@@ -118,28 +124,36 @@ public partial class UsageWidgetWindow : Window
         CodexPanel.Margin = new Thickness(0, showCodex ? 7 : 0, 0, 0);
         MetricsPanel.Margin = new Thickness(0, showClaude && showCodex ? 10 : showClaude ? 7 : 0, 0, 0);
 
-        var compact = _settings.WidgetDensity == WidgetDensity.Compact;
+        var small = _settings.WidgetDensity == WidgetDensity.Small;
+        var compact = _settings.WidgetDensity != WidgetDensity.Comfortable;
         var singleRow = _settings.WidgetLayout == WidgetLayout.SingleRow;
         var providerCount = (showClaude ? 1 : 0) + (showCodex ? 1 : 0);
         if (providerCount == 0)
         {
-            Width = compact ? 300 : 360;
-            Height = compact ? 40 : 48;
+            Width = small ? 250 : compact ? 300 : 360;
+            Height = small ? 34 : compact ? 40 : 48;
             return;
         }
 
-        Width = compact
+        Width = small
+            ? singleRow ? showClaude && showCodex ? 400 : showClaude ? 294 : 190
+                        : showClaude && showCodex ? 390 : showClaude ? 340 : 292
+            : compact
             ? singleRow ? showClaude && showCodex ? 476 : showClaude ? 360 : 220
                         : showClaude && showCodex ? 452 : showClaude ? 400 : 340
             : singleRow ? showClaude && showCodex ? 520 : showClaude ? 420 : 280
                         : showClaude && showCodex ? 520 : 420;
         Height = singleRow
-            ? (_settings.ShowProgressBars ? 46 : 36)
+            ? small ? (_settings.ShowProgressBars ? 38 : 30) : (_settings.ShowProgressBars ? 46 : 36)
             : providerCount == 2
-                ? compact
+                ? small
+                    ? (_settings.ShowWidgetHeader ? 92 : 74)
+                    : compact
                     ? (_settings.ShowWidgetHeader ? 104 : 84)
                     : (_settings.ShowWidgetHeader ? 116 : 96)
-                : compact
+                : small
+                    ? (_settings.ShowWidgetHeader ? 64 : 48)
+                    : compact
                     ? (_settings.ShowWidgetHeader ? 74 : 56)
                     : (_settings.ShowWidgetHeader ? 84 : 66);
     }

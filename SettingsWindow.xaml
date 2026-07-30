@@ -137,6 +137,8 @@
                                  Content="모양" GroupName="SettingsNav" Checked="OnNavigationChanged" />
                     <RadioButton x:Name="BehaviorNav" Style="{StaticResource NavButton}"
                                  Content="동작" GroupName="SettingsNav" Checked="OnNavigationChanged" />
+                    <RadioButton x:Name="UpdateNav" Style="{StaticResource NavButton}"
+                                 Content="업데이트" GroupName="SettingsNav" Checked="OnNavigationChanged" />
                     <RadioButton x:Name="PrivacyNav" Style="{StaticResource NavButton}"
                                  Content="데이터 및 정보" GroupName="SettingsNav" Checked="OnNavigationChanged" />
                 </StackPanel>
@@ -192,7 +194,7 @@
                 <ScrollViewer x:Name="BehaviorPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="28,24">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="동작" />
-                        <TextBlock Text="표시 위치와 업데이트 동작을 설정합니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
+                        <TextBlock Text="표시 위치와 앱 동작을 설정합니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="기본 표시 위치"/><TextBlock Style="{StaticResource SettingDescription}" Text="직접 이동하면 마지막 위치를 기억합니다"/></StackPanel><ComboBox x:Name="PlacementCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnPlacementChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="자동 갱신"/><TextBlock Style="{StaticResource SettingDescription}" Text="요청 제한 시에는 자동으로 간격을 늘립니다"/></StackPanel><ComboBox x:Name="RefreshCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnRefreshChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="트레이 아이콘"/><TextBlock Style="{StaticResource SettingDescription}" Text="아이콘을 숨겨도 상시 위젯은 유지됩니다"/></StackPanel><ComboBox x:Name="TrayCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnTrayChanged"/></Grid></Border>
@@ -201,6 +203,42 @@
                             <Button Style="{StaticResource AppButton}" Content="위치 초기화" Click="OnResetPosition" />
                             <Button Style="{StaticResource GhostButton}" Content="모든 설정 기본값 복원" Margin="8,0,0,0" Click="OnRestoreDefaults" />
                         </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <ScrollViewer x:Name="UpdatePanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Padding="28,24">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource SectionTitle}" Text="업데이트" />
+                        <TextBlock Text="새 버전을 확인하고 설치 방식을 관리합니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
+                            <Grid>
+                                <StackPanel>
+                                    <TextBlock FontWeight="SemiBold" Text="현재 버전" />
+                                    <TextBlock x:Name="CurrentVersionText" Margin="0,7,0,0" FontSize="20" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <Border HorizontalAlignment="Right" VerticalAlignment="Center" Padding="10,6"
+                                        CornerRadius="10" Background="{DynamicResource AccentSoftBrush}">
+                                    <TextBlock x:Name="UpdateChannelText" Foreground="{DynamicResource AccentBrush}" FontSize="11" FontWeight="SemiBold" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}">
+                            <Grid>
+                                <StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="실행 시 업데이트 확인"/><TextBlock Style="{StaticResource SettingDescription}" Text="앱을 시작할 때 한 번 새 버전을 확인합니다"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <TextBlock x:Name="UpdateToggleStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/>
+                                    <CheckBox x:Name="UpdateToggle" Style="{StaticResource ToggleSwitch}" Checked="OnUpdateToggleChanged" Unchecked="OnUpdateToggleChanged"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource SettingRow}" BorderThickness="0">
+                            <Grid>
+                                <StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="수동 확인"/><TextBlock Style="{StaticResource SettingDescription}" Text="GitHub Releases에서 사용 가능한 새 버전을 확인합니다"/></StackPanel>
+                                <Button Style="{StaticResource AppButton}" HorizontalAlignment="Right" Content="업데이트 확인" Click="OnCheckUpdates"/>
+                            </Grid>
+                        </Border>
+                        <TextBlock Margin="0,18,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
+                                   Text="업데이트가 있으면 변경 내역과 다운로드 진행률을 확인한 뒤 적용할 수 있습니다." />
                     </StackPanel>
                 </ScrollViewer>
 
@@ -231,7 +269,7 @@
                         </Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="진단 상태 파일"/><TextBlock Style="{StaticResource SettingDescription}" Text="토큰 없이 상태와 위젯 위치만 로컬에 기록합니다"/></StackPanel><Button Style="{StaticResource AppButton}" HorizontalAlignment="Right" Content="폴더 열기" Click="OnOpenDiagnostics"/></Grid></Border>
                         <TextBlock Margin="0,20,0,4" Text="dejavu" FontWeight="SemiBold" />
-                        <TextBlock Text="버전 0.9.0 RC 1 · 공개 릴리스 후보" Foreground="{DynamicResource MutedTextBrush}" />
+                        <TextBlock x:Name="AboutVersionText" Foreground="{DynamicResource MutedTextBrush}" />
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

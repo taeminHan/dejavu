@@ -2,7 +2,7 @@
 
 Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 데스크톱 앱입니다.
 
-현재 배포 버전은 `0.9.0-rc.1` 공개 릴리스 후보입니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.1`이며, `0.9.0-rc.2`에서 Velopack 기반 설치·자동 업데이트로 전환 중입니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
 [최신 버전 다운로드](https://github.com/taeminHan/dejavu/releases/latest) · [웹사이트 소스](website) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
@@ -14,6 +14,7 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 - 진행률 막대 또는 퍼센트 표시, 투명도·색상·위치 설정
 - 약 1분마다 자동 갱신하며 마지막 정상 값을 유지
 - Windows 시작 시 실행과 알림 영역 메뉴 지원
+- 실행 시 한 번 업데이트 확인, 앱 안에서 다운로드·적용·재시작
 
 Windows 11은 타사 앱이 작업표시줄 본문에 임의의 정보를 삽입하는 공식 API를 제공하지 않습니다. dejavu는 작업표시줄 위에 독립적인 상시 위젯을 두는 방식입니다.
 
@@ -35,7 +36,9 @@ Codex 표시에는 로컬에서 실행 가능한 Codex CLI가 필요합니다. �
 
 ## 설치와 제거
 
-서명된 설치 프로그램이 제공되는 경우 해당 설치 프로그램을 사용합니다. 휴대용 패키지는 압축을 푼 뒤 `dejavu.exe`를 실행합니다. 제거 후 사용자 설정과 진단 파일을 함께 지우려면 앱을 종료하고 `%LocalAppData%\dejavu` 폴더를 삭제합니다.
+GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에 설치됩니다. 설치 버전은 실행할 때 한 번 GitHub Releases를 확인하며, 새 버전이 있으면 앱 안에서 다운로드·적용한 뒤 재시작할 수 있습니다. 업데이트 확인은 설정에서 끌 수 있습니다.
+
+기존 Inno Setup 기반 `0.9.0-rc.1` 사용자는 첫 Velopack 버전만 설치 프로그램으로 한 번 다시 설치해야 합니다. 그 이후 버전부터는 앱 안에서 업데이트됩니다. Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱·바로가기·시작프로그램 등록이 삭제됩니다. 사용자 설정과 진단 파일은 재설치에 대비해 `%LocalAppData%\dejavu`에 보존되며, 이것까지 지우려면 앱 제거 후 해당 폴더를 삭제합니다.
 
 Windows SmartScreen의 게시자 경고가 표시되는 서명되지 않은 빌드는 정식 배포본으로 간주하지 않습니다. 배포 파일은 함께 제공되는 `SHA256SUMS.txt`와 대조할 수 있습니다.
 
@@ -55,7 +58,11 @@ PowerShell에서 다음 명령을 실행합니다.
 .\tools\BuildRelease.ps1
 ```
 
-스크립트는 단일 실행 파일, 휴대용 ZIP, SHA-256 체크섬을 `outputs` 폴더에 만듭니다. Inno Setup Compiler가 설치되어 있으면 설치 프로그램도 함께 빌드합니다.
+스크립트는 Velopack 설치 프로그램, 전체 패키지, 업데이트 피드와 SHA-256 체크섬을 `outputs/dejavu-velopack-releases`에 만듭니다. 이전 GitHub Release를 받아 델타 패키지도 만들려면 `-DownloadPrevious`를 추가합니다.
+
+```powershell
+.\tools\BuildRelease.ps1 -DownloadPrevious
+```
 
 ## 웹사이트
 

@@ -62,6 +62,7 @@ public partial class SettingsWindow : Window
     internal event EventHandler? SettingsChanged;
     internal event EventHandler? PositionResetRequested;
     internal event EventHandler<bool>? StartupChanged;
+    internal event EventHandler? UpdateCheckRequested;
     internal Func<bool>? StartupStateProvider { get; set; }
 
     internal void ShowAndActivate()
@@ -89,6 +90,11 @@ public partial class SettingsWindow : Window
         HeaderToggle.IsChecked = _settings.ShowWidgetHeader;
         OpacitySlider.Value = _settings.WidgetOpacity * 100;
         StartupToggle.IsChecked = StartupStateProvider?.Invoke() ?? false;
+        UpdateToggle.IsChecked = _settings.CheckForUpdatesOnStartup;
+        var currentVersion = VelopackUpdateService.CurrentVersion;
+        CurrentVersionText.Text = currentVersion;
+        UpdateChannelText.Text = currentVersion.Contains('-', StringComparison.Ordinal) ? "릴리스 후보 채널" : "안정 채널";
+        AboutVersionText.Text = $"버전 {currentVersion}";
         UpdateStatusLabels();
         _loading = false;
     }
@@ -109,6 +115,7 @@ public partial class SettingsWindow : Window
         BarsStatus.Text = _settings.ShowProgressBars ? "켜짐" : "꺼짐";
         HeaderToggleStatus.Text = _settings.ShowWidgetHeader ? "켜짐" : "꺼짐";
         StartupStatus.Text = StartupToggle.IsChecked == true ? "켜짐" : "꺼짐";
+        UpdateToggleStatus.Text = _settings.CheckForUpdatesOnStartup ? "켜짐" : "꺼짐";
         OpacityValue.Text = $"{OpacitySlider.Value:0}%";
     }
 
@@ -117,6 +124,7 @@ public partial class SettingsWindow : Window
         if (AppearancePanel is null) return;
         AppearancePanel.Visibility = AppearanceNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         BehaviorPanel.Visibility = BehaviorNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        UpdatePanel.Visibility = UpdateNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PrivacyPanel.Visibility = PrivacyNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -226,6 +234,16 @@ public partial class SettingsWindow : Window
         StartupChanged?.Invoke(this, StartupToggle.IsChecked == true);
     }
 
+    private void OnUpdateToggleChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        _settings.CheckForUpdatesOnStartup = UpdateToggle.IsChecked == true;
+        SaveAndNotify();
+    }
+
+    private void OnCheckUpdates(object sender, RoutedEventArgs e) =>
+        UpdateCheckRequested?.Invoke(this, EventArgs.Empty);
+
     private void OnResetPosition(object sender, RoutedEventArgs e)
     {
         _settings.WidgetPlacement = WidgetPlacement.TaskbarRight;
@@ -252,6 +270,7 @@ public partial class SettingsWindow : Window
         _settings.ServiceDisplayMode = ServiceDisplayMode.AutoDetect;
         _settings.WidgetPlacement = WidgetPlacement.TaskbarRight;
         _settings.Theme = ThemePreference.System;
+        _settings.CheckForUpdatesOnStartup = true;
         _settings.WidgetLeft = null;
         _settings.WidgetTop = null;
         SaveAndNotify(applyTheme: true);

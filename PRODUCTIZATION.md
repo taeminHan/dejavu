@@ -1,6 +1,6 @@
 # dejavu productization status
 
-기준 버전: `0.9.0-rc.1` (2026-07-30)
+기준 버전: `0.9.0-rc.2` 개발 중 (2026-07-30)
 
 이 버전은 기능 완성도를 확인하기 위한 공개 릴리스 후보입니다. 아래 P0 항목이 해결되기 전에는 정식 GA 또는 신뢰된 설치 프로그램으로 표시하지 않습니다.
 
@@ -24,7 +24,7 @@
 
 ### P2 — general availability
 
-1. Automatic updates with rollback.
+1. Validate automatic updates, failed-download recovery, and rollback behavior on clean Windows 11 environments.
 2. Korean and English localization.
 3. Opt-in crash reporting and a user-exportable redacted diagnostics bundle.
 4. Accessibility audit, Windows high-contrast validation, and screen-reader labels.
@@ -43,10 +43,12 @@
 - Existing `%LocalAppData%\\ClaudeUsageTray\\settings.json` migration.
 - Multi-monitor position clamping and display-change recovery.
 - Safe diagnostics that never write OAuth tokens.
+- Velopack-based per-user installation and GitHub Releases update checks.
+- In-app update download, apply, restart, and an opt-out startup check.
 
 ## Deferred or externally blocked
 
-- Signing certificate, auto-update service, telemetry, localization, and public-store packaging.
+- Trusted code-signing certificate, telemetry, localization, and public-store packaging.
 - A supported Anthropic usage API or explicit approval for the current integration.
 - Codex Windows Store-only CLI discovery where package ACLs prevent direct child-process execution.
 - A cleared trademark and trusted code-signing publisher identity.

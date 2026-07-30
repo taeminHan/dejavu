@@ -1,81 +1,104 @@
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "0.9.0-rc.1"
+    [string]$Version = "",
+    [string]$OutputRoot = "",
+    [switch]$DownloadPrevious
 )
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $workspaceRoot = (Resolve-Path (Join-Path $projectRoot "..\.." )).Path
-$outputRoot = Join-Path $workspaceRoot "outputs"
-$publishDirectory = Join-Path $outputRoot "dejavu-$Version"
-$portableRoot = Join-Path $outputRoot "dejavu-$Version-portable"
-$archivePath = Join-Path $outputRoot "dejavu-$Version-win-x64.zip"
-$checksumsPath = Join-Path $outputRoot "SHA256SUMS.txt"
+if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
+    $OutputRoot = Join-Path $workspaceRoot "outputs"
+}
+$outputRoot = [System.IO.Path]::GetFullPath($OutputRoot)
+$publishDirectory = Join-Path $outputRoot "dejavu-velopack-publish"
+$releaseDirectory = Join-Path $outputRoot "dejavu-velopack-releases"
+$checksumsPath = Join-Path $releaseDirectory "SHA256SUMS.txt"
+$releaseNotesPath = Join-Path $outputRoot "dejavu-release-notes.md"
+$packId = "dejavu-desktop"
 $projectFile = Join-Path $projectRoot "ClaudeUsageTray.csproj"
 $bundledDotnet = Join-Path $workspaceRoot "work\dotnet-sdk\dotnet.exe"
+$bundledVpk = Join-Path $workspaceRoot "work\vpk-tool\vpk.exe"
 
 $projectXml = [xml](Get-Content -LiteralPath $projectFile -Raw)
 $projectVersion = [string]$projectXml.Project.PropertyGroup.Version
+if ([string]::IsNullOrWhiteSpace($Version)) {
+    $Version = $projectVersion
+}
 if ($projectVersion -ne $Version) {
     throw "Requested version '$Version' does not match project version '$projectVersion'."
 }
+
+$changelog = Get-Content -LiteralPath (Join-Path $projectRoot "CHANGELOG.md") -Raw
+$escapedVersion = [regex]::Escape($Version)
+$releaseNotesMatch = [regex]::Match($changelog,
+    "(?ms)^##\s+$escapedVersion(?:\s+—[^\r\n]*)?\r?\n(?<notes>.*?)(?=^##\s+|\z)")
+if (-not $releaseNotesMatch.Success) {
+    throw "CHANGELOG.md does not contain a section for version '$Version'."
+}
+$releaseNotes = "# dejavu $Version`n`n" + $releaseNotesMatch.Groups["notes"].Value.Trim() + "`n"
+New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
+Set-Content -LiteralPath $releaseNotesPath -Value $releaseNotes -Encoding utf8NoBOM
 
 $dotnet = if (Test-Path -LiteralPath $bundledDotnet) {
     $bundledDotnet
 } else {
     (Get-Command dotnet -ErrorAction Stop).Source
 }
+$vpk = if (Test-Path -LiteralPath $bundledVpk) {
+    $env:DOTNET_ROOT = Split-Path -Parent $bundledDotnet
+    $bundledVpk
+} else {
+    (Get-Command vpk -ErrorAction Stop).Source
+}
 
 New-Item -ItemType Directory -Path $outputRoot -Force | Out-Null
+New-Item -ItemType Directory -Path $releaseDirectory -Force | Out-Null
 if (Test-Path -LiteralPath $publishDirectory) {
     Remove-Item -LiteralPath $publishDirectory -Recurse -Force
 }
-if (Test-Path -LiteralPath $portableRoot) {
-    Remove-Item -LiteralPath $portableRoot -Recurse -Force
-}
-if (Test-Path -LiteralPath $archivePath) {
-    Remove-Item -LiteralPath $archivePath -Force
+
+if ($DownloadPrevious) {
+    $preRelease = $Version.Contains('-').ToString().ToLowerInvariant()
+    & $vpk download github --repoUrl "https://github.com/taeminHan/dejavu" `
+        --outputDir $releaseDirectory --channel win --pre $preRelease
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "No previous Velopack release was downloaded. A full package will be created."
+    }
 }
 
-& $dotnet publish $projectFile -c $Configuration -o $publishDirectory
+& $dotnet publish $projectFile -c $Configuration -r win-x64 --self-contained true -o $publishDirectory
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE."
 }
 
-New-Item -ItemType Directory -Path $portableRoot -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $publishDirectory "dejavu.exe") -Destination $portableRoot
-foreach ($document in @("README.md", "PRIVACY.md", "SECURITY.md", "CHANGELOG.md")) {
-    Copy-Item -LiteralPath (Join-Path $projectRoot $document) -Destination $portableRoot
-}
-$portableFiles = Get-ChildItem -LiteralPath $portableRoot -File
-Compress-Archive -LiteralPath $portableFiles.FullName -DestinationPath $archivePath -CompressionLevel Optimal
-
-$installerCompiler = @(
-    "C:\Program Files (x86)\Inno Setup 7\ISCC.exe",
-    "C:\Program Files\Inno Setup 7\ISCC.exe",
-    "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-    "C:\Program Files\Inno Setup 6\ISCC.exe"
-) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-
-if ($installerCompiler) {
-    & $installerCompiler (Join-Path $projectRoot "installer\dejavu.iss")
-    if ($LASTEXITCODE -ne 0) {
-        throw "Inno Setup compilation failed with exit code $LASTEXITCODE."
-    }
-} else {
-    Write-Warning "Inno Setup Compiler was not found. The portable package was built without an installer."
+& $vpk pack --packId $packId --packVersion $Version --packDir $publishDirectory `
+    --mainExe dejavu.exe --packTitle dejavu --packAuthors taeminHan `
+    --icon (Join-Path $projectRoot "assets\dejavu.ico") `
+    --releaseNotes $releaseNotesPath `
+    --runtime win-x64 --channel win --shortcuts StartMenuRoot `
+    --outputDir $releaseDirectory
+if ($LASTEXITCODE -ne 0) {
+    throw "vpk pack failed with exit code $LASTEXITCODE."
 }
 
-$artifacts = Get-ChildItem -LiteralPath $outputRoot -File |
-    Where-Object { $_.Name -like "dejavu-$Version-*.zip" -or $_.Name -like "dejavu-Setup-$Version.exe" } |
+$velopackSetup = Join-Path $releaseDirectory "$packId-win-Setup.exe"
+$stableDownload = Join-Path $releaseDirectory "dejavu-Setup.exe"
+if (-not (Test-Path -LiteralPath $velopackSetup)) {
+    throw "Velopack setup was not created at '$velopackSetup'."
+}
+Copy-Item -LiteralPath $velopackSetup -Destination $stableDownload -Force
+
+$artifacts = Get-ChildItem -LiteralPath $releaseDirectory -File |
+    Where-Object { $_.Name -ne "SHA256SUMS.txt" } |
     Sort-Object Name
-
 $checksumLines = foreach ($artifact in $artifacts) {
     $hash = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash  $($artifact.Name)"
 }
 Set-Content -LiteralPath $checksumsPath -Value $checksumLines -Encoding utf8NoBOM
 
-Write-Host "Release artifacts:"
+Write-Host "Velopack release artifacts:"
 $artifacts | Select-Object Name, Length, FullName | Format-Table -AutoSize
 Write-Host "Checksums: $checksumsPath"

@@ -15,25 +15,3 @@ jobs:
           dotnet-version: 10.0.x
       - name: Build Windows app
         run: dotnet build ClaudeUsageTray.csproj -c Release
-
-  website:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 11
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: website/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - uses: actions/upload-artifact@v7
-        with:
-          name: dejavu-website
-          path: website/dist

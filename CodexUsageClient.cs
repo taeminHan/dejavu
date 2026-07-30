@@ -12,13 +12,31 @@ internal sealed record CodexUsageSnapshot(
 
 internal sealed class CodexLoginRequiredException : Exception;
 internal sealed class CodexCliUnavailableException : Exception;
+internal sealed class CodexLoginFailedException : Exception;
 
 internal sealed class CodexUsageClient
 {
+    private const string WindowsAppDownloadUrl =
+        "https://get.microsoft.com/installer/download/9PLM9XGG6VKS?cid=website_cta_psi";
+
+    public static bool IsDesktopInstalled
+    {
+        get
+        {
+            var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "OpenAI", "Codex");
+            return Directory.Exists(root);
+        }
+    }
+
     public static string? FindExecutable()
     {
         var configured = Environment.GetEnvironmentVariable("CODEX_CLI_PATH");
         if (IsRunnable(configured)) return configured;
+
+        if (string.Equals(Environment.GetEnvironmentVariable("DEJAVU_CODEX_SOURCE"), "desktop",
+                StringComparison.OrdinalIgnoreCase))
+            return DesktopExecutableCandidates().FirstOrDefault(IsRunnable);
 
         var roots = new List<string>();
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -37,8 +55,24 @@ internal sealed class CodexUsageClient
             if (File.Exists(executable) && !IsProtectedWindowsAppsPath(executable)) return executable;
         }
 
+        foreach (var executable in DesktopExecutableCandidates())
+        {
+            if (IsRunnable(executable)) return executable;
+        }
+
         return null;
     }
+
+    public static bool IsDesktopBundledExecutable(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var desktopRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "OpenAI", "Codex", "bin") + Path.DirectorySeparatorChar;
+        return Path.GetFullPath(path).StartsWith(Path.GetFullPath(desktopRoot), StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static void OpenSetupPage() =>
+        Process.Start(new ProcessStartInfo(WindowsAppDownloadUrl) { UseShellExecute = true });
 
     public async Task<CodexUsageSnapshot> GetUsageAsync(CancellationToken cancellationToken = default)
     {
@@ -63,7 +97,13 @@ internal sealed class CodexUsageClient
             {
                 method = "initialize",
                 id = 0,
-                @params = new { clientInfo = new { name = "dejavu", title = "dejavu", version = "0.9.0-rc.1" } }
+                @params = new
+                {
+                    clientInfo = new
+                    {
+                        name = "dejavu", title = "dejavu", version = VelopackUpdateService.CurrentVersion
+                    }
+                }
             }, timeout.Token);
             await WriteAsync(process, new { method = "initialized", @params = new { } }, timeout.Token);
             await WriteAsync(process, new { method = "account/rateLimits/read", id = 1 }, timeout.Token);
@@ -91,10 +131,108 @@ internal sealed class CodexUsageClient
         }
     }
 
+    public async Task LoginAsync(CancellationToken cancellationToken = default)
+    {
+        var executable = FindExecutable() ?? throw new CodexCliUnavailableException();
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromMinutes(5));
+        using var process = StartAppServer(executable);
+        var browserOpened = false;
+
+        try
+        {
+            await InitializeAsync(process, timeout.Token);
+            await WriteAsync(process, new
+            {
+                method = "account/login/start",
+                id = 2,
+                @params = new { type = "chatgpt", useHostedLoginSuccessPage = true, appBrand = "codex" }
+            }, timeout.Token);
+
+            while (true)
+            {
+                var line = await process.StandardOutput.ReadLineAsync(timeout.Token);
+                if (line is null) throw new CodexLoginFailedException();
+                using var document = JsonDocument.Parse(line);
+                var root = document.RootElement;
+                if (root.TryGetProperty("id", out var id) && id.TryGetInt32(out var requestId) && requestId == 2)
+                {
+                    if (root.TryGetProperty("error", out _)) throw new CodexLoginFailedException();
+                    if (!root.TryGetProperty("result", out var result) ||
+                        !result.TryGetProperty("authUrl", out var authUrlNode) ||
+                        string.IsNullOrWhiteSpace(authUrlNode.GetString())) throw new CodexLoginFailedException();
+                    Process.Start(new ProcessStartInfo(authUrlNode.GetString()!) { UseShellExecute = true });
+                    browserOpened = true;
+                    continue;
+                }
+
+                if (!browserOpened || !root.TryGetProperty("method", out var method) ||
+                    method.GetString() != "account/login/completed" ||
+                    !root.TryGetProperty("params", out var parameters)) continue;
+                if (parameters.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True)
+                    return;
+                throw new CodexLoginFailedException();
+            }
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new CodexLoginFailedException();
+        }
+        finally
+        {
+            try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
+        }
+    }
+
     private static async Task WriteAsync(Process process, object message, CancellationToken cancellationToken)
     {
         await process.StandardInput.WriteLineAsync(JsonSerializer.Serialize(message).AsMemory(), cancellationToken);
         await process.StandardInput.FlushAsync(cancellationToken);
+    }
+
+    private static Process StartAppServer(string executable)
+    {
+        var startInfo = new ProcessStartInfo(executable)
+        {
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        startInfo.ArgumentList.Add("app-server");
+        return Process.Start(startInfo) ?? throw new CodexCliUnavailableException();
+    }
+
+    private static async Task InitializeAsync(Process process, CancellationToken cancellationToken)
+    {
+        await WriteAsync(process, new
+        {
+            method = "initialize",
+            id = 0,
+            @params = new
+            {
+                clientInfo = new
+                {
+                    name = "dejavu", title = "dejavu", version = VelopackUpdateService.CurrentVersion
+                }
+            }
+        }, cancellationToken);
+        await WriteAsync(process, new { method = "initialized", @params = new { } }, cancellationToken);
+    }
+
+    private static IEnumerable<string> DesktopExecutableCandidates()
+    {
+        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "OpenAI", "Codex", "bin");
+        string[] versionDirectories;
+        try { versionDirectories = Directory.GetDirectories(root); }
+        catch { versionDirectories = []; }
+
+        foreach (var directory in versionDirectories
+                     .OrderByDescending(path => Directory.GetLastWriteTimeUtc(path)))
+            yield return Path.Combine(directory, "codex.exe");
+        yield return Path.Combine(root, "codex.exe");
     }
 
     private static CodexUsageSnapshot Parse(JsonElement result)

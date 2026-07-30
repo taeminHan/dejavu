@@ -19,8 +19,9 @@ internal static class ThemeManager
         Set("BorderBrush", light ? "#DCDCE1" : "#303036");
         Set("TextBrush", light ? "#18181B" : "#F7F7F8");
         Set("MutedTextBrush", light ? "#696974" : "#A1A1AA");
-        Set("AccentBrush", NormalizeColor(settings.AccentColor, "#6D8EFF"));
-        Set("AccentSoftBrush", light ? "#E9EDFF" : "#25304F");
+        var accent = NormalizeColor(settings.AccentColor, "#6D8EFF");
+        Set("AccentBrush", accent);
+        Set("AccentSoftBrush", WithOpacity(accent, light ? 0.16 : 0.24));
         Set("DangerBrush", light ? "#D9434A" : "#F07178");
         Set("WarningBrush", light ? "#A96716" : "#E6A756");
     }
@@ -47,5 +48,12 @@ internal static class ThemeManager
             return value ?? fallback;
         }
         catch { return fallback; }
+    }
+
+    private static string WithOpacity(string value, double opacity)
+    {
+        var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(value);
+        var alpha = (byte)Math.Round(Math.Clamp(opacity, 0, 1) * 255);
+        return $"#{alpha:X2}{color.R:X2}{color.G:X2}{color.B:X2}";
     }
 }

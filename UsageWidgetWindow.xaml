@@ -5,7 +5,8 @@
         Background="Transparent" ShowInTaskbar="False" ShowActivated="False"
         Topmost="True" ResizeMode="NoResize">
     <Border x:Name="WidgetCard" Style="{StaticResource CardBorder}" CornerRadius="14" Padding="14,11"
-            MouseLeftButtonDown="OnWidgetMouseDown" MouseRightButtonUp="OnWidgetRightClick">
+            MouseLeftButtonDown="OnWidgetMouseDown" MouseMove="OnWidgetMouseMove"
+            MouseLeftButtonUp="OnWidgetMouseUp" MouseRightButtonUp="OnWidgetRightClick">
         <Grid>
             <!-- Small: every metric uses the same 48 px cell and the same 30 px ring. -->
             <Grid x:Name="SmallPanel" Visibility="Collapsed">

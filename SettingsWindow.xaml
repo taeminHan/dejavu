@@ -132,10 +132,14 @@
                         <Border Style="{StaticResource SettingRow}" BorderThickness="0">
                             <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="강조 색상"/><TextBlock Style="{StaticResource SettingDescription}" Text="진행률과 활성 상태에 사용할 색상입니다"/></StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#6D8EFF" Click="OnAccentClick"><Ellipse Fill="#6D8EFF"/></Button>
-                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#8B7CF6" Click="OnAccentClick"><Ellipse Fill="#8B7CF6"/></Button>
-                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#D97757" Click="OnAccentClick"><Ellipse Fill="#D97757"/></Button>
-                                    <Button Style="{StaticResource GhostButton}" Width="34" Height="34" Padding="5" Tag="#2BA37A" Click="OnAccentClick"><Ellipse Fill="#2BA37A"/></Button>
+                                    <RadioButton x:Name="BlueAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"
+                                                 Background="#6D8EFF" Tag="#6D8EFF" ToolTip="블루" Checked="OnAccentChanged" />
+                                    <RadioButton x:Name="PurpleAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"
+                                                 Background="#8B7CF6" Tag="#8B7CF6" ToolTip="퍼플" Checked="OnAccentChanged" />
+                                    <RadioButton x:Name="CoralAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"
+                                                 Background="#D97757" Tag="#D97757" ToolTip="코랄" Checked="OnAccentChanged" />
+                                    <RadioButton x:Name="GreenAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"
+                                                 Background="#2BA37A" Tag="#2BA37A" ToolTip="그린" Checked="OnAccentChanged" />
                                 </StackPanel></Grid>
                         </Border>
                     </StackPanel>
@@ -188,8 +192,8 @@
                                     <TextBlock x:Name="UpdateCheckStatus" Style="{StaticResource SettingDescription}" Text="업데이트 확인 버튼을 눌러 현재 상태를 확인하세요."/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <ProgressBar x:Name="UpdateCheckProgress" Width="54" Height="4" Margin="0,0,12,0"
-                                                 IsIndeterminate="True" Visibility="Collapsed" />
+                                    <ProgressBar x:Name="UpdateCheckProgress" Style="{StaticResource IndeterminateProgress}"
+                                                 Margin="0,0,12,0" IsIndeterminate="True" Visibility="Collapsed" />
                                     <Button x:Name="CheckUpdatesButton" Style="{StaticResource AppButton}" Content="업데이트 확인" Click="OnCheckUpdates"/>
                                 </StackPanel>
                             </Grid>
@@ -204,24 +208,50 @@
                         <TextBlock Style="{StaticResource SectionTitle}" Text="데이터 및 정보" />
                         <TextBlock Text="앱이 읽는 정보와 공개 배포 전 확인할 사항입니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
                         <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
+                            <Grid>
+                                <StackPanel Margin="0,0,150,0">
+                                    <TextBlock x:Name="ClaudeConnectionTitle" FontWeight="SemiBold" Text="Claude 연결 확인 중" />
+                                    <TextBlock x:Name="ClaudeConnectionDescription" Margin="0,7,0,0" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               Text="사용 가능한 Claude 사용량 항목을 확인합니다." />
+                                </StackPanel>
+                                <Button x:Name="ClaudeConnectionButton" Style="{StaticResource AppButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Content="Claude Code 로그인" Click="OnClaudeLoginClick" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
+                            <Grid>
+                                <StackPanel Margin="0,0,150,0">
+                                    <TextBlock x:Name="CodexConnectionTitle" FontWeight="SemiBold" Text="Codex 연결 확인 중" />
+                                    <TextBlock x:Name="CodexConnectionDescription" Margin="0,7,0,0" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               Text="Codex Desktop과 CLI에서 사용할 수 있는 로컬 런타임을 확인합니다." />
+                                </StackPanel>
+                                <Button x:Name="CodexConnectionButton" Style="{StaticResource AppButton}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        Content="Codex 로그인" Click="OnCodexLoginClick" />
+                            </Grid>
+                        </Border>
+                        <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock FontWeight="SemiBold" Text="로컬 Claude 로그인 확인" />
+                                <TextBlock FontWeight="SemiBold" Text="Anthropic 공식 로그인" />
                                 <TextBlock Margin="0,7,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
-                                           Text="Claude Code의 로컬 로그인 파일에서 사용량 요청에 필요한 토큰을 일시적으로 읽습니다. 토큰, 대화 내용, 프롬프트는 저장하거나 진단 파일에 기록하지 않습니다." />
+                                           Text="연결 버튼은 Anthropic이 제공하는 공식 Claude Code 로그인 화면을 엽니다. dejavu 계정을 만들거나 비밀번호를 받지 않습니다. 사용량 요청에 필요한 토큰은 메모리에서만 일시적으로 읽으며 토큰, 대화 내용, 프롬프트는 저장하거나 진단 파일에 기록하지 않습니다." />
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
                             <StackPanel>
                                 <TextBlock FontWeight="SemiBold" Text="공식 Codex 로컬 인터페이스" />
                                 <TextBlock Margin="0,7,0,0" TextWrapping="Wrap" Foreground="{DynamicResource MutedTextBrush}"
-                                           Text="설치된 Codex CLI의 공식 app-server에서 사용률, 초기화 시각, 초기화권 개수와 만료 시각만 읽습니다. 초기화권은 dejavu가 자동으로 사용하지 않습니다." />
+                                           Text="Codex Desktop에 포함된 런타임 또는 별도로 설치된 CLI의 공식 app-server에서 사용률, 초기화 시각, 초기화권 개수와 만료 시각만 읽습니다. CLI를 직접 사용하는 사람일 필요는 없으며 초기화권은 dejavu가 자동으로 사용하지 않습니다." />
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource CardBorder}" Padding="18" Margin="0,0,0,14">
                             <StackPanel>
                                 <TextBlock FontWeight="SemiBold" Text="현재 연동 상태" />
                                 <TextBlock Margin="0,7,0,0" TextWrapping="Wrap" Foreground="{DynamicResource WarningBrush}"
-                                           Text="Claude 사용량은 Claude Code의 로컬 로그인을 통해 Anthropic으로 직접 요청합니다. 외부 앱용 공식 API로 문서화된 방식은 아니므로 Claude 업데이트에 따라 작동하지 않을 수 있습니다." />
+                                           Text="Claude Code 사용량 경로와 Claude Desktop의 로컬 기록 형식은 외부 앱용 공식 연동 계약이 아닙니다. Desktop 기록에는 초기화 시각과 Fable 사용률이 없어 해당 값은 표시되지 않으며, Claude 업데이트에 따라 연동이 중단될 수 있습니다." />
                             </StackPanel>
                         </Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="진단 상태 파일"/><TextBlock Style="{StaticResource SettingDescription}" Text="토큰 없이 상태와 위젯 위치만 로컬에 기록합니다"/></StackPanel><Button Style="{StaticResource AppButton}" HorizontalAlignment="Right" Content="폴더 열기" Click="OnOpenDiagnostics"/></Grid></Border>

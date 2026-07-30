@@ -9,6 +9,10 @@ public partial class UsageWidgetWindow : Window
 {
     private ApplicationState _state = ApplicationState.Loading();
     private TraySettings _settings;
+    private bool _leftPointerDown;
+    private bool _isDragging;
+    private System.Windows.Point _pointerDownScreen;
+    private System.Windows.Point _windowOrigin;
 
     internal UsageWidgetWindow(TraySettings settings)
     {
@@ -181,11 +185,13 @@ public partial class UsageWidgetWindow : Window
 
         if (small)
         {
-            Width = showClaude ? 158 : 62;
-            if (singleRow && showClaude && showCodex) Width = 214;
+            // Include the status column and card padding in the window size. Without
+            // these pixels the right-most reset-credit badge is clipped by the card.
+            Width = showClaude ? 168 : 72;
+            if (singleRow && showClaude && showCodex) Width = 224;
             Height = singleRow
-                ? showCodex ? 78 : 60
-                : providerCount == 2 ? 130 : showCodex ? 78 : 60;
+                ? showCodex ? 82 : 60
+                : providerCount == 2 ? 132 : showCodex ? 82 : 60;
             return;
         }
 
@@ -254,21 +260,49 @@ public partial class UsageWidgetWindow : Window
     private void OnWidgetMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton != MouseButton.Left) return;
-        var before = PointToScreen(e.GetPosition(this));
-        var origin = new System.Windows.Point(Left, Top);
-        try { DragMove(); } catch (InvalidOperationException) { }
-        var moved = Math.Abs(Left - origin.X) + Math.Abs(Top - origin.Y) > 3;
-        if (moved)
+        _leftPointerDown = true;
+        _isDragging = false;
+        _pointerDownScreen = PointToScreen(e.GetPosition(this));
+        _windowOrigin = new System.Windows.Point(Left, Top);
+        Mouse.Capture(WidgetCard);
+        e.Handled = true;
+    }
+
+    private void OnWidgetMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (!_leftPointerDown || e.LeftButton != MouseButtonState.Pressed) return;
+        var current = PointToScreen(e.GetPosition(this));
+        var delta = current - _pointerDownScreen;
+        if (!_isDragging &&
+            Math.Abs(delta.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(delta.Y) < SystemParameters.MinimumVerticalDragDistance)
         {
+            return;
+        }
+
+        _isDragging = true;
+        Left = _windowOrigin.X + delta.X;
+        Top = _windowOrigin.Y + delta.Y;
+        e.Handled = true;
+    }
+
+    private void OnWidgetMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Left || !_leftPointerDown) return;
+        Mouse.Capture(null);
+        var wasDragging = _isDragging;
+        _leftPointerDown = false;
+        _isDragging = false;
+        if (wasDragging)
+        {
+            KeepCurrentPositionVisible();
             _settings.WidgetPlacement = WidgetPlacement.Custom;
             _settings.WidgetLeft = (int)Math.Round(Left);
             _settings.WidgetTop = (int)Math.Round(Top);
             PositionChangedByUser?.Invoke(this, EventArgs.Empty);
         }
-        else if (PointToScreen(Mouse.GetPosition(this)).Subtract(before).Length < 4)
-        {
-            WidgetClicked?.Invoke(this, EventArgs.Empty);
-        }
+        else WidgetClicked?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
     }
 
     private void OnWidgetRightClick(object sender, MouseButtonEventArgs e) =>
@@ -317,9 +351,4 @@ public partial class UsageWidgetWindow : Window
 
     private static string FormatCredits(int? credits) => credits is null ? "초기화권 --" : $"초기화권 {credits}개";
     private static string FormatCompactCredits(int? credits) => credits is null ? "초기화권 --" : $"초기화권 {credits}";
-}
-
-internal static class PointExtensions
-{
-    public static Vector Subtract(this System.Windows.Point point, System.Windows.Point other) => point - other;
 }

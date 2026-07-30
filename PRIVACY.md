@@ -6,8 +6,9 @@ dejavu는 Claude와 Codex 사용량을 Windows 바탕화면에 표시하는 로�
 
 ## 처리하는 정보
 
-- Claude를 표시할 때 Claude Code의 로컬 로그인 파일에서 사용량 요청에 필요한 OAuth 액세스 토큰과 만료 시각을 메모리에서 일시적으로 읽습니다.
-- Codex를 표시할 때 설치된 Codex CLI의 로컬 app-server에서 사용률, 초기화 시각, 플랜 유형, 초기화권 개수와 만료 시각을 읽습니다.
+- Claude Code가 로그인되어 있으면 로컬 로그인 파일에서 사용량 요청에 필요한 OAuth 액세스 토큰과 만료 시각을 메모리에서 일시적으로 읽습니다.
+- Claude Desktop만 사용하는 경우 `%AppData%\Claude\plan-usage-history.json`에서 최근 5시간·주간 사용률과 기록 시각만 읽습니다. Desktop 로그인 토큰, 브라우저 쿠키, 대화 내용은 읽지 않습니다.
+- Codex를 표시할 때 Codex Desktop에 포함된 런타임 또는 Codex CLI의 로컬 app-server에서 사용률, 초기화 시각, 플랜 유형, 초기화권 개수와 만료 시각을 읽습니다.
 - 앱 설정, 위젯 위치, 마지막 사용량 수치와 연결 상태를 `%LocalAppData%\dejavu`에 저장합니다.
 - 오류 발생 시 로컬 `crash.log`에 오류 내용과 PC의 파일 경로가 포함될 수 있습니다.
 
@@ -27,7 +28,7 @@ Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱 설정, 위
 
 ## 연동 관련 주의
 
-Claude 사용량 조회 방식은 Anthropic이 외부 앱용 공개 API로 문서화한 계약이 아닙니다. Anthropic의 변경에 따라 기능이 중단될 수 있습니다. Codex 사용량 조회는 OpenAI가 문서화한 로컬 app-server 인터페이스를 사용합니다.
+Claude Code 사용량 조회 방식과 Claude Desktop 로컬 기록 형식은 Anthropic이 외부 앱용 공개 연동 계약으로 문서화한 방식이 아닙니다. Desktop 기록에는 초기화 시각과 Fable 사용률이 포함되지 않습니다. Anthropic의 변경에 따라 기능이 중단될 수 있습니다. Codex 사용량 조회는 OpenAI가 문서화한 로컬 app-server 인터페이스를 사용합니다.
 
 ## 문의
 

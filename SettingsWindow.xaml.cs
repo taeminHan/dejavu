@@ -10,6 +10,7 @@ public partial class SettingsWindow : Window
 {
     private readonly TraySettings _settings;
     private bool _loading;
+    private ApplicationState? _applicationState;
 
     internal SettingsWindow(TraySettings settings)
     {
@@ -65,6 +66,8 @@ public partial class SettingsWindow : Window
     internal event EventHandler<bool>? StartupChanged;
     internal event EventHandler? UpdateCheckRequested;
     internal event EventHandler? UpdateDetailsRequested;
+    internal event EventHandler? ClaudeLoginRequested;
+    internal event EventHandler? CodexLoginRequested;
     internal Func<bool>? StartupStateProvider { get; set; }
 
     internal void ShowAndActivate()
@@ -93,13 +96,101 @@ public partial class SettingsWindow : Window
         OpacitySlider.Value = _settings.WidgetOpacity * 100;
         StartupToggle.IsChecked = StartupStateProvider?.Invoke() ?? false;
         UpdateToggle.IsChecked = _settings.CheckForUpdatesOnStartup;
+        UpdateAccentSelection();
         var currentVersion = VelopackUpdateService.CurrentVersion;
         CurrentVersionText.Text = currentVersion;
         UpdateChannelText.Text = currentVersion.Contains('-', StringComparison.Ordinal) ? "릴리스 후보 채널" : "안정 채널";
         AboutVersionText.Text = $"버전 {currentVersion}";
         SetUpdateCheckResult("업데이트 확인 버튼을 눌러 현재 상태를 확인하세요.");
         UpdateStatusLabels();
+        UpdateClaudeConnectionUi();
+        UpdateCodexConnectionUi();
         _loading = false;
+    }
+
+    internal void UpdateClaudeConnectionState(ApplicationState state)
+    {
+        _applicationState = state;
+        if (ClaudeConnectionTitle is not null) UpdateClaudeConnectionUi();
+        if (CodexConnectionTitle is not null) UpdateCodexConnectionUi();
+    }
+
+    internal void SetCodexLoginPending(bool pending)
+    {
+        CodexConnectionButton.IsEnabled = !pending;
+        if (pending) CodexConnectionButton.Content = "브라우저에서 로그인";
+        else UpdateCodexConnectionUi();
+    }
+
+    private void UpdateCodexConnectionUi()
+    {
+        if (CodexConnectionTitle is null) return;
+        var executable = CodexUsageClient.FindExecutable();
+        var state = _applicationState;
+        if (state?.CodexStatus == UsageStatus.Ready && state.CodexSnapshot is not null)
+        {
+            CodexConnectionTitle.Text = "Codex 사용량 연결됨";
+            CodexConnectionDescription.Text = "사용률, 초기화 시각과 초기화권을 공식 로컬 app-server에서 확인합니다.";
+            CodexConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else if (executable is not null)
+        {
+            CodexConnectionTitle.Text = CodexUsageClient.IsDesktopBundledExecutable(executable)
+                ? "Codex Desktop 감지됨 · 로그인 필요" : "Codex 로그인 필요";
+            CodexConnectionDescription.Text = "CLI를 직접 사용하지 않아도 ChatGPT 로그인으로 Codex 사용량을 연결할 수 있어요.";
+            CodexConnectionButton.Content = "Codex 로그인";
+            CodexConnectionButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            CodexConnectionTitle.Text = CodexUsageClient.IsDesktopInstalled
+                ? "Codex Desktop 업데이트 필요" : "Codex 설치 필요";
+            CodexConnectionDescription.Text = CodexUsageClient.IsDesktopInstalled
+                ? "호환되는 로컬 런타임을 찾지 못했습니다. Codex Desktop을 업데이트해 주세요."
+                : "Codex Desktop 또는 CLI를 설치하면 dejavu가 자동으로 감지합니다.";
+            CodexConnectionButton.Content = "Codex 설치";
+            CodexConnectionButton.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void UpdateClaudeConnectionUi()
+    {
+        if (ClaudeConnectionTitle is null) return;
+        var state = _applicationState;
+        if (state?.ClaudeStatus == UsageStatus.Ready && state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode)
+        {
+            ClaudeConnectionTitle.Text = "Claude Code 연결됨";
+            ClaudeConnectionDescription.Text = state.Snapshot.Fable is null
+                ? "5시간·주간과 초기화 시각을 표시합니다. 현재 계정 응답에는 Fable 전용 한도가 없습니다."
+                : "5시간·주간·Fable 사용률과 초기화 시각을 표시합니다.";
+            ClaudeConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else if (state?.ClaudeStatus == UsageStatus.Ready && state.Snapshot?.Source == ClaudeUsageSource.ClaudeDesktop)
+        {
+            var claudeCodeInstalled = ClaudeEnvironmentDetector.FindExecutable() is not null;
+            ClaudeConnectionTitle.Text = "Claude Desktop 기본 사용량 연결됨";
+            ClaudeConnectionDescription.Text = claudeCodeInstalled
+                ? "5시간·주간은 표시 중입니다. Fable 사용량을 확인하기 위해서는 Claude Code 로그인이 필요해요."
+                : "5시간·주간은 표시 중입니다. Fable 사용량을 확인하려면 Claude Code 설치와 로그인이 필요해요.";
+            ClaudeConnectionButton.Content = claudeCodeInstalled ? "Claude Code 로그인" : "Claude Code 설치";
+            ClaudeConnectionButton.Visibility = Visibility.Visible;
+        }
+        else if (state?.ClaudeStatus == UsageStatus.Loading)
+        {
+            ClaudeConnectionTitle.Text = "Claude 연결 확인 중";
+            ClaudeConnectionDescription.Text = "로컬 Claude Code 로그인과 Desktop 사용 기록을 확인합니다.";
+            ClaudeConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            var claudeCodeInstalled = ClaudeEnvironmentDetector.FindExecutable() is not null;
+            ClaudeConnectionTitle.Text = "Claude 연결 필요";
+            ClaudeConnectionDescription.Text = claudeCodeInstalled
+                ? "Fable 사용량을 확인하기 위해서는 Claude Code 로그인이 필요해요. 로그인 후 5시간·주간 사용률과 초기화 시각도 함께 확인합니다."
+                : "Claude Desktop을 사용하면 5시간·주간 기본 사용량을 자동 감지합니다. Fable까지 확인하려면 Claude Code 설치와 로그인이 필요해요.";
+            ClaudeConnectionButton.Content = claudeCodeInstalled ? "Claude Code 로그인" : "Claude Code 설치";
+            ClaudeConnectionButton.Visibility = Visibility.Visible;
+        }
     }
 
     private static Choice<T>? Find<T>(ItemsControl control, T value) where T : notnull =>
@@ -223,9 +314,17 @@ public partial class SettingsWindow : Window
         SaveAndNotify();
     }
 
-    private void OnAccentClick(object sender, RoutedEventArgs e)
+    private void UpdateAccentSelection()
     {
-        if (sender is not System.Windows.Controls.Button { Tag: string color }) return;
+        foreach (var button in new[] { BlueAccent, PurpleAccent, CoralAccent, GreenAccent })
+            button.IsChecked = string.Equals(button.Tag as string, _settings.AccentColor,
+                StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void OnAccentChanged(object sender, RoutedEventArgs e)
+    {
+        if (_loading || sender is not System.Windows.Controls.RadioButton
+            { IsChecked: true, Tag: string color }) return;
         _settings.AccentColor = color;
         SaveAndNotify(applyTheme: true);
     }
@@ -273,6 +372,12 @@ public partial class SettingsWindow : Window
         SetUpdateCheckLoading();
         UpdateCheckRequested?.Invoke(this, EventArgs.Empty);
     }
+
+    private void OnClaudeLoginClick(object sender, RoutedEventArgs e) =>
+        ClaudeLoginRequested?.Invoke(this, EventArgs.Empty);
+
+    private void OnCodexLoginClick(object sender, RoutedEventArgs e) =>
+        CodexLoginRequested?.Invoke(this, EventArgs.Empty);
 
     private void OnResetPosition(object sender, RoutedEventArgs e)
     {

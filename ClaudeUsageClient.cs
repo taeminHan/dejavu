@@ -6,7 +6,13 @@ using System.Text.Json;
 namespace ClaudeUsageTray;
 
 internal sealed record UsageLimit(double Percent, DateTimeOffset? ResetsAt);
-internal sealed record UsageSnapshot(UsageLimit? FiveHour, UsageLimit? Weekly, UsageLimit? Fable);
+internal enum ClaudeUsageSource { ClaudeCode, ClaudeDesktop }
+internal sealed record UsageSnapshot(
+    UsageLimit? FiveHour,
+    UsageLimit? Weekly,
+    UsageLimit? Fable,
+    ClaudeUsageSource Source = ClaudeUsageSource.ClaudeCode,
+    DateTimeOffset? CapturedAt = null);
 internal sealed class ClaudeLoginRequiredException : Exception;
 internal sealed class ClaudeRateLimitException(TimeSpan retryAfter) : Exception
 {
@@ -21,8 +27,22 @@ internal sealed class ClaudeUsageClient
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
 
     public static bool HasCredentialFile() => ClaudeEnvironmentDetector.FindCredentialPath() is not null;
+    public static bool HasLocalUsageSource() => HasCredentialFile() || ClaudeDesktopUsageReader.HasRecentUsage();
 
     public async Task<UsageSnapshot> GetUsageAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await GetClaudeCodeUsageAsync(cancellationToken);
+        }
+        catch (ClaudeLoginRequiredException)
+        {
+            if (ClaudeDesktopUsageReader.TryReadRecent(out var desktopSnapshot)) return desktopSnapshot;
+            throw;
+        }
+    }
+
+    private async Task<UsageSnapshot> GetClaudeCodeUsageAsync(CancellationToken cancellationToken)
     {
         var credentialPath = ClaudeEnvironmentDetector.FindCredentialPath();
         if (credentialPath is null) throw new ClaudeLoginRequiredException();

@@ -46,7 +46,7 @@
                         <TextBlock x:Name="StatusText" Foreground="{DynamicResource MutedTextBrush}"/>
                         <TextBlock x:Name="ProgressText" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}"/>
                     </Grid>
-                    <ProgressBar x:Name="DownloadProgress" Style="{StaticResource UsageProgress}" Height="6"/>
+                    <ProgressBar x:Name="DownloadProgress" Style="{StaticResource UpdateProgress}"/>
                 </StackPanel>
                 <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button x:Name="LaterButton" MinWidth="76" Style="{StaticResource GhostButton}" Content="나중에" Click="OnLaterClick"/>

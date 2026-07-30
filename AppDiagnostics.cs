@@ -22,11 +22,14 @@ internal static class AppDiagnostics
                 fiveHour = state.Snapshot?.FiveHour?.Percent,
                 weekly = state.Snapshot?.Weekly?.Percent,
                 fable = state.Snapshot?.Fable?.Percent,
+                claudeSource = state.Snapshot?.Source.ToString(),
+                claudeCapturedAt = state.Snapshot?.CapturedAt,
                 codexFiveHour = state.CodexSnapshot?.FiveHour?.Percent,
                 codexWeekly = state.CodexSnapshot?.Weekly?.Percent,
                 codexResetCredits = state.CodexSnapshot?.ResetCredits,
                 widget = new { widget.IsVisible, widget.Left, widget.Top, widget.Width, widget.Height, widget.Opacity },
-                credentialFilePresent = ClaudeUsageClient.HasCredentialFile()
+                credentialFilePresent = ClaudeUsageClient.HasCredentialFile(),
+                desktopUsageAvailable = ClaudeDesktopUsageReader.HasRecentUsage()
             };
             File.WriteAllText(Path.Combine(DirectoryPath, "status.json"),
                 JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));

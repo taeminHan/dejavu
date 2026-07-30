@@ -16,6 +16,9 @@ internal static class ClaudeEnvironmentDetector
 
     public static string? FindCredentialPath()
     {
+        if (string.Equals(Environment.GetEnvironmentVariable("DEJAVU_CLAUDE_SOURCE"), "desktop",
+                StringComparison.OrdinalIgnoreCase)) return null;
+
         foreach (var path in CredentialCandidates())
         {
             try
@@ -49,12 +52,15 @@ internal static class ClaudeEnvironmentDetector
             return false;
         }
 
-        Process.Start(new ProcessStartInfo
+        var startInfo = new ProcessStartInfo
         {
             FileName = executable,
             UseShellExecute = true,
             WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-        });
+        };
+        startInfo.ArgumentList.Add("auth");
+        startInfo.ArgumentList.Add("login");
+        Process.Start(startInfo);
         return true;
     }
 
@@ -79,6 +85,7 @@ internal static class ClaudeEnvironmentDetector
         yield return Path.Combine(profile, ".local", "bin", "claude.exe");
         yield return Path.Combine(appData, "npm", "claude.cmd");
         yield return Path.Combine(appData, "npm", "claude.exe");
+        foreach (var bundled in DesktopBundledExecutables(appData)) yield return bundled;
 
         foreach (var directory in (Environment.GetEnvironmentVariable("PATH") ?? "")
                      .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -86,5 +93,16 @@ internal static class ClaudeEnvironmentDetector
             yield return Path.Combine(directory, "claude.exe");
             yield return Path.Combine(directory, "claude.cmd");
         }
+    }
+
+    private static IEnumerable<string> DesktopBundledExecutables(string appData)
+    {
+        var root = Path.Combine(appData, "Claude", "claude-code");
+        string[] directories;
+        try { directories = Directory.GetDirectories(root); }
+        catch { yield break; }
+
+        foreach (var directory in directories.OrderByDescending(path => path, StringComparer.OrdinalIgnoreCase))
+            yield return Path.Combine(directory, "claude.exe");
     }
 }

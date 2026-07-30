@@ -29,11 +29,14 @@ internal sealed class DesktopApplicationController : IDisposable
     private readonly DispatcherTimer _loginWatchTimer = new() { Interval = TimeSpan.FromSeconds(3) };
     private CancellationTokenSource? _refreshCancellation;
     private CancellationTokenSource? _updateCancellation;
+    private CancellationTokenSource? _codexLoginCancellation;
     private UpdateInfo? _pendingUpdate;
     private ApplicationState _state = ApplicationState.Loading();
     private Drawing.Icon? _generatedIcon;
     private bool _refreshing;
     private bool _checkingForUpdate;
+    private bool _loginWatchRequiresClaudeCode;
+    private bool _codexLoginInProgress;
     private bool _disposed;
 
     public DesktopApplicationController(System.Windows.Application application, bool startWithSettings = false,
@@ -58,9 +61,11 @@ internal sealed class DesktopApplicationController : IDisposable
         _loginWatchTimer.Tick += async (_, _) =>
         {
             _onboarding.RefreshDetection();
-            if (!ClaudeUsageClient.HasCredentialFile()) return;
-            _loginWatchTimer.Stop();
             await RefreshAsync(force: true);
+            var connected = _state.ClaudeStatus == UsageStatus.Ready &&
+                            (!_loginWatchRequiresClaudeCode ||
+                             _state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode);
+            if (connected) _loginWatchTimer.Stop();
         };
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
@@ -94,13 +99,16 @@ internal sealed class DesktopApplicationController : IDisposable
 
         _details.RefreshRequested += async (_, _) => await RefreshAsync(force: true);
         _details.SettingsRequested += (_, _) => ShowSettings();
-        _details.LoginRequested += (_, _) => StartClaudeLogin();
+        _details.ClaudeLoginRequested += (_, _) => StartClaudeLogin(requireClaudeCode: true);
+        _details.CodexLoginRequested += async (_, _) => await StartCodexLoginAsync();
 
         _settingsWindow.SettingsChanged += (_, _) => ApplySettings();
         _settingsWindow.PositionResetRequested += (_, _) => _widget.PositionFromSettings(forceDefault: true);
         _settingsWindow.StartupChanged += (_, enabled) => SetStartup(enabled);
         _settingsWindow.UpdateCheckRequested += async (_, _) => await CheckForUpdatesFromSettingsAsync();
         _settingsWindow.UpdateDetailsRequested += (_, _) => ShowPendingUpdate();
+        _settingsWindow.ClaudeLoginRequested += (_, _) => StartClaudeLogin(requireClaudeCode: true);
+        _settingsWindow.CodexLoginRequested += async (_, _) => await StartCodexLoginAsync();
 
         _updateWindow.InstallRequested += async (_, _) => await DownloadAndApplyUpdateAsync();
 
@@ -115,7 +123,8 @@ internal sealed class DesktopApplicationController : IDisposable
             ShowSettings();
             _settingsWindow.PrivacyNav.IsChecked = true;
         };
-        _onboarding.LoginRequested += (_, _) => StartClaudeLogin();
+        _onboarding.LoginRequested += requireClaudeCode => StartClaudeLogin(requireClaudeCode);
+        _onboarding.CodexLoginRequested += async (_, _) => await StartCodexLoginAsync();
         _onboarding.Closed += (_, _) =>
         {
             if (!_settings.FirstRunCompleted) ShowWidget();
@@ -309,7 +318,9 @@ internal sealed class DesktopApplicationController : IDisposable
         try
         {
             var snapshot = await _claudeClient.GetUsageAsync(cancellationToken);
-            return new ProviderResult<UsageSnapshot>(UsageStatus.Ready, snapshot, "Claude 최신");
+            var message = snapshot.Source == ClaudeUsageSource.ClaudeDesktop
+                ? "Claude Desktop 기록" : "Claude 최신";
+            return new ProviderResult<UsageSnapshot>(UsageStatus.Ready, snapshot, message);
         }
         catch (ClaudeLoginRequiredException)
         {
@@ -354,9 +365,14 @@ internal sealed class DesktopApplicationController : IDisposable
     {
         _state = state;
         if (state.ClaudeStatus == UsageStatus.LoginRequired) _loginWatchTimer.Start();
-        else if (state.ClaudeStatus == UsageStatus.Ready) _loginWatchTimer.Stop();
+        else if (state.ClaudeStatus == UsageStatus.Ready &&
+                 (!_loginWatchTimer.IsEnabled || !_loginWatchRequiresClaudeCode ||
+                  state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode))
+            _loginWatchTimer.Stop();
         _widget.UpdateState(state);
         _details.UpdateState(state, _settings);
+        _settingsWindow.UpdateClaudeConnectionState(state);
+        _onboarding.UpdateState(state);
         UpdateTrayIcon();
         AppDiagnostics.Write(state, _widget);
     }
@@ -400,13 +416,67 @@ internal sealed class DesktopApplicationController : IDisposable
         _settingsWindow.ShowAndActivate();
     }
 
-    private void StartClaudeLogin()
+    private void StartClaudeLogin(bool requireClaudeCode)
     {
+        _loginWatchRequiresClaudeCode = requireClaudeCode;
         var environment = ClaudeEnvironmentDetector.Detect();
         if (environment.IsInstalled) ClaudeEnvironmentDetector.OpenLogin();
+        else if (!requireClaudeCode && ClaudeDesktopUsageReader.IsInstalled) ClaudeDesktopUsageReader.OpenDesktop();
         else ClaudeEnvironmentDetector.OpenSetupPage();
         _loginWatchTimer.Start();
         _onboarding.RefreshDetection();
+    }
+
+    private async Task StartCodexLoginAsync()
+    {
+        if (_codexLoginInProgress) return;
+        if (CodexUsageClient.FindExecutable() is null)
+        {
+            CodexUsageClient.OpenSetupPage();
+            return;
+        }
+
+        _codexLoginInProgress = true;
+        _codexLoginCancellation = new CancellationTokenSource();
+        _onboarding.SetCodexLoginPending(true);
+        _settingsWindow.SetCodexLoginPending(true);
+        try
+        {
+            await _codexClient.LoginAsync(_codexLoginCancellation.Token);
+            await RefreshAsync(force: true);
+        }
+        catch (CodexCliUnavailableException)
+        {
+            CodexUsageClient.OpenSetupPage();
+        }
+        catch (OperationCanceledException) when (_codexLoginCancellation?.IsCancellationRequested == true)
+        {
+            // Application shutdown cancels the pending browser login.
+        }
+        catch (CodexLoginFailedException)
+        {
+            ApplyState(_state with
+            {
+                CodexStatus = UsageStatus.LoginRequired,
+                CodexMessage = "Codex 로그인을 완료하지 못했습니다"
+            });
+        }
+        catch
+        {
+            ApplyState(_state with
+            {
+                CodexStatus = UsageStatus.Error,
+                CodexMessage = "Codex 로그인 창을 열지 못했습니다"
+            });
+        }
+        finally
+        {
+            _codexLoginInProgress = false;
+            _codexLoginCancellation.Dispose();
+            _codexLoginCancellation = null;
+            _onboarding.SetCodexLoginPending(false);
+            _settingsWindow.SetCodexLoginPending(false);
+        }
     }
 
     private void UpdateTrayIcon()
@@ -600,6 +670,8 @@ internal sealed class DesktopApplicationController : IDisposable
         _refreshCancellation?.Dispose();
         _updateCancellation?.Cancel();
         _updateCancellation?.Dispose();
+        _codexLoginCancellation?.Cancel();
+        _codexLoginCancellation?.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         _generatedIcon?.Dispose();

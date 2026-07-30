@@ -489,6 +489,33 @@ internal sealed class DesktopApplicationController : IDisposable
         }
     }
 
+    internal static void PerformUninstallCleanup()
+    {
+        RemoveStartupRegistration();
+        DeleteUserDataDirectory("dejavu");
+        DeleteUserDataDirectory("ClaudeUsageTray");
+    }
+
+    private static void DeleteUserDataDirectory(string directoryName)
+    {
+        try
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (string.IsNullOrWhiteSpace(localAppData)) return;
+
+            var root = Path.GetFullPath(localAppData).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                       + Path.DirectorySeparatorChar;
+            var target = Path.GetFullPath(Path.Combine(root, directoryName));
+            if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return;
+
+            if (Directory.Exists(target)) Directory.Delete(target, recursive: true);
+        }
+        catch
+        {
+            // User-data cleanup must not prevent Velopack from removing the application.
+        }
+    }
+
     private static void MigrateExistingStartupRegistration()
     {
         try

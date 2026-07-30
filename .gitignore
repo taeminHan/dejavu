@@ -4,11 +4,6 @@ obj/
 *.user
 *.suo
 
-# Website
-website/node_modules/
-website/dist/
-website/.vite/
-
 # Release artifacts and local tools
 outputs/
 *.pfx

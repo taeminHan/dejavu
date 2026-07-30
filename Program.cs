@@ -12,7 +12,7 @@ internal static class Program
         try
         {
             VelopackApp.Build()
-                .OnBeforeUninstallFastCallback(_ => DesktopApplicationController.RemoveStartupRegistration())
+                .OnBeforeUninstallFastCallback(_ => DesktopApplicationController.PerformUninstallCleanup())
                 .Run();
             using var mutex = new Mutex(true, MutexName, out var createdNew);
             if (!createdNew) return;

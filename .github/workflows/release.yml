@@ -1,8 +1,9 @@
-name: Release
+name: Release dejavu
 
 on:
   push:
-    tags: ['v*']
+    tags:
+      - "v*"
 
 permissions:
   contents: write
@@ -11,26 +12,69 @@ jobs:
   release:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 10.0.x
-      - name: Publish app
-        shell: pwsh
-        run: dotnet publish ClaudeUsageTray.csproj -c Release -o publish
-      - name: Assemble portable package
+          dotnet-version: "10.0.302"
+
+      - name: Install Velopack CLI
+        run: dotnet tool install --global vpk --version 1.2.0
+
+      - name: Read version
+        id: version
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Path package
-          Copy-Item publish/dejavu.exe package/
-          Copy-Item README.md,PRIVACY.md,SECURITY.md,CHANGELOG.md package/
-          Compress-Archive -Path package/* -DestinationPath dejavu-win-x64.zip
-          $hash = (Get-FileHash dejavu-win-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          Set-Content -Path SHA256SUMS.txt -Value "$hash  dejavu-win-x64.zip" -Encoding utf8NoBOM
-      - uses: softprops/action-gh-release@v3
-        with:
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            dejavu-win-x64.zip
-            SHA256SUMS.txt
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          "value=$version" >> $env:GITHUB_OUTPUT
+          "prerelease=$($version.Contains('-').ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Prepare release paths
+        id: paths
+        shell: pwsh
+        run: |
+          $outputRoot = Join-Path $env:RUNNER_TEMP "dejavu-output"
+          "output_root=$outputRoot" >> $env:GITHUB_OUTPUT
+          "release_dir=$(Join-Path $outputRoot 'dejavu-velopack-releases')" >> $env:GITHUB_OUTPUT
+
+      - name: Download previous Velopack release
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          vpk download github `
+            --repoUrl "https://github.com/${{ github.repository }}" `
+            --token "${{ secrets.GITHUB_TOKEN }}" `
+            --outputDir "${{ steps.paths.outputs.release_dir }}" `
+            --channel win `
+            --pre "${{ steps.version.outputs.prerelease }}"
+
+      - name: Build Velopack release
+        shell: pwsh
+        run: ./tools/BuildRelease.ps1 -Version "${{ steps.version.outputs.value }}" -OutputRoot "${{ steps.paths.outputs.output_root }}"
+
+      - name: Publish GitHub release
+        shell: pwsh
+        run: |
+          vpk upload github `
+            --repoUrl "https://github.com/${{ github.repository }}" `
+            --token "${{ secrets.GITHUB_TOKEN }}" `
+            --outputDir "${{ steps.paths.outputs.release_dir }}" `
+            --channel win `
+            --tag "${{ github.ref_name }}" `
+            --releaseName "dejavu ${{ github.ref_name }}" `
+            --targetCommitish "${{ github.sha }}" `
+            --pre "${{ steps.version.outputs.prerelease }}" `
+            --publish true
+
+      - name: Upload stable download alias and checksums
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" `
+            "${{ steps.paths.outputs.release_dir }}\dejavu-Setup.exe" `
+            "${{ steps.paths.outputs.release_dir }}\SHA256SUMS.txt" `
+            --repo "${{ github.repository }}" `
+            --clobber

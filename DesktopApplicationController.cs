@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Win32;
+using Velopack;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
 
@@ -21,13 +22,18 @@ internal sealed class DesktopApplicationController : IDisposable
     private readonly UsageDetailsWindow _details = new();
     private readonly SettingsWindow _settingsWindow;
     private readonly OnboardingWindow _onboarding;
+    private readonly UpdateWindow _updateWindow = new();
+    private readonly VelopackUpdateService _updateService = new();
     private readonly Forms.NotifyIcon _trayIcon = new();
     private readonly DispatcherTimer _timer = new();
     private readonly DispatcherTimer _loginWatchTimer = new() { Interval = TimeSpan.FromSeconds(3) };
     private CancellationTokenSource? _refreshCancellation;
+    private CancellationTokenSource? _updateCancellation;
+    private UpdateInfo? _pendingUpdate;
     private ApplicationState _state = ApplicationState.Loading();
     private Drawing.Icon? _generatedIcon;
     private bool _refreshing;
+    private bool _checkingForUpdate;
     private bool _disposed;
 
     public DesktopApplicationController(System.Windows.Application application, bool startWithSettings = false,
@@ -35,6 +41,7 @@ internal sealed class DesktopApplicationController : IDisposable
     {
         _application = application;
         ThemeManager.Apply(_settings);
+        if (_updateService.IsInstalled) MigrateExistingStartupRegistration();
 
         _widget = new UsageWidgetWindow(_settings);
         _settingsWindow = new SettingsWindow(_settings)
@@ -76,6 +83,7 @@ internal sealed class DesktopApplicationController : IDisposable
 
         AppDiagnostics.ClearCrashLog();
         _ = RefreshAsync();
+        if (_settings.CheckForUpdatesOnStartup) _ = CheckForUpdatesAfterStartupAsync();
     }
 
     private void WireWindows()
@@ -91,6 +99,9 @@ internal sealed class DesktopApplicationController : IDisposable
         _settingsWindow.SettingsChanged += (_, _) => ApplySettings();
         _settingsWindow.PositionResetRequested += (_, _) => _widget.PositionFromSettings(forceDefault: true);
         _settingsWindow.StartupChanged += (_, enabled) => SetStartup(enabled);
+        _settingsWindow.UpdateCheckRequested += async (_, _) => await CheckForUpdatesAsync(showIfCurrent: true);
+
+        _updateWindow.InstallRequested += async (_, _) => await DownloadAndApplyUpdateAsync();
 
         _onboarding.Completed += (_, _) =>
         {
@@ -120,6 +131,8 @@ internal sealed class DesktopApplicationController : IDisposable
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("사용량 열기", null, (_, _) => _application.Dispatcher.Invoke(ToggleDetails));
         menu.Items.Add("지금 새로고침", null, async (_, _) => await _application.Dispatcher.InvokeAsync(async () => await RefreshAsync(force: true)));
+        menu.Items.Add("업데이트 확인", null, async (_, _) =>
+            await _application.Dispatcher.InvokeAsync(async () => await CheckForUpdatesAsync(showIfCurrent: true)));
         menu.Items.Add("설정", null, (_, _) => _application.Dispatcher.Invoke(ShowSettings));
         menu.Items.Add(new Forms.ToolStripSeparator());
         var startup = new Forms.ToolStripMenuItem("Windows 시작 시 실행") { Checked = IsStartupEnabled(), CheckOnClick = true };
@@ -176,6 +189,79 @@ internal sealed class DesktopApplicationController : IDisposable
             _refreshCancellation.Dispose();
             _refreshCancellation = null;
             _refreshing = false;
+        }
+    }
+
+    private async Task CheckForUpdatesAfterStartupAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(4));
+        if (_disposed) return;
+        await CheckForUpdatesAsync(showIfCurrent: false);
+    }
+
+    private async Task CheckForUpdatesAsync(bool showIfCurrent)
+    {
+        if (_checkingForUpdate) return;
+        _checkingForUpdate = true;
+        try
+        {
+            if (!_updateService.IsInstalled)
+            {
+                if (showIfCurrent)
+                    _updateWindow.ShowStatus("설치 버전에서 확인할 수 있어요",
+                        "자동 업데이트는 Velopack 설치 버전부터 사용할 수 있습니다. 현재 개발용 실행 파일은 업데이트 대상이 아닙니다.");
+                return;
+            }
+
+            var update = await _updateService.CheckAsync();
+            if (update is null)
+            {
+                if (showIfCurrent) _updateWindow.ShowCurrent();
+                return;
+            }
+
+            _pendingUpdate = update;
+            _updateWindow.ShowAvailable(update.TargetFullRelease.Version.ToString(),
+                update.TargetFullRelease.NotesMarkdown);
+        }
+        catch (Exception)
+        {
+            if (showIfCurrent)
+                _updateWindow.ShowStatus("업데이트를 확인하지 못했어요",
+                    "업데이트 서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.");
+        }
+        finally
+        {
+            _checkingForUpdate = false;
+        }
+    }
+
+    private async Task DownloadAndApplyUpdateAsync()
+    {
+        if (_pendingUpdate is null || _updateCancellation is not null) return;
+        _updateCancellation = new CancellationTokenSource();
+        try
+        {
+            _updateWindow.SetDownloading(0);
+            await _updateService.DownloadAsync(_pendingUpdate,
+                progress => _application.Dispatcher.Invoke(() => _updateWindow.SetDownloading(progress)),
+                _updateCancellation.Token);
+            _updateWindow.SetDownloading(100);
+            _updateService.ApplyAndRestart(_pendingUpdate);
+            Exit();
+        }
+        catch (OperationCanceledException) when (_updateCancellation.IsCancellationRequested)
+        {
+            _updateWindow.SetError("업데이트가 취소되었습니다.");
+        }
+        catch (Exception)
+        {
+            _updateWindow.SetError("업데이트를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        }
+        finally
+        {
+            _updateCancellation.Dispose();
+            _updateCancellation = null;
         }
     }
 
@@ -349,6 +435,50 @@ internal sealed class DesktopApplicationController : IDisposable
         }
     }
 
+    internal static void RemoveStartupRegistration()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
+            key?.DeleteValue(RunValueName, false);
+            key?.DeleteValue("UsageBarForClaude", false);
+            key?.DeleteValue("ClaudeUsageTray", false);
+        }
+        catch
+        {
+            // Uninstall must continue even when the Run key is unavailable.
+        }
+    }
+
+    private static void MigrateExistingStartupRegistration()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
+            var hasExistingRegistration = key.GetValue(RunValueName) is string ||
+                                          key.GetValue("UsageBarForClaude") is string ||
+                                          key.GetValue("ClaudeUsageTray") is string;
+            if (!hasExistingRegistration) return;
+
+            var executable = Environment.ProcessPath;
+            if (string.IsNullOrWhiteSpace(executable)) return;
+            var executableDirectory = Path.GetDirectoryName(executable);
+            if (string.Equals(Path.GetFileName(executableDirectory), "current", StringComparison.OrdinalIgnoreCase))
+            {
+                var rootDirectory = Directory.GetParent(executableDirectory!)?.FullName;
+                if (!string.IsNullOrWhiteSpace(rootDirectory))
+                    executable = Path.Combine(rootDirectory, Path.GetFileName(executable));
+            }
+            key.SetValue(RunValueName, $"\"{executable}\"");
+            key.DeleteValue("UsageBarForClaude", false);
+            key.DeleteValue("ClaudeUsageTray", false);
+        }
+        catch
+        {
+            // A registry migration must never prevent the widget from starting.
+        }
+    }
+
     private static string Format(UsageLimit? value) => value is null ? "--%" : $"{value.Percent:0}%";
     private static string Truncate(string value, int maximum) => value.Length <= maximum ? value : value[..maximum];
 
@@ -402,6 +532,8 @@ internal sealed class DesktopApplicationController : IDisposable
         _loginWatchTimer.Stop();
         _refreshCancellation?.Cancel();
         _refreshCancellation?.Dispose();
+        _updateCancellation?.Cancel();
+        _updateCancellation?.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         _generatedIcon?.Dispose();
@@ -409,6 +541,7 @@ internal sealed class DesktopApplicationController : IDisposable
         _details.Hide();
         _settingsWindow.Hide();
         _onboarding.Hide();
+        _updateWindow.Hide();
     }
 
     [DllImport("user32.dll", SetLastError = true)]

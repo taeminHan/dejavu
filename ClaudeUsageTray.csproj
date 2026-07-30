@@ -19,14 +19,17 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <AssemblyTitle>dejavu</AssemblyTitle>
     <Description>Always-on Claude and Codex usage monitor for Windows 11.</Description>
-    <Version>0.9.0-rc.1</Version>
+    <Version>0.9.0-rc.2</Version>
     <AssemblyVersion>0.9.0.0</AssemblyVersion>
     <FileVersion>0.9.0.0</FileVersion>
-    <InformationalVersion>0.9.0-rc.1</InformationalVersion>
+    <InformationalVersion>0.9.0-rc.2</InformationalVersion>
     <Product>dejavu</Product>
     <Company>taeminHan</Company>
     <Copyright>Copyright © 2026 taeminHan and contributors</Copyright>
     <NeutralLanguage>ko-KR</NeutralLanguage>
     <StartupObject>ClaudeUsageTray.Program</StartupObject>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
 </Project>

@@ -30,6 +30,7 @@ internal sealed class TraySettings
     public ThemePreference Theme { get; set; } = ThemePreference.System;
     public bool FirstRunCompleted { get; set; }
     public bool ShowWidgetHeader { get; set; } = true;
+    public bool CheckForUpdatesOnStartup { get; set; } = true;
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

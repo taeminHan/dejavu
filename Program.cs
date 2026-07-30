@@ -1,5 +1,7 @@
 namespace ClaudeUsageTray;
 
+using Velopack;
+
 internal static class Program
 {
     private const string MutexName = "Local\\dejavu.SingleInstance";
@@ -9,6 +11,9 @@ internal static class Program
     {
         try
         {
+            VelopackApp.Build()
+                .OnBeforeUninstallFastCallback(_ => DesktopApplicationController.RemoveStartupRegistration())
+                .Run();
             using var mutex = new Mutex(true, MutexName, out var createdNew);
             if (!createdNew) return;
 

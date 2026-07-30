@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 
 const repositoryUrl = 'https://github.com/taeminHan/dejavu'
-const releasesUrl = `${repositoryUrl}/releases/latest`
+const directDownloadUrl = `${repositoryUrl}/releases/latest/download/dejavu-Setup.exe`
 
 type ReleaseAsset = { name: string; browser_download_url: string }
 type Release = { tag_name: string; html_url: string; assets: ReleaseAsset[] }
@@ -30,10 +30,25 @@ function App() {
     return () => controller.abort()
   }, [])
 
-  const installer = release?.assets.find((asset) =>
-    asset.name.toLowerCase().includes('setup') && asset.name.endsWith('.exe'))
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]'))
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return
+          entry.target.classList.add('is-visible')
+          observer.unobserve(entry.target)
+        })
+      },
+      { threshold: 0.16, rootMargin: '0px 0px -8% 0px' },
+    )
+
+    elements.forEach((element) => observer.observe(element))
+    return () => observer.disconnect()
+  }, [])
+
   const portable = release?.assets.find((asset) => asset.name.toLowerCase().includes('win-x64.zip'))
-  const downloadHref = installer?.browser_download_url ?? release?.html_url ?? releasesUrl
+  const downloadHref = directDownloadUrl
   const releaseLabel = release?.tag_name ?? '최신 버전'
 
   return (
@@ -94,15 +109,16 @@ function App() {
           </div>
         </section>
 
-        <section className="trust-strip" aria-label="제품 특징 요약">
+        <section className="trust-strip" aria-label="제품 특징 요약" data-reveal="fade">
           <span>항상 표시</span><i /><span>약 1분 자동 갱신</span><i /><span>별도 계정 없음</span><i /><span>소스 공개</span>
         </section>
 
         <section className="features-section" id="features">
-          <div className="section-heading"><p>WHY DEJAVU</p><h2>확인은 빠르게.<br />집중은 그대로.</h2></div>
+          <div className="section-heading" data-reveal="up"><p>WHY DEJAVU</p><h2>확인은 빠르게.<br />집중은 그대로.</h2></div>
           <div className="feature-grid">
-            {features.map((feature) => (
-              <article className="feature-card" key={feature.number}>
+            {features.map((feature, index) => (
+              <article className="feature-card" key={feature.number} data-reveal="up"
+                style={{ '--delay': `${index * 120}ms` } as CSSProperties}>
                 <span className="feature-number">{feature.number}</span>
                 <div className={`feature-illustration illustration-${feature.number}`} aria-hidden="true"><span /><span /><span /></div>
                 <h3>{feature.title}</h3><p>{feature.body}</p>
@@ -112,17 +128,17 @@ function App() {
         </section>
 
         <section className="privacy-section" id="privacy">
-          <div className="privacy-orbit" aria-hidden="true"><span className="brand-mark large"><span /></span></div>
-          <div className="privacy-copy">
-            <p className="section-kicker">LOCAL FIRST</p><h2>당신의 데이터는<br />당신의 PC에.</h2>
+          <div className="privacy-orbit" aria-hidden="true" data-reveal="scale"><span className="brand-mark large"><span /></span></div>
+          <div className="privacy-copy" data-reveal="right">
+            <p className="section-kicker">LOCAL FIRST</p><h2><span className="nowrap">당신의 데이터는</span><br />당신의 PC에.</h2>
             <p>dejavu는 자체 계정이나 중계 서버를 운영하지 않습니다. 사용량은 이 PC에 로그인된 Claude Code와 Codex에서 조회하며 토큰과 대화 내용은 dejavu 설정에 저장하지 않습니다.</p>
             <a href={`${repositoryUrl}/blob/main/PRIVACY.md`} target="_blank" rel="noreferrer">개인정보 처리 방식 자세히 보기 <span aria-hidden="true">→</span></a>
           </div>
         </section>
 
         <section className="download-section" id="download">
-          <div><p className="section-kicker">READY WHEN YOU ARE</p><h2>사용량 대신,<br />작업에 집중하세요.</h2><p>Windows 11에서 바로 시작할 수 있습니다.</p></div>
-          <div className="download-card">
+          <div data-reveal="up"><p className="section-kicker">READY WHEN YOU ARE</p><h2>사용량 대신,<br />작업에 집중하세요.</h2><p>Windows 11에서 바로 시작할 수 있습니다.</p></div>
+          <div className="download-card" data-reveal="scale" style={{ '--delay': '120ms' } as CSSProperties}>
             <a className="primary-button large-button" href={downloadHref}>
               <span className="windows-glyph" aria-hidden="true"><i /><i /><i /><i /></span>Windows용 다운로드
             </a>

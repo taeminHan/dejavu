@@ -1,0 +1,15 @@
+services:
+  dejavu-site:
+    image: dejavu-website:0.9.0-rc.1
+    container_name: dejavu-site
+    restart: unless-stopped
+    expose:
+      - "8080"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    # Replace this with the network currently shared by nginx and f1ti.
+    name: your_existing_proxy_network

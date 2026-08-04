@@ -10,6 +10,7 @@ internal enum WidgetLayout { SingleRow, TwoRows }
 internal enum ServiceDisplayMode { AutoDetect, ClaudeAndCodex, ClaudeOnly, CodexOnly }
 internal enum WidgetPlacement { TaskbarRight, TopRight, Custom }
 internal enum ThemePreference { System, Light, Dark }
+internal enum WidgetVisualTheme { Modern, RetroNight, FluentGlass, TerminalMono, Orbit, PaperInk }
 
 internal sealed class TraySettings
 {
@@ -29,8 +30,8 @@ internal sealed class TraySettings
     public ServiceDisplayMode ServiceDisplayMode { get; set; } = ServiceDisplayMode.AutoDetect;
     public WidgetPlacement WidgetPlacement { get; set; } = WidgetPlacement.TaskbarRight;
     public ThemePreference Theme { get; set; } = ThemePreference.System;
+    public WidgetVisualTheme WidgetTheme { get; set; } = WidgetVisualTheme.Modern;
     public bool FirstRunCompleted { get; set; }
-    public bool ShowWidgetHeader { get; set; } = true;
     public bool CheckForUpdatesOnStartup { get; set; } = true;
 
     private static string FilePath => Path.Combine(
@@ -42,9 +43,9 @@ internal sealed class TraySettings
 
     public static TraySettings Load()
     {
+        var source = File.Exists(FilePath) ? FilePath : LegacyFilePath;
         try
         {
-            var source = File.Exists(FilePath) ? FilePath : LegacyFilePath;
             var settings = File.Exists(source)
                 ? JsonSerializer.Deserialize<TraySettings>(File.ReadAllText(source)) ?? new TraySettings()
                 : new TraySettings();
@@ -52,17 +53,31 @@ internal sealed class TraySettings
             if (source == LegacyFilePath && File.Exists(source)) settings.Save();
             return settings;
         }
-        catch { return new TraySettings(); }
+        catch
+        {
+            PreserveCorruptSettings(source);
+            return new TraySettings();
+        }
     }
 
-    public void Save()
+    public bool Save()
     {
         Normalize();
-        var directory = Path.GetDirectoryName(FilePath)!;
-        Directory.CreateDirectory(directory);
         var temporary = FilePath + ".tmp";
-        File.WriteAllText(temporary, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
-        File.Move(temporary, FilePath, true);
+        try
+        {
+            var directory = Path.GetDirectoryName(FilePath)!;
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(temporary, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporary, FilePath, true);
+            return true;
+        }
+        catch
+        {
+            try { if (File.Exists(temporary)) File.Delete(temporary); }
+            catch { }
+            return false;
+        }
     }
 
     private void Normalize()
@@ -76,6 +91,36 @@ internal sealed class TraySettings
         if (!Enum.IsDefined(ServiceDisplayMode)) ServiceDisplayMode = ServiceDisplayMode.AutoDetect;
         if (!Enum.IsDefined(WidgetPlacement)) WidgetPlacement = WidgetPlacement.TaskbarRight;
         if (!Enum.IsDefined(Theme)) Theme = ThemePreference.System;
+        if (!Enum.IsDefined(WidgetTheme)) WidgetTheme = WidgetVisualTheme.Modern;
+        BackgroundColor = NormalizeColor(BackgroundColor, "#1E1E20");
+        AccentColor = NormalizeColor(AccentColor, "#3A96F6");
+        TextColor = NormalizeColor(TextColor, "#AEAEB4");
+    }
+
+    private static string NormalizeColor(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return fallback;
+        try
+        {
+            _ = System.Windows.Media.ColorConverter.ConvertFromString(value);
+            return value;
+        }
+        catch { return fallback; }
+    }
+
+    private static void PreserveCorruptSettings(string source)
+    {
+        try
+        {
+            if (!File.Exists(source)) return;
+            var directory = Path.GetDirectoryName(source)!;
+            var backup = Path.Combine(directory, $"settings.corrupt-{DateTime.Now:yyyyMMdd-HHmmss}.json");
+            File.Move(source, backup, false);
+        }
+        catch
+        {
+            // A read-only or locked settings file must not prevent startup.
+        }
     }
 
     internal (bool Claude, bool Codex) ResolveServices(ApplicationState state) => ServiceDisplayMode switch

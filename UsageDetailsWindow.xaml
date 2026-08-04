@@ -1,36 +1,111 @@
 <Window x:Class="ClaudeUsageTray.UsageDetailsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="dejavu Details" Width="420" MinHeight="220" MaxHeight="620" SizeToContent="Height"
-        WindowStyle="None" AllowsTransparency="True"
-        Background="Transparent" ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
-        Deactivated="OnDeactivated">
-    <Border Style="{StaticResource CardBorder}" CornerRadius="14" Padding="18">
+        xmlns:local="clr-namespace:ClaudeUsageTray"
+        Title="dejavu Details" Width="420" MinHeight="220" MaxHeight="680" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ShowInTaskbar="False" Topmost="True" ResizeMode="NoResize"
+        FontFamily="{DynamicResource AppFontFamily}" Deactivated="OnDeactivated">
+    <Border x:Name="DetailsCard" Style="{StaticResource CardBorder}" Padding="18">
         <Grid>
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <Grid>
-                <StackPanel><TextBlock Text="dejavu" FontSize="17" FontWeight="SemiBold"/><TextBlock x:Name="StatusText" Text="확인 중" Margin="0,4,0,0" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
-                <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Right" Padding="8,6" Content="설정" Click="OnSettingsClick"/>
-            </Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="1" Margin="0,18,0,12">
-                <StackPanel x:Name="ClaudeSection">
-                <Grid Margin="0,0,0,10"><TextBlock Text="Claude" FontSize="13" FontWeight="SemiBold"/><TextBlock x:Name="ClaudeStatusText" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/></Grid>
-                <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="FiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold"/><StackPanel Grid.Column="2"><ProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="FiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel></Grid>
-                <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="주간 전체" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="WeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold"/><StackPanel Grid.Column="2"><ProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="WeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel></Grid>
-                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="주간 Fable" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="FableValue" Grid.Column="1" Text="--%" FontWeight="SemiBold"/><StackPanel Grid.Column="2"><ProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="FableReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel></Grid>
-                </StackPanel>
+            <Border x:Name="DetailsHeader" Padding="0,0,0,14"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="DetailsThemeBadge" Width="34" Height="34" Margin="0,0,11,0"
+                                CornerRadius="{DynamicResource BadgeCornerRadius}"
+                                Background="{DynamicResource AccentSoftBrush}"
+                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                            <TextBlock Text="{DynamicResource ThemeMarkText}" FontSize="15" FontWeight="Bold"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="DetailsBrandText" Text="dejavu" FontSize="17" FontWeight="SemiBold" />
+                            <TextBlock x:Name="StatusText" Text="확인 중" Margin="0,3,0,0" FontSize="11"
+                                       Foreground="{DynamicResource MutedTextBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                    <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Right"
+                            Padding="8,6" Content="설정" Click="OnSettingsClick" />
+                </Grid>
+            </Border>
 
-                <Border x:Name="ServiceDivider" Height="1" Background="{DynamicResource BorderBrush}" Margin="0,18,0,14"/>
-                <StackPanel x:Name="CodexSection">
-                <Grid Margin="0,0,0,10"><TextBlock Text="Codex" FontSize="13" FontWeight="SemiBold"/><TextBlock x:Name="CodexStatusText" HorizontalAlignment="Right" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/></Grid>
-                <Grid Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CodexFiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold"/><StackPanel Grid.Column="2"><ProgressBar x:Name="CodexFiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="CodexFiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel></Grid>
-                <Grid Margin="0,0,0,12"><Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="주간" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CodexWeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold"/><StackPanel Grid.Column="2"><ProgressBar x:Name="CodexWeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="CodexWeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel></Grid>
-                <Border Style="{StaticResource CardBorder}" Padding="12,9"><Grid><StackPanel><TextBlock Text="초기화권" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CodexResetCredits" Text="--개" Margin="0,2,0,0" FontWeight="SemiBold"/></StackPanel><TextBlock x:Name="CodexResetExpiry" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></Grid></Border>
-                </StackPanel>
+            <StackPanel x:Name="DetailsBody" Grid.Row="1" Margin="0,14,0,12">
+                <Border x:Name="ClaudeCard" Padding="0">
+                    <StackPanel x:Name="ClaudeSection">
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock x:Name="ClaudeSectionTitle" Text="Claude" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock x:Name="ClaudeStatusText" HorizontalAlignment="Right" FontSize="11"
+                                       Foreground="{DynamicResource MutedTextBrush}" />
+                        </Grid>
+                        <Grid x:Name="ClaudeFiveRow" Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
+                            <TextBlock x:Name="FiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="FiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                        </Grid>
+                        <Grid x:Name="ClaudeWeeklyRow" Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="주간 전체" Foreground="{DynamicResource MutedTextBrush}" />
+                            <TextBlock x:Name="WeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="WeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                        </Grid>
+                        <Grid x:Name="ClaudeFableRow">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="주간 Fable" Foreground="{DynamicResource MutedTextBrush}" />
+                            <TextBlock x:Name="FableValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="FableReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="ServiceDivider" Height="1" Background="{DynamicResource BorderBrush}" Margin="0,18,0,14" />
+
+                <Border x:Name="CodexCard" Padding="0">
+                    <StackPanel x:Name="CodexSection">
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock x:Name="CodexSectionTitle" Text="Codex" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock x:Name="CodexStatusText" HorizontalAlignment="Right" FontSize="11"
+                                       Foreground="{DynamicResource MutedTextBrush}" />
+                        </Grid>
+                        <Grid x:Name="CodexFiveRow" Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
+                            <TextBlock x:Name="CodexFiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexFiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="CodexFiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                        </Grid>
+                        <Grid x:Name="CodexWeeklyRow" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <TextBlock Text="주간" Foreground="{DynamicResource MutedTextBrush}" />
+                            <TextBlock x:Name="CodexWeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexWeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="CodexWeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                        </Grid>
+                        <Border x:Name="CreditsCard" Style="{StaticResource CardBorder}" Padding="12,9">
+                            <Grid>
+                                <StackPanel><TextBlock Text="초기화권" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CodexResetCredits" Text="--개" Margin="0,2,0,0" FontWeight="SemiBold"/></StackPanel>
+                                <TextBlock x:Name="CodexResetExpiry" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
-            <Grid Grid.Row="2"><TextBlock x:Name="FooterText" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource MutedTextBrush}" Text="마지막 값을 표시합니다"/><Button x:Name="ActionButton" Style="{StaticResource AppButton}" HorizontalAlignment="Right" Content="지금 새로고침" Click="OnActionClick"/></Grid>
+            <Border x:Name="DetailsFooter" Grid.Row="2" Padding="0,12,0,0"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+                <Grid>
+                    <TextBlock x:Name="FooterText" VerticalAlignment="Center" FontSize="10"
+                               Foreground="{DynamicResource MutedTextBrush}" Text="마지막 값을 표시합니다" />
+                    <Button x:Name="ActionButton" Style="{StaticResource AppButton}" HorizontalAlignment="Right"
+                            Content="지금 새로고침" Click="OnActionClick" />
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </Window>

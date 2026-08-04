@@ -7,7 +7,7 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 ### 리센느 화이팅
 
-현재 공개 배포 버전은 `0.9.0-rc.6`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.7`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
 [공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [최신 버전 다운로드](https://github.com/taeminHan/dejavu/releases/latest) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 

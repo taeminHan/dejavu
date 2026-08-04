@@ -7,10 +7,80 @@ namespace ClaudeUsageTray;
 public partial class UpdateWindow : Window
 {
     private bool _busy;
+    internal bool AllowClose { get; set; }
 
     internal UpdateWindow() => InitializeComponent();
 
     internal event EventHandler? InstallRequested;
+
+    internal void ApplyTheme(WidgetVisualTheme theme)
+    {
+        DownloadProgress.Style = FindResource(ThemeManager.WidgetProgressStyleKey(theme))
+            as System.Windows.Style;
+        UpdateTitleRow.Height = new GridLength(54);
+        UpdateTitleBar.BorderThickness = new Thickness(0, 0, 0, 1);
+        UpdateTitleBar.Background = System.Windows.Media.Brushes.Transparent;
+        UpdateThemeBadge.Width = UpdateThemeBadge.Height = 28;
+        UpdateThemeBadge.CornerRadius = FindResource("BadgeCornerRadius") is CornerRadius badgeRadius
+            ? badgeRadius : new CornerRadius(0);
+        UpdateContent.Margin = new Thickness(26, 24, 26, 22);
+        UpdateNotesCard.CornerRadius = FindResource("CardCornerRadius") is CornerRadius cardRadius
+            ? cardRadius : new CornerRadius(0);
+        UpdateNotesCard.BorderThickness = new Thickness(1);
+        UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "BackgroundBrush");
+        UpdateBrandText.Text = "dejavu 업데이트";
+
+        switch (theme)
+        {
+            case WidgetVisualTheme.RetroNight:
+                UpdateTitleRow.Height = new GridLength(48);
+                UpdateTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                UpdateThemeBadge.CornerRadius = new CornerRadius(0);
+                UpdateBrandText.Text = "DEJAVU // UPDATE";
+                UpdateContent.Margin = new Thickness(20, 18, 20, 18);
+                UpdateNotesCard.CornerRadius = new CornerRadius(0);
+                UpdateNotesCard.BorderThickness = new Thickness(2);
+                break;
+            case WidgetVisualTheme.FluentGlass:
+                UpdateTitleRow.Height = new GridLength(60);
+                UpdateTitleBar.BorderThickness = new Thickness(0);
+                UpdateThemeBadge.Width = UpdateThemeBadge.Height = 34;
+                UpdateBrandText.Text = "dejavu glass · update";
+                UpdateContent.Margin = new Thickness(28, 24, 28, 24);
+                UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                break;
+            case WidgetVisualTheme.TerminalMono:
+                UpdateTitleRow.Height = new GridLength(46);
+                UpdateTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                UpdateThemeBadge.Width = 40;
+                UpdateThemeBadge.Height = 26;
+                UpdateThemeBadge.CornerRadius = new CornerRadius(0);
+                UpdateBrandText.Text = "dejavu.update --check";
+                UpdateContent.Margin = new Thickness(18, 16, 18, 16);
+                UpdateNotesCard.CornerRadius = new CornerRadius(0);
+                break;
+            case WidgetVisualTheme.Orbit:
+                UpdateTitleRow.Height = new GridLength(62);
+                UpdateTitleBar.BorderThickness = new Thickness(0);
+                UpdateThemeBadge.Width = UpdateThemeBadge.Height = 38;
+                UpdateThemeBadge.CornerRadius = new CornerRadius(19);
+                UpdateBrandText.Text = "DEJAVU ORBIT · UPDATE";
+                UpdateNotesCard.CornerRadius = new CornerRadius(18);
+                UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                break;
+            case WidgetVisualTheme.PaperInk:
+                UpdateTitleRow.Height = new GridLength(50);
+                UpdateThemeBadge.Width = 24;
+                UpdateThemeBadge.Height = 32;
+                UpdateThemeBadge.CornerRadius = new CornerRadius(0);
+                UpdateBrandText.Text = "dejavu 갱신 기록";
+                UpdateContent.Margin = new Thickness(30, 22, 30, 20);
+                UpdateNotesCard.CornerRadius = new CornerRadius(0);
+                UpdateNotesCard.BorderThickness = new Thickness(2, 0, 0, 0);
+                UpdateNotesCard.Background = System.Windows.Media.Brushes.Transparent;
+                break;
+        }
+    }
 
     internal void ShowAvailable(string latestVersion, string? releaseNotes)
     {
@@ -108,6 +178,7 @@ public partial class UpdateWindow : Window
 
     private void OnClosing(object? sender, CancelEventArgs e)
     {
+        if (AllowClose) return;
         e.Cancel = true;
         if (!_busy) Hide();
     }

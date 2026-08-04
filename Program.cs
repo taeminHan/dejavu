@@ -5,6 +5,7 @@ using Velopack;
 internal static class Program
 {
     private const string MutexName = "Local\\dejavu.SingleInstance";
+    private const string ActivationEventName = "Local\\dejavu.ShowSettings";
 
     [STAThread]
     private static void Main()
@@ -15,7 +16,19 @@ internal static class Program
                 .OnBeforeUninstallFastCallback(_ => DesktopApplicationController.PerformUninstallCleanup())
                 .Run();
             using var mutex = new Mutex(true, MutexName, out var createdNew);
-            if (!createdNew) return;
+            if (!createdNew)
+            {
+                try
+                {
+                    using var activationEvent = EventWaitHandle.OpenExisting(ActivationEventName);
+                    activationEvent.Set();
+                }
+                catch (WaitHandleCannotBeOpenedException) { }
+                return;
+            }
+
+            using var showSettingsEvent = new EventWaitHandle(
+                false, EventResetMode.AutoReset, ActivationEventName);
 
             var application = new System.Windows.Application
             {
@@ -35,13 +48,45 @@ internal static class Program
                 .Any(argument => string.Equals(argument, "--settings", StringComparison.OrdinalIgnoreCase));
             var startWithOnboarding = Environment.GetCommandLineArgs()
                 .Any(argument => string.Equals(argument, "--onboarding", StringComparison.OrdinalIgnoreCase));
-            using var controller = new DesktopApplicationController(application, startWithSettings, startWithOnboarding);
-            application.Run();
+            var startWithDetails = Environment.GetCommandLineArgs()
+                .Any(argument => string.Equals(argument, "--details", StringComparison.OrdinalIgnoreCase));
+            var previewTheme = ParsePreview<WidgetVisualTheme>("theme");
+            var previewDensity = ParsePreview<WidgetDensity>("density");
+            var previewLayout = ParsePreview<WidgetLayout>("layout");
+            var previewServices = ParsePreview<ServiceDisplayMode>("services");
+            using var controller = new DesktopApplicationController(
+                application, startWithSettings, startWithOnboarding, startWithDetails,
+                previewTheme, previewDensity, previewLayout, previewServices);
+            var activationRegistration = ThreadPool.RegisterWaitForSingleObject(
+                showSettingsEvent,
+                (_, _) => application.Dispatcher.BeginInvoke(controller.ShowSettingsFromExternalActivation),
+                null,
+                Timeout.Infinite,
+                executeOnlyOnce: false);
+            try
+            {
+                application.Run();
+            }
+            finally
+            {
+                activationRegistration.Unregister(null);
+            }
         }
         catch (Exception exception)
         {
             WriteCrash(exception);
         }
+    }
+
+    private static T? ParsePreview<T>(string option) where T : struct, Enum
+    {
+        var prefix = $"--{option}=";
+        return Environment.GetCommandLineArgs()
+            .Select(argument => argument.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                ? argument[prefix.Length..] : null)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => Enum.TryParse<T>(value, true, out var parsed) ? parsed : (T?)null)
+            .FirstOrDefault(value => value is not null);
     }
 
     private static void WriteCrash(Exception exception)
@@ -50,8 +95,11 @@ internal static class Program
         {
             var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "dejavu");
             Directory.CreateDirectory(directory);
-            File.WriteAllText(Path.Combine(directory, "crash.log"),
-                $"{DateTimeOffset.Now:O}\n{exception}");
+            var path = Path.Combine(directory, "crash.log");
+            if (File.Exists(path) && new FileInfo(path).Length > 256 * 1024)
+                File.Move(path, Path.Combine(directory, "crash.previous.log"), true);
+            File.AppendAllText(path,
+                $"[{DateTimeOffset.Now:O}] dejavu {VelopackUpdateService.CurrentVersion}\n{exception}\n\n");
         }
         catch { }
     }

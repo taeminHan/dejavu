@@ -47,10 +47,18 @@ internal sealed class ClaudeUsageClient
         var credentialPath = ClaudeEnvironmentDetector.FindCredentialPath();
         if (credentialPath is null) throw new ClaudeLoginRequiredException();
 
-        await using var credentialStream = new FileStream(
-            credentialPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
-            bufferSize: 4096, useAsync: true);
-        using var credentialDocument = await JsonDocument.ParseAsync(credentialStream, cancellationToken: cancellationToken);
+        byte[] credentialPayload;
+        await using (var credentialStream = new FileStream(
+                         credentialPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
+                         bufferSize: 4096, useAsync: true))
+        {
+            using var memory = new MemoryStream();
+            await credentialStream.CopyToAsync(memory, cancellationToken);
+            credentialPayload = memory.ToArray();
+        }
+
+        // Do not hold Claude's credential file open while parsing or making the network request.
+        using var credentialDocument = JsonDocument.Parse(credentialPayload);
         if (!credentialDocument.RootElement.TryGetProperty("claudeAiOauth", out var oauth) ||
             !oauth.TryGetProperty("accessToken", out var tokenNode) ||
             string.IsNullOrWhiteSpace(tokenNode.GetString()))

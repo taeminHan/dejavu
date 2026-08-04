@@ -27,23 +27,30 @@ internal sealed class DesktopApplicationController : IDisposable
     private readonly Forms.NotifyIcon _trayIcon = new();
     private readonly DispatcherTimer _timer = new();
     private readonly DispatcherTimer _loginWatchTimer = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private CancellationTokenSource? _refreshCancellation;
     private CancellationTokenSource? _updateCancellation;
     private CancellationTokenSource? _codexLoginCancellation;
     private UpdateInfo? _pendingUpdate;
     private ApplicationState _state = ApplicationState.Loading();
     private Drawing.Icon? _generatedIcon;
-    private bool _refreshing;
     private bool _checkingForUpdate;
     private bool _loginWatchRequiresClaudeCode;
     private bool _codexLoginInProgress;
     private bool _disposed;
 
     public DesktopApplicationController(System.Windows.Application application, bool startWithSettings = false,
-        bool startWithOnboarding = false)
+        bool startWithOnboarding = false, bool startWithDetails = false,
+        WidgetVisualTheme? previewTheme = null, WidgetDensity? previewDensity = null,
+        WidgetLayout? previewLayout = null, ServiceDisplayMode? previewServices = null)
     {
         _application = application;
+        if (previewTheme is not null) _settings.WidgetTheme = previewTheme.Value;
+        if (previewDensity is not null) _settings.WidgetDensity = previewDensity.Value;
+        if (previewLayout is not null) _settings.WidgetLayout = previewLayout.Value;
+        if (previewServices is not null) _settings.ServiceDisplayMode = previewServices.Value;
         ThemeManager.Apply(_settings);
+        _updateWindow.ApplyTheme(_settings.WidgetTheme);
         if (_updateService.IsInstalled) MigrateExistingStartupRegistration();
 
         _widget = new UsageWidgetWindow(_settings);
@@ -56,12 +63,19 @@ internal sealed class DesktopApplicationController : IDisposable
         WireWindows();
         ConfigureTray();
         _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
-        _timer.Tick += async (_, _) => await RefreshAsync();
+        _timer.Tick += async (_, _) =>
+        {
+            if (!_disposed) await RefreshAsync();
+        };
         _timer.Start();
         _loginWatchTimer.Tick += async (_, _) =>
         {
+            if (_disposed) return;
             _onboarding.RefreshDetection();
-            await RefreshAsync(force: true);
+            // The login watcher must not repeatedly cancel a slow provider request.
+            // A non-forced refresh coalesces with one already in progress.
+            await RefreshAsync();
+            if (_disposed) return;
             var connected = _state.ClaudeStatus == UsageStatus.Ready &&
                             (!_loginWatchRequiresClaudeCode ||
                              _state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode);
@@ -69,7 +83,12 @@ internal sealed class DesktopApplicationController : IDisposable
         };
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
 
-        if (startWithSettings)
+        if (startWithDetails)
+        {
+            ShowWidget();
+            ToggleDetails();
+        }
+        else if (startWithSettings)
         {
             ShowWidget();
             ShowSettings();
@@ -86,7 +105,6 @@ internal sealed class DesktopApplicationController : IDisposable
             _onboarding.Activate();
         }
 
-        AppDiagnostics.ClearCrashLog();
         _ = RefreshAsync();
         if (_settings.CheckForUpdatesOnStartup) _ = CheckForUpdatesAfterStartupAsync();
     }
@@ -140,9 +158,10 @@ internal sealed class DesktopApplicationController : IDisposable
 
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("사용량 열기", null, (_, _) => _application.Dispatcher.Invoke(ToggleDetails));
-        menu.Items.Add("지금 새로고침", null, async (_, _) => await _application.Dispatcher.InvokeAsync(async () => await RefreshAsync(force: true)));
+        menu.Items.Add("지금 새로고침", null, async (_, _) =>
+            await InvokeOnDispatcherAsync(() => RefreshAsync(force: true)));
         menu.Items.Add("업데이트 확인", null, async (_, _) =>
-            await _application.Dispatcher.InvokeAsync(async () => await CheckForUpdatesAsync(showIfCurrent: true)));
+            await InvokeOnDispatcherAsync(() => CheckForUpdatesAsync(showIfCurrent: true)));
         menu.Items.Add("설정", null, (_, _) => _application.Dispatcher.Invoke(ShowSettings));
         menu.Items.Add(new Forms.ToolStripSeparator());
         var startup = new Forms.ToolStripMenuItem("Windows 시작 시 실행") { Checked = IsStartupEnabled(), CheckOnClick = true };
@@ -160,23 +179,39 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private async Task RefreshAsync(bool force = false)
     {
-        if (_refreshing) return;
+        if (_disposed) return;
+        if (force)
+        {
+            try { _refreshCancellation?.Cancel(); }
+            catch (ObjectDisposedException) { }
+        }
 
-        _refreshing = true;
-        _refreshCancellation = new CancellationTokenSource();
-        ApplyState(ApplicationState.Loading(_state.Snapshot, _state.CodexSnapshot));
+        if (!await _refreshGate.WaitAsync(0))
+        {
+            if (!force) return;
+            await _refreshGate.WaitAsync();
+        }
+
+        CancellationTokenSource? refreshCancellation = null;
         try
         {
-            var claudeTask = ReadClaudeAsync(_refreshCancellation.Token);
-            var codexTask = ReadCodexAsync(_refreshCancellation.Token);
+            if (_disposed) return;
+            refreshCancellation = new CancellationTokenSource();
+            _refreshCancellation = refreshCancellation;
+            ApplyState(ApplicationState.Loading(_state.Snapshot, _state.CodexSnapshot));
+            var claudeTask = ReadClaudeAsync(refreshCancellation.Token);
+            var codexTask = ReadCodexAsync(refreshCancellation.Token);
             await Task.WhenAll(claudeTask, codexTask);
+            if (_disposed || refreshCancellation.IsCancellationRequested) return;
             var claude = await claudeTask;
             var codex = await codexTask;
             _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
             var overall = claude.Status == UsageStatus.Ready || codex.Status == UsageStatus.Ready
                 ? UsageStatus.Ready
-                : claude.Status == UsageStatus.Offline || codex.Status == UsageStatus.Offline
-                    ? UsageStatus.Offline
+                : claude.Status == UsageStatus.RateLimited || codex.Status == UsageStatus.RateLimited
+                    ? UsageStatus.RateLimited
+                    : claude.Status == UsageStatus.Offline || codex.Status == UsageStatus.Offline
+                        ? UsageStatus.Offline
                     : claude.Status == UsageStatus.LoginRequired && codex.Status == UsageStatus.LoginRequired
                         ? UsageStatus.LoginRequired : UsageStatus.Error;
             var message = claude.Status == UsageStatus.Ready && codex.Status == UsageStatus.Ready
@@ -186,19 +221,20 @@ internal sealed class DesktopApplicationController : IDisposable
                 CodexSnapshot: codex.Snapshot, ClaudeStatus: claude.Status, CodexStatus: codex.Status,
                 ClaudeMessage: claude.Message, CodexMessage: codex.Message));
         }
-        catch (OperationCanceledException) when (_refreshCancellation.IsCancellationRequested)
+        catch (OperationCanceledException) when (refreshCancellation?.IsCancellationRequested == true)
         {
             // A manual refresh superseded the current request.
         }
         catch (Exception)
         {
-            ApplyState(_state with { Status = UsageStatus.Error, Message = "사용량을 가져오지 못했어요" });
+            if (!_disposed)
+                ApplyState(_state with { Status = UsageStatus.Error, Message = "사용량을 가져오지 못했어요" });
         }
         finally
         {
-            _refreshCancellation.Dispose();
-            _refreshCancellation = null;
-            _refreshing = false;
+            if (ReferenceEquals(_refreshCancellation, refreshCancellation)) _refreshCancellation = null;
+            refreshCancellation?.Dispose();
+            _refreshGate.Release();
         }
     }
 
@@ -211,7 +247,9 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private async Task CheckForUpdatesAsync(bool showIfCurrent)
     {
+        if (_disposed) return;
         var result = await QueryForUpdatesAsync();
+        if (_disposed) return;
         switch (result.Status)
         {
             case UpdateCheckStatus.Available:
@@ -233,7 +271,9 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private async Task CheckForUpdatesFromSettingsAsync()
     {
+        if (_disposed) return;
         var result = await QueryForUpdatesAsync();
+        if (_disposed) return;
         switch (result.Status)
         {
             case UpdateCheckStatus.Available:
@@ -260,15 +300,24 @@ internal sealed class DesktopApplicationController : IDisposable
         _checkingForUpdate = true;
         try
         {
-            if (!_updateService.IsInstalled) return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
+            if (!_updateService.IsInstalled)
+            {
+                _pendingUpdate = null;
+                return new UpdateCheckResult(UpdateCheckStatus.NotInstalled);
+            }
             var update = await _updateService.CheckAsync();
-            if (update is null) return new UpdateCheckResult(UpdateCheckStatus.Current);
+            if (update is null)
+            {
+                _pendingUpdate = null;
+                return new UpdateCheckResult(UpdateCheckStatus.Current);
+            }
             _pendingUpdate = update;
             return new UpdateCheckResult(UpdateCheckStatus.Available,
                 update.TargetFullRelease.Version.ToString());
         }
         catch
         {
+            _pendingUpdate = null;
             return new UpdateCheckResult(UpdateCheckStatus.Error);
         }
         finally
@@ -287,29 +336,39 @@ internal sealed class DesktopApplicationController : IDisposable
     private async Task DownloadAndApplyUpdateAsync()
     {
         if (_pendingUpdate is null || _updateCancellation is not null) return;
-        _updateCancellation = new CancellationTokenSource();
+        var updateCancellation = new CancellationTokenSource();
+        _updateCancellation = updateCancellation;
         try
         {
             _updateWindow.SetDownloading(0);
             await _updateService.DownloadAsync(_pendingUpdate,
-                progress => _application.Dispatcher.Invoke(() => _updateWindow.SetDownloading(progress)),
-                _updateCancellation.Token);
+                progress =>
+                {
+                    if (_disposed || updateCancellation.IsCancellationRequested) return;
+                    _application.Dispatcher.BeginInvoke(() =>
+                    {
+                        if (!_disposed && !updateCancellation.IsCancellationRequested)
+                            _updateWindow.SetDownloading(progress);
+                    });
+                },
+                updateCancellation.Token);
+            if (_disposed || updateCancellation.IsCancellationRequested) return;
             _updateWindow.SetDownloading(100);
             _updateService.ApplyAndRestart(_pendingUpdate);
             Exit();
         }
-        catch (OperationCanceledException) when (_updateCancellation.IsCancellationRequested)
+        catch (OperationCanceledException) when (updateCancellation.IsCancellationRequested)
         {
-            _updateWindow.SetError("업데이트가 취소되었습니다.");
+            if (!_disposed) _updateWindow.SetError("업데이트가 취소되었습니다.");
         }
         catch (Exception)
         {
-            _updateWindow.SetError("업데이트를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+            if (!_disposed) _updateWindow.SetError("업데이트를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.");
         }
         finally
         {
-            _updateCancellation.Dispose();
-            _updateCancellation = null;
+            if (ReferenceEquals(_updateCancellation, updateCancellation)) _updateCancellation = null;
+            updateCancellation.Dispose();
         }
     }
 
@@ -321,6 +380,10 @@ internal sealed class DesktopApplicationController : IDisposable
             var message = snapshot.Source == ClaudeUsageSource.ClaudeDesktop
                 ? "Claude Desktop 기록" : "Claude 최신";
             return new ProviderResult<UsageSnapshot>(UsageStatus.Ready, snapshot, message);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (ClaudeLoginRequiredException)
         {
@@ -347,6 +410,10 @@ internal sealed class DesktopApplicationController : IDisposable
             var snapshot = await _codexClient.GetUsageAsync(cancellationToken);
             return new ProviderResult<CodexUsageSnapshot>(UsageStatus.Ready, snapshot, "Codex 최신");
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (CodexLoginRequiredException)
         {
             return new ProviderResult<CodexUsageSnapshot>(UsageStatus.LoginRequired, _state.CodexSnapshot, "Codex 로그인 필요");
@@ -363,6 +430,7 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private void ApplyState(ApplicationState state)
     {
+        if (_disposed) return;
         _state = state;
         if (state.ClaudeStatus == UsageStatus.LoginRequired) _loginWatchTimer.Start();
         else if (state.ClaudeStatus == UsageStatus.Ready &&
@@ -374,13 +442,16 @@ internal sealed class DesktopApplicationController : IDisposable
         _settingsWindow.UpdateClaudeConnectionState(state);
         _onboarding.UpdateState(state);
         UpdateTrayIcon();
-        AppDiagnostics.Write(state, _widget);
+        AppDiagnostics.Write(state, _widget, _settings.WidgetOpacity);
     }
 
     private void ApplySettings()
     {
+        if (_disposed) return;
         ThemeManager.Apply(_settings);
         _widget.ApplySettings(_settings);
+        _updateWindow.ApplyTheme(_settings.WidgetTheme);
+        _onboarding.ApplyTheme(_settings.WidgetTheme);
         if (_settings.WidgetPlacement != WidgetPlacement.Custom) _widget.PositionFromSettings(forceDefault: true);
         else
         {
@@ -390,11 +461,12 @@ internal sealed class DesktopApplicationController : IDisposable
         _details.UpdateState(_state, _settings);
         _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
         UpdateTrayIcon();
-        AppDiagnostics.Write(_state, _widget);
+        AppDiagnostics.Write(_state, _widget, _settings.WidgetOpacity);
     }
 
     private void ShowWidget()
     {
+        if (_disposed) return;
         _widget.PositionFromSettings();
         if (!_widget.IsVisible) _widget.Show();
         _widget.Topmost = true;
@@ -402,6 +474,7 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private void ToggleDetails()
     {
+        if (_disposed) return;
         if (_details.IsVisible) _details.Hide();
         else
         {
@@ -412,19 +485,37 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private void ShowSettings()
     {
+        if (_disposed) return;
         _details.Hide();
         _settingsWindow.ShowAndActivate();
     }
 
+    internal void ShowSettingsFromExternalActivation()
+    {
+        if (!_disposed) ShowSettings();
+    }
+
     private void StartClaudeLogin(bool requireClaudeCode)
     {
-        _loginWatchRequiresClaudeCode = requireClaudeCode;
-        var environment = ClaudeEnvironmentDetector.Detect();
-        if (environment.IsInstalled) ClaudeEnvironmentDetector.OpenLogin();
-        else if (!requireClaudeCode && ClaudeDesktopUsageReader.IsInstalled) ClaudeDesktopUsageReader.OpenDesktop();
-        else ClaudeEnvironmentDetector.OpenSetupPage();
-        _loginWatchTimer.Start();
-        _onboarding.RefreshDetection();
+        if (_disposed) return;
+        try
+        {
+            _loginWatchRequiresClaudeCode = requireClaudeCode;
+            var environment = ClaudeEnvironmentDetector.Detect();
+            if (environment.IsInstalled) ClaudeEnvironmentDetector.OpenLogin();
+            else if (!requireClaudeCode && ClaudeDesktopUsageReader.IsInstalled) ClaudeDesktopUsageReader.OpenDesktop();
+            else ClaudeEnvironmentDetector.OpenSetupPage();
+            _loginWatchTimer.Start();
+            _onboarding.RefreshDetection();
+        }
+        catch
+        {
+            ApplyState(_state with
+            {
+                ClaudeStatus = UsageStatus.Error,
+                ClaudeMessage = "Claude 로그인 창을 열지 못했습니다"
+            });
+        }
     }
 
     private async Task StartCodexLoginAsync()
@@ -432,24 +523,45 @@ internal sealed class DesktopApplicationController : IDisposable
         if (_codexLoginInProgress) return;
         if (CodexUsageClient.FindExecutable() is null)
         {
-            CodexUsageClient.OpenSetupPage();
+            try { CodexUsageClient.OpenSetupPage(); }
+            catch
+            {
+                ApplyState(_state with
+                {
+                    CodexStatus = UsageStatus.Error,
+                    CodexMessage = "Codex 설치 안내를 열지 못했습니다"
+                });
+            }
             return;
         }
 
         _codexLoginInProgress = true;
-        _codexLoginCancellation = new CancellationTokenSource();
+        var codexLoginCancellation = new CancellationTokenSource();
+        _codexLoginCancellation = codexLoginCancellation;
         _onboarding.SetCodexLoginPending(true);
         _settingsWindow.SetCodexLoginPending(true);
         try
         {
-            await _codexClient.LoginAsync(_codexLoginCancellation.Token);
+            await _codexClient.LoginAsync(codexLoginCancellation.Token);
+            if (_disposed || codexLoginCancellation.IsCancellationRequested) return;
             await RefreshAsync(force: true);
         }
         catch (CodexCliUnavailableException)
         {
-            CodexUsageClient.OpenSetupPage();
+            try { CodexUsageClient.OpenSetupPage(); }
+            catch
+            {
+                if (!_disposed)
+                {
+                    ApplyState(_state with
+                    {
+                        CodexStatus = UsageStatus.Error,
+                        CodexMessage = "Codex 설치 안내를 열지 못했습니다"
+                    });
+                }
+            }
         }
-        catch (OperationCanceledException) when (_codexLoginCancellation?.IsCancellationRequested == true)
+        catch (OperationCanceledException) when (codexLoginCancellation.IsCancellationRequested)
         {
             // Application shutdown cancels the pending browser login.
         }
@@ -472,10 +584,13 @@ internal sealed class DesktopApplicationController : IDisposable
         finally
         {
             _codexLoginInProgress = false;
-            _codexLoginCancellation.Dispose();
-            _codexLoginCancellation = null;
-            _onboarding.SetCodexLoginPending(false);
-            _settingsWindow.SetCodexLoginPending(false);
+            if (ReferenceEquals(_codexLoginCancellation, codexLoginCancellation)) _codexLoginCancellation = null;
+            codexLoginCancellation.Dispose();
+            if (!_disposed)
+            {
+                _onboarding.SetCodexLoginPending(false);
+                _settingsWindow.SetCodexLoginPending(false);
+            }
         }
     }
 
@@ -511,8 +626,26 @@ internal sealed class DesktopApplicationController : IDisposable
             : $"dejavu · {string.Join(" · ", providers)}", 63);
     }
 
-    private void OnDisplaySettingsChanged(object? sender, EventArgs e) =>
-        _application.Dispatcher.Invoke(() => _widget.PositionFromSettings());
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+    {
+        if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
+        _application.Dispatcher.BeginInvoke(() =>
+        {
+            if (!_disposed) _widget.PositionFromSettings();
+        });
+    }
+
+    private async Task InvokeOnDispatcherAsync(Func<Task> action)
+    {
+        if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
+        try
+        {
+            if (_application.Dispatcher.CheckAccess()) await action();
+            else await _application.Dispatcher.InvokeAsync(action).Task.Unwrap();
+        }
+        catch (TaskCanceledException) when (_disposed || _application.Dispatcher.HasShutdownStarted) { }
+        catch (InvalidOperationException) when (_disposed || _application.Dispatcher.HasShutdownStarted) { }
+    }
 
     private void Exit()
     {
@@ -522,26 +655,34 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private static bool IsStartupEnabled()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
-        return key?.GetValue(RunValueName) is string;
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath);
+            return key?.GetValue(RunValueName) is string;
+        }
+        catch { return false; }
     }
 
     private static void SetStartup(bool enabled)
     {
-        using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
-        if (enabled)
+        try
         {
-            var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Executable path is unavailable.");
-            key.SetValue(RunValueName, $"\"{executable}\"");
-            key.DeleteValue("UsageBarForClaude", false);
-            key.DeleteValue("ClaudeUsageTray", false);
+            using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
+            if (enabled)
+            {
+                var executable = Environment.ProcessPath ?? throw new InvalidOperationException("Executable path is unavailable.");
+                key.SetValue(RunValueName, $"\"{executable}\"");
+                key.DeleteValue("UsageBarForClaude", false);
+                key.DeleteValue("ClaudeUsageTray", false);
+            }
+            else
+            {
+                key.DeleteValue(RunValueName, false);
+                key.DeleteValue("UsageBarForClaude", false);
+                key.DeleteValue("ClaudeUsageTray", false);
+            }
         }
-        else
-        {
-            key.DeleteValue(RunValueName, false);
-            key.DeleteValue("UsageBarForClaude", false);
-            key.DeleteValue("ClaudeUsageTray", false);
-        }
+        catch { }
     }
 
     internal static void RemoveStartupRegistration()
@@ -667,16 +808,15 @@ internal sealed class DesktopApplicationController : IDisposable
         _timer.Stop();
         _loginWatchTimer.Stop();
         _refreshCancellation?.Cancel();
-        _refreshCancellation?.Dispose();
         _updateCancellation?.Cancel();
-        _updateCancellation?.Dispose();
         _codexLoginCancellation?.Cancel();
-        _codexLoginCancellation?.Dispose();
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         _generatedIcon?.Dispose();
         _widget.Hide();
         _details.Hide();
+        _settingsWindow.AllowClose = true;
+        _updateWindow.AllowClose = true;
         _settingsWindow.Hide();
         _onboarding.Hide();
         _updateWindow.Hide();

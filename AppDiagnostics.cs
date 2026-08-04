@@ -7,8 +7,9 @@ internal static class AppDiagnostics
     private static string DirectoryPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "dejavu");
 
-    public static void Write(ApplicationState state, System.Windows.Window widget)
+    public static void Write(ApplicationState state, System.Windows.Window widget, double widgetBackgroundOpacity)
     {
+        string? temporary = null;
         try
         {
             Directory.CreateDirectory(DirectoryPath);
@@ -27,26 +28,29 @@ internal static class AppDiagnostics
                 codexFiveHour = state.CodexSnapshot?.FiveHour?.Percent,
                 codexWeekly = state.CodexSnapshot?.Weekly?.Percent,
                 codexResetCredits = state.CodexSnapshot?.ResetCredits,
-                widget = new { widget.IsVisible, widget.Left, widget.Top, widget.Width, widget.Height, widget.Opacity },
+                widget = new
+                {
+                    widget.IsVisible, widget.Left, widget.Top, widget.Width, widget.Height,
+                    windowOpacity = widget.Opacity,
+                    backgroundOpacity = widgetBackgroundOpacity
+                },
                 credentialFilePresent = ClaudeUsageClient.HasCredentialFile(),
                 desktopUsageAvailable = ClaudeDesktopUsageReader.HasRecentUsage()
             };
-            File.WriteAllText(Path.Combine(DirectoryPath, "status.json"),
+            var path = Path.Combine(DirectoryPath, "status.json");
+            temporary = path + $".{Environment.ProcessId}.tmp";
+            File.WriteAllText(temporary,
                 JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporary, path, true);
         }
         catch
         {
             // Diagnostics must never affect the always-on widget.
         }
-    }
-
-    public static void ClearCrashLog()
-    {
-        try
+        finally
         {
-            var path = Path.Combine(DirectoryPath, "crash.log");
-            if (File.Exists(path)) File.Delete(path);
+            try { if (temporary is not null && File.Exists(temporary)) File.Delete(temporary); }
+            catch { }
         }
-        catch { }
     }
 }

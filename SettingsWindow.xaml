@@ -4,15 +4,16 @@
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="dejavu 설정" Width="760" Height="590" MinWidth="700" MinHeight="540"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource BackgroundBrush}"
-        Foreground="{DynamicResource TextBrush}" FontFamily="Segoe UI Variable Text"
-        WindowStyle="None" ResizeMode="CanResize" ShowInTaskbar="True" Closing="OnClosing">
+        Foreground="{DynamicResource TextBrush}" FontFamily="{DynamicResource AppFontFamily}"
+        WindowStyle="None" ResizeMode="CanResize" ShowInTaskbar="True"
+        StateChanged="OnWindowStateChanged" Closing="OnClosing">
     <shell:WindowChrome.WindowChrome>
-        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="12"
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="{DynamicResource WindowCornerRadius}"
                             GlassFrameThickness="0" UseAeroCaptionButtons="False" />
     </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <Style x:Key="SettingRow" TargetType="Border">
-            <Setter Property="Padding" Value="0,15" />
+            <Setter Property="Padding" Value="{DynamicResource SettingsRowPadding}" />
             <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="0,0,0,1" />
         </Style>
@@ -38,28 +39,42 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions><RowDefinition Height="64"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+    <Border x:Name="WindowFrame" Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource WindowFrameBrush}" BorderThickness="{DynamicResource WindowFrameThickness}"
+            CornerRadius="{DynamicResource WindowCornerRadius}" SnapsToDevicePixels="True"
+            SizeChanged="OnWindowFrameSizeChanged">
+    <Grid x:Name="SettingsShell">
+        <Grid.RowDefinitions><RowDefinition x:Name="SettingsTitleRow" Height="64"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Rectangle x:Name="SettingsTextureOverlay" Grid.RowSpan="2" IsHitTestVisible="False"
+                   Visibility="Collapsed" Opacity="0.12">
+            <Rectangle.Fill>
+                <DrawingBrush TileMode="Tile" Viewport="0,0,12,12" ViewportUnits="Absolute">
+                    <DrawingBrush.Drawing>
+                        <GeometryDrawing Brush="{DynamicResource ThemeGridBrush}" Geometry="M 0,11 L 12,11 12,12 0,12 Z" />
+                    </DrawingBrush.Drawing>
+                </DrawingBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <Border x:Name="SettingsTitleBar" Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1" Padding="18,0" MouseLeftButtonDown="OnTitleBarMouseLeftButtonDown">
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="32" Height="32" CornerRadius="9" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,11,0">
-                        <TextBlock Text="◒" Foreground="{DynamicResource AccentBrush}" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border x:Name="SettingsMark" Width="32" Height="32" CornerRadius="{DynamicResource BadgeCornerRadius}" Background="{DynamicResource AccentSoftBrush}" Margin="0,0,11,0">
+                        <TextBlock Text="{DynamicResource ThemeMarkText}" Foreground="{DynamicResource AccentBrush}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="dejavu" FontSize="15" FontWeight="SemiBold" />
-                        <TextBlock Text="설정은 자동으로 저장됩니다" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
+                        <TextBlock x:Name="SettingsBrandText" Text="dejavu" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock x:Name="SettingsSubtitleText" Text="설정은 자동으로 저장됩니다" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Border Height="28" VerticalAlignment="Center" Background="{DynamicResource BackgroundBrush}"
-                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="11"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="{DynamicResource BadgeCornerRadius}"
                             Padding="9,0" Margin="0,0,10,0">
                         <Grid VerticalAlignment="Center">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="6"/><ColumnDefinition Width="6"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="저장됨" FontSize="10" LineHeight="13"
+                            <TextBlock x:Name="SaveStateText" Grid.Column="2" Text="저장됨" FontSize="10" LineHeight="13"
                                        LineStackingStrategy="BlockLineHeight" VerticalAlignment="Center"
                                        Foreground="{DynamicResource MutedTextBrush}" />
                         </Grid>
@@ -78,11 +93,11 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="176"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+        <Grid x:Name="SettingsBody" Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition x:Name="SettingsSidebarColumn" Width="176"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border x:Name="SettingsSidebar" Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="0,0,1,0" Padding="12,18">
-                <StackPanel>
+                <StackPanel x:Name="SettingsNavStack">
                     <RadioButton x:Name="AppearanceNav" Style="{StaticResource NavButton}" IsChecked="True"
                                  Content="모양" GroupName="SettingsNav" Checked="OnNavigationChanged" />
                     <RadioButton x:Name="BehaviorNav" Style="{StaticResource NavButton}"
@@ -94,7 +109,7 @@
                 </StackPanel>
             </Border>
 
-            <Grid Grid.Column="1">
+            <Grid x:Name="SettingsContent" Grid.Column="1">
                 <ScrollViewer x:Name="AppearancePanel" VerticalScrollBarVisibility="Auto" Padding="28,24">
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="모양" />
@@ -106,12 +121,12 @@
                                 <ComboBox x:Name="ThemeCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnThemeChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="프로그레스 바"/><TextBlock Style="{StaticResource SettingDescription}" Text="끄면 퍼센트 숫자만 표시합니다"/></StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="BarsStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="BarsToggle" Style="{StaticResource ToggleSwitch}" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
+                            <Grid><StackPanel MaxWidth="270" HorizontalAlignment="Left"><TextBlock Style="{StaticResource SettingTitle}" Text="제품 스타일"/><TextBlock x:Name="ThemeDescriptionText" Style="{StaticResource SettingDescription}" TextWrapping="Wrap" Text="위젯과 모든 앱 화면에 적용할 디자인입니다"/></StackPanel>
+                                <ComboBox x:Name="WidgetThemeCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnWidgetThemeChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 헤더"/><TextBlock Style="{StaticResource SettingDescription}" Text="제품명과 마지막 업데이트 시간을 표시합니다"/></StackPanel>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="HeaderToggleStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="HeaderToggle" Style="{StaticResource ToggleSwitch}" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="프로그레스 바"/><TextBlock Style="{StaticResource SettingDescription}" Text="끄면 퍼센트 숫자만 표시합니다"/></StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="BarsStatus" VerticalAlignment="Center" Margin="0,0,11,0" FontSize="11" FontWeight="SemiBold"/><CheckBox x:Name="BarsToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="프로그레스 바 표시" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
                             <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 크기"/><TextBlock Style="{StaticResource SettingDescription}" Text="작음, 중간, 큼 중 화면에 맞는 밀도를 선택합니다"/></StackPanel>
@@ -126,7 +141,7 @@
                                 <ComboBox x:Name="ServicesCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnServicesChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="투명도"/><TextBlock Style="{StaticResource SettingDescription}" Text="상시 표시 위젯의 배경 투명도입니다"/></StackPanel>
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="배경 투명도"/><TextBlock Style="{StaticResource SettingDescription}" Text="글자와 진행률은 선명하게 유지하고 배경만 조절합니다"/></StackPanel>
                                 <StackPanel Width="210" HorizontalAlignment="Right"><TextBlock x:Name="OpacityValue" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}"/><Slider x:Name="OpacitySlider" Minimum="55" Maximum="100" ValueChanged="OnOpacityChanged" /></StackPanel></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}" BorderThickness="0">
@@ -152,7 +167,7 @@
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="기본 표시 위치"/><TextBlock Style="{StaticResource SettingDescription}" Text="직접 이동하면 마지막 위치를 기억합니다"/></StackPanel><ComboBox x:Name="PlacementCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnPlacementChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="자동 갱신"/><TextBlock Style="{StaticResource SettingDescription}" Text="요청 제한 시에는 자동으로 간격을 늘립니다"/></StackPanel><ComboBox x:Name="RefreshCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnRefreshChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="트레이 아이콘"/><TextBlock Style="{StaticResource SettingDescription}" Text="아이콘을 숨겨도 상시 위젯은 유지됩니다"/></StackPanel><ComboBox x:Name="TrayCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnTrayChanged"/></Grid></Border>
-                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="Windows 시작 시 실행"/><TextBlock Style="{StaticResource SettingDescription}" Text="로그인 후 위젯을 자동으로 표시합니다"/></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="StartupStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/><CheckBox x:Name="StartupToggle" Style="{StaticResource ToggleSwitch}" Checked="OnStartupChanged" Unchecked="OnStartupChanged"/></StackPanel></Grid></Border>
+                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="Windows 시작 시 실행"/><TextBlock Style="{StaticResource SettingDescription}" Text="로그인 후 위젯을 자동으로 표시합니다"/></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="StartupStatus" VerticalAlignment="Center" Margin="0,0,11,0" FontSize="11" FontWeight="SemiBold"/><CheckBox x:Name="StartupToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="Windows 시작 시 실행" Checked="OnStartupChanged" Unchecked="OnStartupChanged"/></StackPanel></Grid></Border>
                         <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
                             <Button Style="{StaticResource AppButton}" Content="위치 초기화" Click="OnResetPosition" />
                             <Button Style="{StaticResource GhostButton}" Content="모든 설정 기본값 복원" Margin="8,0,0,0" Click="OnRestoreDefaults" />
@@ -180,8 +195,8 @@
                             <Grid>
                                 <StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="실행 시 업데이트 확인"/><TextBlock Style="{StaticResource SettingDescription}" Text="앱을 시작할 때 한 번 새 버전을 확인합니다"/></StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                    <TextBlock x:Name="UpdateToggleStatus" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource MutedTextBrush}"/>
-                                    <CheckBox x:Name="UpdateToggle" Style="{StaticResource ToggleSwitch}" Checked="OnUpdateToggleChanged" Unchecked="OnUpdateToggleChanged"/>
+                                    <TextBlock x:Name="UpdateToggleStatus" VerticalAlignment="Center" Margin="0,0,11,0" FontSize="11" FontWeight="SemiBold"/>
+                                    <CheckBox x:Name="UpdateToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="실행 시 업데이트 확인" Checked="OnUpdateToggleChanged" Unchecked="OnUpdateToggleChanged"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -262,4 +277,5 @@
             </Grid>
         </Grid>
     </Grid>
+    </Border>
 </Window>

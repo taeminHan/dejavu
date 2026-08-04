@@ -49,6 +49,10 @@ Windows SmartScreen의 게시자 경고가 표시되는 서명되지 않은 빌�
 
 ## 배포 문서
 
+- [아키텍처와 데이터 흐름](docs/ARCHITECTURE.md)
+- [개발·검증 안내](docs/DEVELOPMENT.md)
+- [위젯 UI 계약](docs/WIDGET_UI.md)
+- [안정성 계약](docs/STABILITY.md)
 - [개인정보 안내](PRIVACY.md)
 - [보안 정책](SECURITY.md)
 - [변경 내역](CHANGELOG.md)

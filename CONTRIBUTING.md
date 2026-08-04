@@ -6,6 +6,9 @@ dejavu 개선 제안과 버그 제보를 환영합니다.
 
 앱에는 Windows 11과 .NET 10 SDK가 필요합니다.
 
+처음 기여한다면 [아키텍처](docs/ARCHITECTURE.md), [개발·검증 안내](docs/DEVELOPMENT.md),
+[위젯 UI 계약](docs/WIDGET_UI.md), [안정성 계약](docs/STABILITY.md) 순서로 읽어 주세요.
+
 ```powershell
 dotnet build -c Release
 ```

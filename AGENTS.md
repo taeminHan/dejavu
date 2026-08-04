@@ -4,11 +4,13 @@ These instructions apply to the entire repository. Dejavu is a public Windows 11
 
 ## Start here
 
-1. Read `docs/WIDGET_UI.md` before changing the widget, themes, usage details, or settings UI.
-2. Read `docs/STABILITY.md` before changing refresh, update, login, shutdown, settings persistence, or diagnostics behavior.
-3. Run `git status --short` and preserve unrelated work. The repository may intentionally contain uncommitted design work.
-4. Read the complete XAML and code-behind for every affected window before editing.
-5. Do not commit, push, tag, publish a GitHub release, or replace release artifacts unless the user explicitly asks.
+1. Read `docs/ARCHITECTURE.md` for runtime ownership, provider detection, storage, update and uninstall boundaries.
+2. Read `docs/DEVELOPMENT.md` for build, preview, integration-test and release workflows.
+3. Read `docs/WIDGET_UI.md` before changing the widget, themes, usage details, or settings UI.
+4. Read `docs/STABILITY.md` before changing refresh, update, login, shutdown, settings persistence, or diagnostics behavior.
+5. Run `git status --short` and preserve unrelated work. The repository may intentionally contain uncommitted design work.
+6. Read the complete XAML and code-behind for every affected window before editing.
+7. Do not commit, push, tag, publish a GitHub release, or replace release artifacts unless the user explicitly asks.
 
 ## UI ownership
 

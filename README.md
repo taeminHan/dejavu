@@ -11,6 +11,10 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 [공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0-rc.7 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0-rc.7/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/). 서명 대상, 승인 절차, 프로젝트 역할과 검증 방법은 [코드 서명 정책](CODE_SIGNING_POLICY.md)에 공개합니다.
+
 - Claude: 5시간, 주간 전체, 계정에 제공되는 주간 Fable 사용률
 - Codex: 5시간 및 주간 사용률, 다음 초기화 시각
 - Codex 초기화권: 보유 개수와 가장 가까운 만료 시각을 읽기 전용으로 표시
@@ -55,6 +59,7 @@ Windows SmartScreen의 게시자 경고가 표시되는 서명되지 않은 빌�
 - [안정성 계약](docs/STABILITY.md)
 - [개인정보 안내](PRIVACY.md)
 - [보안 정책](SECURITY.md)
+- [코드 서명 정책](CODE_SIGNING_POLICY.md)
 - [변경 내역](CHANGELOG.md)
 - [제품화 상태](PRODUCTIZATION.md)
 - [출시 점검표](RELEASE_CHECKLIST.md)

@@ -16,6 +16,8 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 - During application exit, `AllowClose` must be set on windows that cancel `Closing`, then `Application.Shutdown()` may close them.
 - Keep the named mutex and activation event behavior: a second process activates settings in the first process.
 - Browser, Explorer, registry, and other shell operations may fail. UI event handlers must translate those failures into a visible status and must not crash the dispatcher.
+- The widget repairs a missing native `WS_EX_TOPMOST` state after native window-position changes, Explorer restart, display changes, session unlock and power resume. Recovery uses `SWP_NOACTIVATE`, preserves geometry and never toggles `Topmost` off.
+- Check the native state before repairing it. Do not poll or repeatedly push the widget ahead of other topmost applications.
 
 ## Persistence and diagnostics
 
@@ -43,3 +45,4 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 4. Exercise the widget layout matrix described in `WIDGET_UI.md`.
 5. Smoke-test first start, second-instance activation, settings/details open and close, forced refresh during an active refresh, and tray exit.
 6. For update changes, separately test current, available, download cancel, download failure, and apply/restart from an installed Velopack build. A plain published EXE cannot prove the install/update path.
+7. For widget lifecycle changes, test Win+L/unlock, sleep/resume, Explorer restart and display transitions; the foreground window, widget geometry and pointer interactions must remain unchanged during topmost repair.

@@ -84,6 +84,14 @@ Before a state or setting change, the window may have a different size. After ap
 
 Service auto-detection is a size-changing event and follows the same rule as a density or row-layout change.
 
+## Always-on-top behavior
+
+- The WPF `Topmost` value and the native `WS_EX_TOPMOST` state must agree while the widget is visible.
+- If Windows, Explorer, a display transition, session unlock or power resume removes the native topmost state, restore it with `SetWindowPos(HWND_TOPMOST)` using `SWP_NOACTIVATE`.
+- Native window-position notifications are debounced and repair only a missing topmost state. Do not continuously move the widget to the front of the topmost band.
+- Topmost recovery must not activate the widget, change its position or size, or compete with other intentional topmost windows.
+- UAC secure desktop, the lock screen, exclusive full-screen content and another application's topmost window are outside the guarantee.
+
 ## Manual visual checklist
 
 1. Start with automatic detection and confirm no empty provider slot appears while loading.
@@ -95,3 +103,4 @@ Service auto-detection is a size-changing event and follows the same rule as a d
 7. Return to a right-edge placement and repeat; the right margin must remain stable.
 8. Left-click without dragging to open details; drag beyond the system threshold to move without opening details.
 9. Check the expanded usage window separately because its separators and density are intentionally independent from the widget.
+10. After Win+L/unlock, sleep/resume, Explorer restart and display changes, confirm the widget remains above normal windows without taking keyboard focus.

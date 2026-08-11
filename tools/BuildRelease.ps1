@@ -90,8 +90,31 @@ if (-not (Test-Path -LiteralPath $velopackSetup)) {
 }
 Copy-Item -LiteralPath $velopackSetup -Destination $stableDownload -Force
 
+$currentArtifactNames = @(
+    "$packId-$Version-full.nupkg",
+    "$packId-$Version-delta.nupkg",
+    "$packId-win-Portable.zip",
+    "$packId-win-Setup.exe",
+    "dejavu-Setup.exe",
+    "RELEASES",
+    "releases.win.json"
+)
+$requiredArtifactNames = @(
+    "$packId-$Version-full.nupkg",
+    "$packId-win-Portable.zip",
+    "$packId-win-Setup.exe",
+    "dejavu-Setup.exe",
+    "RELEASES",
+    "releases.win.json"
+)
+$missingArtifacts = $requiredArtifactNames | Where-Object {
+    -not (Test-Path -LiteralPath (Join-Path $releaseDirectory $_))
+}
+if ($missingArtifacts) {
+    throw "Velopack did not create required artifacts: $($missingArtifacts -join ', ')"
+}
 $artifacts = Get-ChildItem -LiteralPath $releaseDirectory -File |
-    Where-Object { $_.Name -ne "SHA256SUMS.txt" } |
+    Where-Object { $_.Name -in $currentArtifactNames } |
     Sort-Object Name
 $checksumLines = foreach ($artifact in $artifacts) {
     $hash = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash.ToLowerInvariant()

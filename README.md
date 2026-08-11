@@ -7,9 +7,9 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 ### 리센느 화이팅
 
-현재 공개 배포 버전은 `0.9.0-rc.7`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.8`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
-[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0-rc.7 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0-rc.7/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
+[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0-rc.8 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0-rc.8/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
 ## Code signing policy
 
@@ -57,6 +57,7 @@ Windows SmartScreen의 게시자 경고가 표시되는 서명되지 않은 빌�
 - [개발·검증 안내](docs/DEVELOPMENT.md)
 - [위젯 UI 계약](docs/WIDGET_UI.md)
 - [안정성 계약](docs/STABILITY.md)
+- [macOS 지원 계획](docs/MACOS_SUPPORT_PLAN.md)
 - [개인정보 안내](PRIVACY.md)
 - [보안 정책](SECURITY.md)
 - [코드 서명 정책](CODE_SIGNING_POLICY.md)

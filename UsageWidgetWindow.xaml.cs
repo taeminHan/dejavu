@@ -1,29 +1,138 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Forms = System.Windows.Forms;
 
 namespace ClaudeUsageTray;
 
 public partial class UsageWidgetWindow : Window
 {
+    private const int GwlExStyle = -20;
+    private const long WsExTopmost = 0x00000008L;
+    private const int WmShowWindow = 0x0018;
+    private const int WmWindowPosChanged = 0x0047;
+    private const uint SwpNoSize = 0x0001;
+    private const uint SwpNoMove = 0x0002;
+    private const uint SwpNoActivate = 0x0010;
+    private const uint SwpNoOwnerZOrder = 0x0200;
+    private static readonly nint HwndTopmost = new(-1);
+    private static readonly uint TaskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
     private ApplicationState _state = ApplicationState.Loading();
     private TraySettings _settings;
     private bool _leftPointerDown;
     private bool _isDragging;
+    private bool _topmostRepairPending;
     private System.Windows.Point _pointerDownScreen;
     private System.Windows.Point _windowOrigin;
+    private nint _windowHandle;
+    private HwndSource? _windowSource;
+    private string _pendingTopmostRepairReason = "initial_show";
 
     internal UsageWidgetWindow(TraySettings settings)
     {
         InitializeComponent();
         _settings = settings;
+        IsVisibleChanged += OnWidgetIsVisibleChanged;
         ApplySettings(settings);
     }
 
     internal event EventHandler? WidgetClicked;
     internal event EventHandler? SettingsRequested;
     internal event EventHandler? PositionChangedByUser;
+
+    internal bool NativeTopmost => _windowHandle != nint.Zero && HasNativeTopmostStyle(_windowHandle);
+    internal int TopmostRepairCount { get; private set; }
+    internal DateTimeOffset? LastTopmostRepairAt { get; private set; }
+    internal string? LastTopmostRepairReason { get; private set; }
+    internal int? LastTopmostRepairError { get; private set; }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        _windowHandle = new WindowInteropHelper(this).Handle;
+        _windowSource = HwndSource.FromHwnd(_windowHandle);
+        _windowSource?.AddHook(WidgetWindowProc);
+        RequestTopmostRepair("source_initialized");
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        IsVisibleChanged -= OnWidgetIsVisibleChanged;
+        _windowSource?.RemoveHook(WidgetWindowProc);
+        _windowSource = null;
+        _windowHandle = nint.Zero;
+        base.OnClosed(e);
+    }
+
+    internal void RequestTopmostRepair(string reason)
+    {
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        if (!Dispatcher.CheckAccess())
+        {
+            _ = Dispatcher.BeginInvoke(DispatcherPriority.Background,
+                new Action(() => RequestTopmostRepair(reason)));
+            return;
+        }
+
+        _pendingTopmostRepairReason = reason;
+        if (_topmostRepairPending) return;
+        _topmostRepairPending = true;
+        _ = Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+        {
+            _topmostRepairPending = false;
+            RepairTopmostIfNeeded(_pendingTopmostRepairReason);
+        }));
+    }
+
+    private void OnWidgetIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (IsVisible) RequestTopmostRepair("visibility_restored");
+    }
+
+    private nint WidgetWindowProc(nint hwnd, int message, nint wParam, nint lParam, ref bool handled)
+    {
+        if ((message == WmWindowPosChanged &&
+             (!Topmost || !HasNativeTopmostStyle(hwnd))) ||
+            (message == WmShowWindow && wParam != nint.Zero) ||
+            (TaskbarCreatedMessage != 0 && unchecked((uint)message) == TaskbarCreatedMessage))
+        {
+            RequestTopmostRepair(message == WmWindowPosChanged
+                ? "window_position_changed"
+                : message == WmShowWindow ? "window_shown" : "explorer_restarted");
+        }
+
+        return nint.Zero;
+    }
+
+    private void RepairTopmostIfNeeded(string reason)
+    {
+        if (!IsVisible || _windowHandle == nint.Zero) return;
+        var managedTopmost = Topmost;
+        var nativeTopmost = HasNativeTopmostStyle(_windowHandle);
+        if (managedTopmost && nativeTopmost) return;
+
+        Topmost = true;
+        var repaired = HasNativeTopmostStyle(_windowHandle) || SetWindowPos(
+            _windowHandle, HwndTopmost, 0, 0, 0, 0,
+            SwpNoMove | SwpNoSize | SwpNoActivate | SwpNoOwnerZOrder);
+        LastTopmostRepairAt = DateTimeOffset.Now;
+        LastTopmostRepairReason = reason;
+        if (repaired)
+        {
+            TopmostRepairCount++;
+            LastTopmostRepairError = null;
+        }
+        else
+        {
+            LastTopmostRepairError = Marshal.GetLastWin32Error();
+        }
+    }
+
+    private static bool HasNativeTopmostStyle(nint handle) =>
+        (GetWindowLongPtr(handle, GwlExStyle).ToInt64() & WsExTopmost) != 0;
 
     internal void ApplySettings(TraySettings settings)
     {
@@ -441,5 +550,17 @@ public partial class UsageWidgetWindow : Window
             SweepDirection.Clockwise, true));
         return new PathGeometry([figure]);
     }
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW", SetLastError = true)]
+    private static extern nint GetWindowLongPtr(nint handle, int index);
+
+    [DllImport("user32.dll", EntryPoint = "RegisterWindowMessageW", CharSet = CharSet.Unicode,
+        SetLastError = true)]
+    private static extern uint RegisterWindowMessage(string message);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(nint handle, nint insertAfter, int x, int y, int width, int height,
+        uint flags);
 
 }

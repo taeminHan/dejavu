@@ -15,6 +15,7 @@
 - [ ] Velopack 설치 버전에서 다음 버전 감지, 다운로드, 적용, 재시작 검증
 - [ ] 업데이트 다운로드 실패와 오프라인 상태에서 기존 버전이 계속 실행되는지 검증
 - [ ] Windows 11 100%, 125%, 150%, 200% DPI 검증
+- [ ] Win+L/잠금 해제, 절전/복귀, Explorer 재시작, RDP·디스플레이 전환 뒤 위젯 Topmost·포커스·위치·크기 검증
 - [ ] Windows Defender 및 SmartScreen 제출 전 검사
 
 ## Release artifact checks

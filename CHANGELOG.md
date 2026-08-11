@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0-rc.8 — 2026-08-11
+
+- 잠금 해제, 절전 복귀, RDP·디스플레이 전환과 Explorer 재시작 뒤 네이티브 Topmost 상태가 풀리면 위젯이 자동으로 복구되도록 보강했습니다.
+- 복구가 필요한 경우에만 `SWP_NOACTIVATE`로 Topmost 상태를 다시 적용해 현재 작업 중인 창의 포커스와 위젯 위치·크기를 유지하고 다른 Topmost 앱과의 순서 경쟁을 피합니다.
+- 진단 파일에 WPF·네이티브 Topmost 상태와 마지막 복구 결과를 추가해 간헐적인 Z-order 문제를 확인할 수 있게 했습니다.
+- GitHub Release 초안에 실제 업로드된 자산을 기준으로 SHA-256 체크섬을 다시 생성·검증하고, 검증 성공 후에만 공개하도록 릴리스 파이프라인을 수정했습니다.
+- 공통 .NET 코어와 별도 macOS 셸을 전제로 Apple Silicon용 macOS 공개 베타 범위·검증 단계·배포 계획을 문서화했습니다. 이번 Windows 릴리스에 macOS 실행 파일은 포함되지 않습니다.
+- SignPath 승인 전 릴리스 후보이므로 설치 파일은 아직 공인 코드 서명이 적용되지 않았습니다.
+
 ## 0.9.0-rc.7 — 2026-08-04
 
 - Modern, Retro Night, Fluent Glass, Terminal Mono, Orbit, Paper Ink 여섯 테마를 위젯뿐 아니라 설정·상세 사용량·업데이트·온보딩 화면까지 일관되게 적용했습니다.

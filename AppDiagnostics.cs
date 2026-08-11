@@ -7,7 +7,7 @@ internal static class AppDiagnostics
     private static string DirectoryPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "dejavu");
 
-    public static void Write(ApplicationState state, System.Windows.Window widget, double widgetBackgroundOpacity)
+    public static void Write(ApplicationState state, UsageWidgetWindow widget, double widgetBackgroundOpacity)
     {
         string? temporary = null;
         try
@@ -31,6 +31,12 @@ internal static class AppDiagnostics
                 widget = new
                 {
                     widget.IsVisible, widget.Left, widget.Top, widget.Width, widget.Height,
+                    managedTopmost = widget.Topmost,
+                    nativeTopmost = widget.NativeTopmost,
+                    topmostRepairCount = widget.TopmostRepairCount,
+                    lastTopmostRepairAt = widget.LastTopmostRepairAt,
+                    lastTopmostRepairReason = widget.LastTopmostRepairReason,
+                    lastTopmostRepairError = widget.LastTopmostRepairError,
                     windowOpacity = widget.Opacity,
                     backgroundOpacity = widgetBackgroundOpacity
                 },

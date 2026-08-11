@@ -82,6 +82,8 @@ internal sealed class DesktopApplicationController : IDisposable
             if (connected) _loginWatchTimer.Stop();
         };
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+        SystemEvents.SessionSwitch += OnSessionSwitch;
 
         if (startWithDetails)
         {
@@ -469,7 +471,7 @@ internal sealed class DesktopApplicationController : IDisposable
         if (_disposed) return;
         _widget.PositionFromSettings();
         if (!_widget.IsVisible) _widget.Show();
-        _widget.Topmost = true;
+        _widget.RequestTopmostRepair("show_widget");
     }
 
     private void ToggleDetails()
@@ -627,12 +629,31 @@ internal sealed class DesktopApplicationController : IDisposable
     }
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
+        => QueueWidgetTopmostRepair("display_settings_changed", reposition: true);
+
+    private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode == PowerModes.Resume) QueueWidgetTopmostRepair("power_resume");
+    }
+
+    private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
+    {
+        if (e.Reason is SessionSwitchReason.SessionUnlock or SessionSwitchReason.SessionLogon
+            or SessionSwitchReason.ConsoleConnect or SessionSwitchReason.RemoteConnect)
+        {
+            QueueWidgetTopmostRepair($"session_{e.Reason}");
+        }
+    }
+
+    private void QueueWidgetTopmostRepair(string reason, bool reposition = false)
     {
         if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
-        _application.Dispatcher.BeginInvoke(() =>
+        _application.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() =>
         {
-            if (!_disposed) _widget.PositionFromSettings();
-        });
+            if (_disposed) return;
+            if (reposition) _widget.PositionFromSettings();
+            _widget.RequestTopmostRepair(reason);
+        }));
     }
 
     private async Task InvokeOnDispatcherAsync(Func<Task> action)
@@ -805,6 +826,8 @@ internal sealed class DesktopApplicationController : IDisposable
         if (_disposed) return;
         _disposed = true;
         SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        SystemEvents.SessionSwitch -= OnSessionSwitch;
         _timer.Stop();
         _loginWatchTimer.Stop();
         _refreshCancellation?.Cancel();

@@ -101,7 +101,7 @@ dotnet build .\ClaudeUsageTray.csproj -c Release
 
 For widget changes, exercise the matrix in `WIDGET_UI.md`: four service states, three densities, two layouts, progress on/off, all six themes, provider error/loading states and all placement modes. Verify that text and progress geometry use the same percentage.
 
-For lifecycle changes, exercise first start, second-instance activation, forced refresh during a refresh, settings/details open-close, display changes and tray exit. For Claude file-access changes, confirm Claude Desktop files are opened read-only and handles are released before parsing or network work.
+For lifecycle changes, exercise first start, second-instance activation, forced refresh during a refresh, settings/details open-close, Win+L/unlock, sleep/resume, Explorer restart, RDP/display transitions and tray exit. Confirm topmost recovery does not steal foreground focus or change widget geometry. For Claude file-access changes, confirm Claude Desktop files are opened read-only and handles are released before parsing or network work.
 
 ## Manual data-path tests
 

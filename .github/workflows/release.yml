@@ -66,15 +66,91 @@ jobs:
             --releaseName "dejavu ${{ github.ref_name }}" `
             --targetCommitish "${{ github.sha }}" `
             --pre "${{ steps.version.outputs.prerelease }}" `
-            --publish true
+            --publish false
 
-      - name: Upload stable download alias and checksums
+      - name: Upload stable download alias
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.ref_name }}" `
             "${{ steps.paths.outputs.release_dir }}\dejavu-Setup.exe" `
-            "${{ steps.paths.outputs.release_dir }}\SHA256SUMS.txt" `
             --repo "${{ github.repository }}" `
             --clobber
+
+      - name: Generate checksums from uploaded release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $publishedDir = Join-Path $env:RUNNER_TEMP "dejavu-published-assets"
+          New-Item -ItemType Directory -Path $publishedDir -Force | Out-Null
+          gh release download "${{ github.ref_name }}" `
+            --repo "${{ github.repository }}" `
+            --dir $publishedDir
+          if ($LASTEXITCODE -ne 0) {
+            throw "Published release assets could not be downloaded."
+          }
+
+          $checksumsPath = Join-Path $publishedDir "SHA256SUMS.txt"
+          if (Test-Path -LiteralPath $checksumsPath) {
+            Remove-Item -LiteralPath $checksumsPath -Force
+          }
+          $publishedAssets = Get-ChildItem -LiteralPath $publishedDir -File | Sort-Object Name
+          if (-not $publishedAssets) {
+            throw "The published release contains no assets."
+          }
+          $checksumLines = foreach ($artifact in $publishedAssets) {
+            $hash = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($artifact.Name)"
+          }
+          Set-Content -LiteralPath $checksumsPath -Value $checksumLines -Encoding utf8NoBOM
+          gh release upload "${{ github.ref_name }}" $checksumsPath `
+            --repo "${{ github.repository }}" `
+            --clobber
+          if ($LASTEXITCODE -ne 0) {
+            throw "Published checksums could not be uploaded."
+          }
+
+          $versionedSetup = Get-ChildItem -LiteralPath $publishedDir -File `
+            -Filter "dejavu-desktop-win-Setup.exe" | Select-Object -First 1
+          $stableSetup = Get-Item -LiteralPath (Join-Path $publishedDir "dejavu-Setup.exe")
+          if (-not $versionedSetup -or
+              (Get-FileHash -LiteralPath $versionedSetup.FullName -Algorithm SHA256).Hash -ne
+              (Get-FileHash -LiteralPath $stableSetup.FullName -Algorithm SHA256).Hash) {
+            throw "The stable setup alias does not match the versioned setup."
+          }
+
+      - name: Verify uploaded checksum asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $publishedDir = Join-Path $env:RUNNER_TEMP "dejavu-published-assets"
+          $verificationDir = Join-Path $env:RUNNER_TEMP "dejavu-checksum-verification"
+          New-Item -ItemType Directory -Path $verificationDir -Force | Out-Null
+          gh release download "${{ github.ref_name }}" `
+            --repo "${{ github.repository }}" `
+            --pattern "SHA256SUMS.txt" `
+            --dir $verificationDir
+          if ($LASTEXITCODE -ne 0) {
+            throw "The published checksum asset could not be downloaded."
+          }
+          $localChecksum = Join-Path $publishedDir "SHA256SUMS.txt"
+          $publishedChecksum = Join-Path $verificationDir "SHA256SUMS.txt"
+          if ((Get-FileHash -LiteralPath $localChecksum -Algorithm SHA256).Hash -ne
+              (Get-FileHash -LiteralPath $publishedChecksum -Algorithm SHA256).Hash) {
+            throw "The published checksum file differs from the verified local copy."
+          }
+
+      - name: Publish verified release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ github.ref_name }}" `
+            --repo "${{ github.repository }}" `
+            --draft=false
+          if ($LASTEXITCODE -ne 0) {
+            throw "The verified release could not be published."
+          }

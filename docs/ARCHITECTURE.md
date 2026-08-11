@@ -1,6 +1,6 @@
 # Dejavu architecture
 
-This document is the project-level map for maintainers and coding agents. Read it before changing provider detection, authentication, application lifecycle, persistence, updates, or uninstall behavior. UI-specific contracts live in `WIDGET_UI.md`; lifecycle safety contracts live in `STABILITY.md`.
+This document is the Windows project-level map for maintainers and coding agents. Read it before changing provider detection, authentication, application lifecycle, persistence, updates, or uninstall behavior. UI-specific contracts live in `WIDGET_UI.md`; lifecycle safety contracts live in `STABILITY.md`; proposed cross-platform work lives in `MACOS_SUPPORT_PLAN.md`.
 
 ## Product boundary
 
@@ -24,7 +24,7 @@ The project intentionally depends on local and non-public integration surfaces. 
 | `VelopackUpdateService.cs` | Checks GitHub Releases, downloads Velopack packages and applies an installed update. |
 | `ThemeManager.cs` / `ThemeResources.xaml` | Semantic theme values and shared WPF control styles. |
 | `WidgetLayoutCalculator.cs` | Pure source of truth for widget geometry. |
-| `UsageWidgetWindow*` | Always-visible widget rendering, pointer interaction and monitor positioning. |
+| `UsageWidgetWindow*` | Always-visible widget rendering, pointer interaction, monitor positioning and native topmost-band recovery. |
 | `UsageDetailsWindow*` | Expanded usage values, reset credits and reset times. |
 | `SettingsWindow*`, `OnboardingWindow*`, `UpdateWindow*` | Configuration, first-run connection guidance and update decisions. |
 

@@ -23,6 +23,16 @@
     <SolidColorBrush x:Key="WidgetMetricTextBrush" Color="#6D8EFF" />
     <SolidColorBrush x:Key="WidgetTrackBrush" Color="#202024" />
     <SolidColorBrush x:Key="ThemeGridBrush" Color="#29292E" />
+    <SolidColorBrush x:Key="OrbitSunBrush" Color="#F6B93B" />
+    <SolidColorBrush x:Key="OrbitSunCoreBrush" Color="#FFF2A8" />
+    <SolidColorBrush x:Key="OrbitEarthBrush" Color="#4AA3F2" />
+    <SolidColorBrush x:Key="OrbitEarthLandBrush" Color="#78D69B" />
+    <SolidColorBrush x:Key="OrbitMoonBrush" Color="#DCE5EE" />
+    <SolidColorBrush x:Key="OrbitMoonDetailBrush" Color="#8797AA" />
+    <SolidColorBrush x:Key="OrbitSaturnBrush" Color="#E5BF65" />
+    <SolidColorBrush x:Key="OrbitSaturnBandBrush" Color="#A8753F" />
+    <SolidColorBrush x:Key="OrbitSaturnRingBrush" Color="#DCE5F2" />
+    <SolidColorBrush x:Key="OrbitBodyOutlineBrush" Color="#18324F" />
     <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text</FontFamily>
     <FontFamily x:Key="WidgetFontFamily">Segoe UI Variable Text</FontFamily>
     <CornerRadius x:Key="WindowCornerRadius">12</CornerRadius>
@@ -645,6 +655,7 @@
                                                  Minimum="{TemplateBinding Minimum}"
                                                  Maximum="{TemplateBinding Maximum}"
                                                  VisualMode="{TemplateBinding VisualMode}"
+                                                 OrbitBody="{TemplateBinding OrbitBody}"
                                                  Fill="{TemplateBinding Foreground}"
                                                  Track="{TemplateBinding Background}" />
                 </ControlTemplate>

@@ -108,7 +108,7 @@ public partial class SettingsWindow : Window
         BarsToggle.IsChecked = _settings.ShowProgressBars;
         OpacitySlider.Value = _settings.WidgetOpacity * 100;
         StartupToggle.IsChecked = StartupStateProvider?.Invoke() ?? false;
-        UpdateToggle.IsChecked = _settings.CheckForUpdatesOnStartup;
+        UpdateToggle.IsChecked = _settings.AutomaticUpdateChecksEnabled;
         UpdateAccentSelection();
         SaveStateText.Text = "저장됨";
         SaveStateText.SetResourceReference(TextBlock.ForegroundProperty, "MutedTextBrush");
@@ -242,7 +242,7 @@ public partial class SettingsWindow : Window
     {
         SetToggleStatus(BarsStatus, _settings.ShowProgressBars);
         SetToggleStatus(StartupStatus, StartupToggle.IsChecked == true);
-        SetToggleStatus(UpdateToggleStatus, _settings.CheckForUpdatesOnStartup);
+        SetToggleStatus(UpdateToggleStatus, _settings.AutomaticUpdateChecksEnabled);
         OpacityValue.Text = $"{OpacitySlider.Value:0}%";
     }
 
@@ -549,7 +549,7 @@ public partial class SettingsWindow : Window
     private void OnUpdateToggleChanged(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        _settings.CheckForUpdatesOnStartup = UpdateToggle.IsChecked == true;
+        _settings.AutomaticUpdateChecksEnabled = UpdateToggle.IsChecked == true;
         SaveAndNotify();
     }
 
@@ -615,7 +615,7 @@ public partial class SettingsWindow : Window
         _settings.WidgetPlacement = WidgetPlacement.TaskbarRight;
         _settings.Theme = ThemePreference.System;
         _settings.WidgetTheme = WidgetVisualTheme.Modern;
-        _settings.CheckForUpdatesOnStartup = true;
+        _settings.AutomaticUpdateChecksEnabled = true;
         _settings.WidgetLeft = null;
         _settings.WidgetTop = null;
         SaveAndNotify(applyTheme: true);

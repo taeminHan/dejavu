@@ -7,9 +7,9 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 ### 리센느 화이팅
 
-현재 공개 배포 버전은 `0.9.0-rc.8`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0-rc.9`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
-[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0-rc.8 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0-rc.8/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
+[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0-rc.9 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0-rc.9/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
 ## Code signing policy
 
@@ -23,7 +23,7 @@ Free code signing provided by [SignPath.io](https://signpath.io/), certificate b
 - 진행률 막대 또는 퍼센트 표시, 투명도·색상·위치 설정
 - 약 1분마다 자동 갱신하며 마지막 정상 값을 유지
 - Windows 시작 시 실행과 알림 영역 메뉴 지원
-- 실행 시 한 번 업데이트 확인, 앱 안에서 다운로드·적용·재시작
+- 앱 시작 후와 매 정각 자동 업데이트 확인, 새 버전 알림, 앱 안에서 다운로드·적용·재시작
 
 Windows 11은 타사 앱이 작업표시줄 본문에 임의의 정보를 삽입하는 공식 API를 제공하지 않습니다. dejavu는 작업표시줄 위에 독립적인 상시 위젯을 두는 방식입니다.
 
@@ -45,7 +45,7 @@ Codex 표시에는 Codex Desktop 또는 로컬에서 실행 가능한 Codex CLI�
 
 ## 설치와 제거
 
-GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에 설치됩니다. 설치 버전은 실행할 때 한 번 GitHub Releases를 확인하며, 새 버전이 있으면 앱 안에서 다운로드·적용한 뒤 재시작할 수 있습니다. 업데이트 확인은 설정에서 끌 수 있습니다.
+GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에 설치됩니다. 설치 버전은 앱 시작 후와 매 정각 GitHub Releases를 확인하며, 새 버전은 한 번만 알립니다. 알림이나 설정에서 변경 내역을 확인하고 앱 안에서 다운로드·적용한 뒤 재시작할 수 있으며, 자동 확인은 설정에서 끌 수 있습니다.
 
 기존 Inno Setup 기반 `0.9.0-rc.1` 사용자는 첫 Velopack 버전만 설치 프로그램으로 한 번 다시 설치해야 합니다. 그 이후 버전부터는 앱 안에서 업데이트됩니다. Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱·바로가기·시작프로그램 등록뿐 아니라 `%LocalAppData%\dejavu`의 설정, 위젯 위치, 캐시와 진단 파일도 함께 삭제됩니다. Claude Code와 Codex의 로그인 정보 및 해당 프로그램의 데이터는 삭제하지 않습니다.
 

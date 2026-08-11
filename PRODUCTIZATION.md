@@ -1,6 +1,6 @@
 # dejavu productization status
 
-기준 버전: `0.9.0-rc.8` (2026-08-11)
+기준 버전: `0.9.0-rc.9` (2026-08-11)
 
 이 버전은 기능 완성도를 확인하기 위한 공개 릴리스 후보입니다. 아래 P0 항목이 해결되기 전에는 정식 GA 또는 신뢰된 설치 프로그램으로 표시하지 않습니다.
 
@@ -44,7 +44,7 @@
 - Multi-monitor position clamping and native topmost recovery after display, session, power and Explorer transitions.
 - Safe diagnostics that never write OAuth tokens.
 - Velopack-based per-user installation and GitHub Releases update checks.
-- In-app update download, apply, restart, and an opt-out startup check.
+- In-app update download, apply, restart, and opt-out startup plus on-the-hour checks with per-version notification deduplication.
 
 ## Deferred or externally blocked
 

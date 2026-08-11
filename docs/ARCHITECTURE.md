@@ -81,7 +81,7 @@ If no runnable executable exists, the UI links to the official Codex Windows ins
 
 | Path or registry value | Contents and policy |
 |---|---|
-| `%LocalAppData%\dejavu\settings.json` | User settings. Written through `settings.json.tmp` and atomically replaced. |
+| `%LocalAppData%\dejavu\settings.json` | User settings, including the last automatically notified update version. Written through `settings.json.tmp` and atomically replaced. Never stores provider credentials. |
 | `%LocalAppData%\dejavu\settings.corrupt-*.json` | Preserved invalid settings. Startup continues with normalized defaults. |
 | `%LocalAppData%\dejavu\status.json` | Support status, percentages, timestamps, geometry and source availability. Must never contain tokens or conversations. |
 | `%LocalAppData%\dejavu\crash.log` | Append-only crash details. Rotates to `crash.previous.log` above 256 KiB. |
@@ -93,6 +93,8 @@ Velopack uninstall removes the startup entries plus `%LocalAppData%\dejavu` and 
 ## Updates and releases
 
 Installed builds use `VelopackUpdateService`; plain `dotnet run`, build output and portable executables are not considered installed and cannot prove update behavior. Release-candidate builds include prereleases when querying `taeminHan/dejavu` GitHub Releases.
+
+When automatic checks are enabled, an installed build checks after startup and at the next local wall-clock hour. Every tick recalculates the following clock-hour boundary instead of adding a fixed interval, so delayed ticks do not drift. Resume and system-time changes perform at most one overdue check and then realign the schedule. Startup, hourly and manual requests share one in-flight query; automatic failures stay silent, the same version is notified only once across restarts, and manual checks always remain available. Disabling the setting stops the schedule immediately.
 
 The tag workflow in `.github/workflows/release.yml` installs Velopack CLI, downloads the previous package for delta generation, calls `tools/BuildRelease.ps1`, publishes the GitHub Release and uploads the stable `dejavu-Setup.exe` alias plus checksums.
 

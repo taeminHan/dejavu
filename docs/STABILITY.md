@@ -27,6 +27,15 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 - Never clear `crash.log` at startup. It is append-only and rotates to `crash.previous.log` after 256 KiB.
 - Diagnostics must never contain credentials, tokens, authorization headers, browser content, or Claude/Codex conversations.
 
+## Update scheduling
+
+- Automatic checks run only for installed Velopack builds and only while the user setting is enabled. Development and portable builds must not start the schedule.
+- Schedule the next local wall-clock hour from the current time after every tick. Do not use a repeating one-hour interval that drifts from the clock boundary.
+- Startup, hourly and manual checks share one in-flight update query. Automatic current, unavailable, offline and error results are silent; a manual request still receives the shared final result.
+- Persist the last automatically notified version and suppress only repeated automatic notifications for that version. Manual checks are never suppressed.
+- If resume or a system-time change crosses the saved boundary, run at most one catch-up check and then realign to the next hour. Duplicate lifecycle events must not produce notification bursts.
+- Turning automatic checks off stops the timer immediately and must also suppress a notification from a query already in flight. `Dispose()` stops the timer and post-await continuations check `_disposed` before touching UI.
+
 ## Claude non-interference
 
 - Dejavu never injects into, hooks, suspends, kills, or sends window messages to Claude Desktop.
@@ -44,5 +53,5 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 3. Run an isolated Release build.
 4. Exercise the widget layout matrix described in `WIDGET_UI.md`.
 5. Smoke-test first start, second-instance activation, settings/details open and close, forced refresh during an active refresh, and tray exit.
-6. For update changes, separately test current, available, download cancel, download failure, and apply/restart from an installed Velopack build. A plain published EXE cannot prove the install/update path.
+6. For update changes, separately test current, available, download cancel, download failure, apply/restart, startup and exact-hour checks, setting on/off, same-version deduplication, notification click, hidden-tray fallback, overlapping checks, offline behavior and sleep/time-change recovery from an installed Velopack build. A plain published EXE cannot prove the install/update path.
 7. For widget lifecycle changes, test Win+L/unlock, sleep/resume, Explorer restart and display transitions; the foreground window, widget geometry and pointer interactions must remain unchanged during topmost repair.

@@ -193,10 +193,10 @@
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
                             <Grid>
-                                <StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="실행 시 업데이트 확인"/><TextBlock Style="{StaticResource SettingDescription}" Text="앱을 시작할 때 한 번 새 버전을 확인합니다"/></StackPanel>
+                                <StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="자동 업데이트 확인"/><TextBlock Style="{StaticResource SettingDescription}" Text="앱 시작 후와 매 정각 새 버전을 확인합니다"/></StackPanel>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <TextBlock x:Name="UpdateToggleStatus" VerticalAlignment="Center" Margin="0,0,11,0" FontSize="11" FontWeight="SemiBold"/>
-                                    <CheckBox x:Name="UpdateToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="실행 시 업데이트 확인" Checked="OnUpdateToggleChanged" Unchecked="OnUpdateToggleChanged"/>
+                                    <CheckBox x:Name="UpdateToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="자동 업데이트 확인" Checked="OnUpdateToggleChanged" Unchecked="OnUpdateToggleChanged"/>
                                 </StackPanel>
                             </Grid>
                         </Border>

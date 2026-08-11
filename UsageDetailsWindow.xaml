@@ -49,19 +49,19 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
                             <TextBlock x:Name="FiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="FiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,7,0,0"/><TextBlock x:Name="FiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Grid x:Name="ClaudeWeeklyRow" Margin="0,0,0,14">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock Text="주간 전체" Foreground="{DynamicResource MutedTextBrush}" />
                             <TextBlock x:Name="WeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="WeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,7,0,0"/><TextBlock x:Name="WeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Grid x:Name="ClaudeFableRow">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock Text="주간 Fable" Foreground="{DynamicResource MutedTextBrush}" />
                             <TextBlock x:Name="FableValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="FableReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,7,0,0"/><TextBlock x:Name="FableReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -79,13 +79,13 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
                             <TextBlock x:Name="CodexFiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexFiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="CodexFiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexFiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0"/><TextBlock x:Name="CodexFiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Grid x:Name="CodexWeeklyRow" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock Text="주간" Foreground="{DynamicResource MutedTextBrush}" />
                             <TextBlock x:Name="CodexWeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexWeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0"/><TextBlock x:Name="CodexWeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexWeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0"/><TextBlock x:Name="CodexWeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Border x:Name="CreditsCard" Style="{StaticResource CardBorder}" Padding="12,9">
                             <Grid>

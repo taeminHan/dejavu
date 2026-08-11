@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ClaudeUsageTray;
 
@@ -32,7 +33,11 @@ internal sealed class TraySettings
     public ThemePreference Theme { get; set; } = ThemePreference.System;
     public WidgetVisualTheme WidgetTheme { get; set; } = WidgetVisualTheme.Modern;
     public bool FirstRunCompleted { get; set; }
-    public bool CheckForUpdatesOnStartup { get; set; } = true;
+    // Keep the rc.2 JSON key so an existing opt-out remains disabled after the
+    // setting expands from startup-only to startup and hourly checks.
+    [JsonPropertyName("CheckForUpdatesOnStartup")]
+    public bool AutomaticUpdateChecksEnabled { get; set; } = true;
+    public string? LastNotifiedUpdateVersion { get; set; }
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -95,6 +100,7 @@ internal sealed class TraySettings
         BackgroundColor = NormalizeColor(BackgroundColor, "#1E1E20");
         AccentColor = NormalizeColor(AccentColor, "#3A96F6");
         TextColor = NormalizeColor(TextColor, "#AEAEB4");
+        LastNotifiedUpdateVersion = NormalizeVersion(LastNotifiedUpdateVersion);
     }
 
     private static string NormalizeColor(string? value, string fallback)
@@ -106,6 +112,13 @@ internal sealed class TraySettings
             return value;
         }
         catch { return fallback; }
+    }
+
+    private static string? NormalizeVersion(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        var trimmed = value.Trim();
+        return trimmed[..Math.Min(64, trimmed.Length)];
     }
 
     private static void PreserveCorruptSettings(string source)

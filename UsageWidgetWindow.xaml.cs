@@ -510,7 +510,7 @@ public partial class UsageWidgetWindow : Window
     }
 
     private void SetCircularMetric(System.Windows.Controls.TextBlock label, System.Windows.Shapes.Path arc,
-        System.Windows.Shapes.Ellipse planet, UsageLimit? limit)
+        OrbitBodyMarker planet, UsageLimit? limit)
     {
         var value = limit is null ? (double?)null : Math.Clamp(limit.Percent, 0, 100);
         label.Text = value is null ? "--%" : $"{value:0}%";
@@ -518,7 +518,8 @@ public partial class UsageWidgetWindow : Window
         var thresholdBrushKey = _settings.UseThresholdColors && value >= 90 ? "DangerBrush"
             : _settings.UseThresholdColors && value >= 70 ? "WarningBrush" : null;
         var metricBrush = FindResource(thresholdBrushKey ?? "WidgetMetricTextBrush") as System.Windows.Media.Brush;
-        var progressBrush = FindResource(thresholdBrushKey ?? "WidgetAccentBrush") as System.Windows.Media.Brush;
+        var progressBrush = FindResource(thresholdBrushKey ?? "WidgetAccentBrush") as System.Windows.Media.Brush
+                            ?? System.Windows.Media.Brushes.Transparent;
         label.Foreground = metricBrush;
         arc.Stroke = progressBrush;
         var showPlanet = _settings.WidgetTheme == WidgetVisualTheme.Orbit &&

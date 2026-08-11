@@ -68,7 +68,7 @@ Important assertions:
 - Shared colors and styles belong in `ThemeResources.xaml`; theme values and style keys belong in `ThemeManager.cs`.
 - A theme should change structure or rendering character, not only its palette.
 - Paper Ink uses the bundled OFL-licensed handwriting font and pencil progress renderer. Widget card ledger underlines are intentionally absent; expanded details may retain record-sheet separators.
-- Orbit Small mode uses circular progress with planet markers.
+- Orbit uses vector celestial markers on circular progress: Claude 5-hour limits use a cratered moon, Claude weekly limits use Earth, Fable uses a ray-drawn sun, and Codex always uses Saturn. Small mode uses the same mapping with a larger marker while retaining its 30 px ring geometry.
 - Terminal uses terminal-like progress rendering and angular chrome.
 - All themes must retain visible hover, pressed, disabled, loading, and focus states in settings and dialogs.
 - Widget transparency applies only to chrome and decorative surface brushes. Keep the WPF window, text, icons, borders, and progress geometry at full opacity.

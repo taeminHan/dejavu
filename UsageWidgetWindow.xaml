@@ -44,7 +44,9 @@
                                 <Ellipse x:Name="SmallFiveHourTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallFiveHourArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                                <Ellipse x:Name="SmallFiveHourPlanet" Width="6" Height="6" Fill="{DynamicResource WidgetAccentBrush}" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="1" Visibility="Collapsed" />
+                                <local:OrbitBodyMarker x:Name="SmallFiveHourPlanet" Width="10" Height="10" Body="Moon"
+                                                       Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
+                                                       Visibility="Collapsed" />
                                 <TextBlock x:Name="SmallFiveHourValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
@@ -55,7 +57,9 @@
                                 <Ellipse x:Name="SmallWeeklyTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallWeeklyArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                                <Ellipse x:Name="SmallWeeklyPlanet" Width="6" Height="6" Fill="{DynamicResource WidgetAccentBrush}" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="1" Visibility="Collapsed" />
+                                <local:OrbitBodyMarker x:Name="SmallWeeklyPlanet" Width="10" Height="10" Body="Earth"
+                                                       Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
+                                                       Visibility="Collapsed" />
                                 <TextBlock x:Name="SmallWeeklyValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
@@ -66,7 +70,9 @@
                                 <Ellipse x:Name="SmallFableTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallFableArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                                <Ellipse x:Name="SmallFablePlanet" Width="6" Height="6" Fill="{DynamicResource WidgetAccentBrush}" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="1" Visibility="Collapsed" />
+                                <local:OrbitBodyMarker x:Name="SmallFablePlanet" Width="10" Height="10" Body="Sun"
+                                                       Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
+                                                       Visibility="Collapsed" />
                                 <TextBlock x:Name="SmallFableValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
@@ -78,7 +84,9 @@
                             <Ellipse x:Name="SmallCodexTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                             <Path x:Name="SmallCodexArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                            <Ellipse x:Name="SmallCodexPlanet" Width="6" Height="6" Fill="{DynamicResource WidgetAccentBrush}" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="1" Visibility="Collapsed" />
+                            <local:OrbitBodyMarker x:Name="SmallCodexPlanet" Width="10" Height="10" Body="Saturn"
+                                                   Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
+                                                   Visibility="Collapsed" />
                             <TextBlock x:Name="SmallCodexValue" Text="--%" FontSize="9" FontWeight="Bold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
@@ -103,7 +111,7 @@
                         <TextBlock x:Name="CompactFiveHourLabel" Text="5H" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                         <TextBlock x:Name="CompactFiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
                     </Grid>
-                    <local:UsageProgressBar x:Name="CompactFiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
+                    <local:UsageProgressBar x:Name="CompactFiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,5,0,0" />
                 </StackPanel>
                 </Border>
                 <Border x:Name="CompactWeeklyCard" Grid.Column="2">
@@ -112,7 +120,7 @@
                         <TextBlock x:Name="CompactWeeklyLabel" Text="주간" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                         <TextBlock x:Name="CompactWeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
                     </Grid>
-                    <local:UsageProgressBar x:Name="CompactWeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
+                    <local:UsageProgressBar x:Name="CompactWeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,5,0,0" />
                 </StackPanel>
                 </Border>
                 <Border x:Name="CompactFableCard" Grid.Column="4">
@@ -121,7 +129,7 @@
                         <TextBlock x:Name="CompactFableLabel" Text="Fable" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                         <TextBlock x:Name="CompactFableValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
                     </Grid>
-                    <local:UsageProgressBar x:Name="CompactFableBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
+                    <local:UsageProgressBar x:Name="CompactFableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,5,0,0" />
                 </StackPanel>
                 </Border>
                 <Border x:Name="CompactCodexCard" Grid.Column="6">
@@ -131,7 +139,7 @@
                         <TextBlock x:Name="CompactCodexValue" Text="--%" HorizontalAlignment="Right"
                                    FontSize="12" FontWeight="SemiBold" />
                     </Grid>
-                    <local:UsageProgressBar x:Name="CompactCodexBar" Style="{StaticResource UsageProgress}" Margin="0,5,0,0" />
+                    <local:UsageProgressBar x:Name="CompactCodexBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,5,0,0" />
                 </StackPanel>
                 </Border>
             </Grid>
@@ -156,7 +164,7 @@
                         <TextBlock x:Name="CodexLabel" Text="Codex 주간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                         <TextBlock x:Name="CodexValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
                     </Grid>
-                    <local:UsageProgressBar x:Name="CodexBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                    <local:UsageProgressBar x:Name="CodexBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0" />
                 </StackPanel>
                 </Border>
                 <Grid x:Name="MetricsPanel" Grid.Row="1" Margin="0,10,0,0">
@@ -170,19 +178,19 @@
                     <Border x:Name="ComfortableFiveCard" Grid.Column="0">
                     <StackPanel>
                         <Grid><TextBlock x:Name="FiveHourLabel" Text="5시간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><TextBlock x:Name="FiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
-                        <local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                        <local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,7,0,0" />
                     </StackPanel>
                     </Border>
                     <Border x:Name="ComfortableWeeklyCard" Grid.Column="2">
                     <StackPanel>
                         <Grid><TextBlock x:Name="WeeklyLabel" Text="주간 전체" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><TextBlock x:Name="WeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
-                        <local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                        <local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,7,0,0" />
                     </StackPanel>
                     </Border>
                     <Border x:Name="ComfortableFableCard" Grid.Column="4">
                     <StackPanel>
                         <Grid><TextBlock x:Name="FableLabel" Text="주간 Fable" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><TextBlock x:Name="FableValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
-                        <local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" Margin="0,7,0,0" />
+                        <local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,7,0,0" />
                     </StackPanel>
                     </Border>
                 </Grid>

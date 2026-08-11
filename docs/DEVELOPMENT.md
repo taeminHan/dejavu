@@ -137,6 +137,14 @@ Test these separately from an installed build:
 4. Network/download failure.
 5. Apply, restart and retained user settings.
 6. Complete uninstall, including startup registration and Dejavu data cleanup while preserving Claude/Codex data.
+7. Automatic checks enabled: one startup check and a check at the exact next local clock hour.
+8. Automatic checks disabled: no startup, hourly or resume check; manual Settings checks still work.
+9. Repeated availability of the same version: one automatic notification across later hours and an app restart; a newer version may notify once again.
+10. Notification interaction: clicking the tray notification opens the themed update decision window; a hidden tray uses the decision window once per version.
+11. Startup, clock-hour and manual requests that overlap: one network query is shared and the manual UI receives its final result.
+12. Sleep/resume and system-time changes: one overdue catch-up at most, no burst for skipped hours, then alignment to the next wall-clock hour.
+
+The scheduler is deliberately based on the next wall-clock boundary, not a fixed one-hour interval. Pure schedule and notification-policy checks may run against a Release build, but notification, install detection, download and apply behavior still require a Velopack-installed build.
 
 ## Local release packaging
 

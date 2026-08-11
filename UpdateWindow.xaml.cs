@@ -95,7 +95,7 @@ public partial class UpdateWindow : Window
     internal void ShowCurrent(string? message = null)
     {
         ShowStatus("최신 버전을 사용 중이에요",
-            message ?? "새 업데이트가 공개되면 앱을 시작할 때 한 번 확인해서 알려드릴게요.");
+            message ?? "새 업데이트가 공개되면 앱 시작 후와 매 정각 자동으로 확인해서 알려드릴게요.");
     }
 
     internal void ShowStatus(string title, string message)

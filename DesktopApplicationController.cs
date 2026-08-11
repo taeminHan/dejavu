@@ -27,14 +27,16 @@ internal sealed class DesktopApplicationController : IDisposable
     private readonly Forms.NotifyIcon _trayIcon = new();
     private readonly DispatcherTimer _timer = new();
     private readonly DispatcherTimer _loginWatchTimer = new() { Interval = TimeSpan.FromSeconds(3) };
+    private readonly DispatcherTimer _automaticUpdateTimer = new();
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private CancellationTokenSource? _refreshCancellation;
     private CancellationTokenSource? _updateCancellation;
     private CancellationTokenSource? _codexLoginCancellation;
     private UpdateInfo? _pendingUpdate;
+    private Task<UpdateCheckResult>? _updateCheckTask;
+    private DateTimeOffset? _nextAutomaticUpdateAt;
     private ApplicationState _state = ApplicationState.Loading();
     private Drawing.Icon? _generatedIcon;
-    private bool _checkingForUpdate;
     private bool _loginWatchRequiresClaudeCode;
     private bool _codexLoginInProgress;
     private bool _disposed;
@@ -81,9 +83,12 @@ internal sealed class DesktopApplicationController : IDisposable
                              _state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode);
             if (connected) _loginWatchTimer.Stop();
         };
+        _automaticUpdateTimer.Tick += OnAutomaticUpdateTimerTick;
+        ConfigureAutomaticUpdateChecks();
         SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
         SystemEvents.SessionSwitch += OnSessionSwitch;
+        SystemEvents.TimeChanged += OnSystemTimeChanged;
 
         if (startWithDetails)
         {
@@ -108,7 +113,7 @@ internal sealed class DesktopApplicationController : IDisposable
         }
 
         _ = RefreshAsync();
-        if (_settings.CheckForUpdatesOnStartup) _ = CheckForUpdatesAfterStartupAsync();
+        if (_settings.AutomaticUpdateChecksEnabled) _ = CheckForUpdatesAfterStartupAsync();
     }
 
     private void WireWindows()
@@ -176,6 +181,11 @@ internal sealed class DesktopApplicationController : IDisposable
         {
             if (e.Button == Forms.MouseButtons.Left) _application.Dispatcher.Invoke(ToggleDetails);
         };
+        _trayIcon.BalloonTipClicked += (_, _) =>
+        {
+            if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
+            _application.Dispatcher.BeginInvoke(new Action(ShowPendingUpdate));
+        };
         UpdateTrayIcon();
     }
 
@@ -240,11 +250,58 @@ internal sealed class DesktopApplicationController : IDisposable
         }
     }
 
+    private void ConfigureAutomaticUpdateChecks()
+    {
+        if (_disposed || !_settings.AutomaticUpdateChecksEnabled || !_updateService.IsInstalled)
+        {
+            _automaticUpdateTimer.Stop();
+            _nextAutomaticUpdateAt = null;
+            return;
+        }
+
+        // ApplySettings also runs for visual preferences. Preserve an active
+        // clock-boundary timer so an unrelated save cannot skip a queued tick.
+        if (_automaticUpdateTimer.IsEnabled && _nextAutomaticUpdateAt is not null) return;
+
+        var now = DateTimeOffset.Now;
+        var next = HourlyUpdateSchedule.NextCheckAt(now);
+        _nextAutomaticUpdateAt = next;
+        _automaticUpdateTimer.Interval = next - now;
+        _automaticUpdateTimer.Start();
+    }
+
+    private async void OnAutomaticUpdateTimerTick(object? sender, EventArgs e)
+    {
+        _automaticUpdateTimer.Stop();
+        try
+        {
+            await CheckForUpdatesAutomaticallyAsync();
+        }
+        catch
+        {
+            // An automatic check is best-effort and must never crash the UI dispatcher.
+        }
+        finally
+        {
+            if (!_disposed) ConfigureAutomaticUpdateChecks();
+        }
+    }
+
     private async Task CheckForUpdatesAfterStartupAsync()
     {
         await Task.Delay(TimeSpan.FromSeconds(4));
-        if (_disposed) return;
-        await CheckForUpdatesAsync(showIfCurrent: false);
+        if (_disposed || !_settings.AutomaticUpdateChecksEnabled) return;
+        await CheckForUpdatesAutomaticallyAsync();
+    }
+
+    private async Task CheckForUpdatesAutomaticallyAsync()
+    {
+        if (_disposed || !_settings.AutomaticUpdateChecksEnabled) return;
+        var result = await QueryForUpdatesAsync();
+        if (_disposed || !_settings.AutomaticUpdateChecksEnabled ||
+            result.Status != UpdateCheckStatus.Available ||
+            !AutomaticUpdatePolicy.ShouldNotify(result.Version, _settings.LastNotifiedUpdateVersion)) return;
+        NotifyUpdateAvailable(result.Version!);
     }
 
     private async Task CheckForUpdatesAsync(bool showIfCurrent)
@@ -287,9 +344,6 @@ internal sealed class DesktopApplicationController : IDisposable
             case UpdateCheckStatus.NotInstalled:
                 _settingsWindow.SetUpdateCheckResult("설치 버전에서만 업데이트를 확인할 수 있습니다.");
                 break;
-            case UpdateCheckStatus.Busy:
-                _settingsWindow.SetUpdateCheckResult("이미 업데이트를 확인하고 있습니다. 잠시 후 다시 시도해 주세요.");
-                break;
             default:
                 _settingsWindow.SetUpdateCheckResult("업데이트 서버에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.");
                 break;
@@ -298,8 +352,25 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private async Task<UpdateCheckResult> QueryForUpdatesAsync()
     {
-        if (_checkingForUpdate) return new UpdateCheckResult(UpdateCheckStatus.Busy);
-        _checkingForUpdate = true;
+        var updateCheck = _updateCheckTask;
+        if (updateCheck is null)
+        {
+            updateCheck = QueryForUpdatesCoreAsync();
+            _updateCheckTask = updateCheck;
+        }
+
+        try
+        {
+            return await updateCheck;
+        }
+        finally
+        {
+            if (ReferenceEquals(_updateCheckTask, updateCheck)) _updateCheckTask = null;
+        }
+    }
+
+    private async Task<UpdateCheckResult> QueryForUpdatesCoreAsync()
+    {
         try
         {
             if (!_updateService.IsInstalled)
@@ -322,17 +393,45 @@ internal sealed class DesktopApplicationController : IDisposable
             _pendingUpdate = null;
             return new UpdateCheckResult(UpdateCheckStatus.Error);
         }
-        finally
-        {
-            _checkingForUpdate = false;
-        }
     }
 
     private void ShowPendingUpdate()
     {
         if (_pendingUpdate is null) return;
-        _updateWindow.ShowAvailable(_pendingUpdate.TargetFullRelease.Version.ToString(),
+        var version = _pendingUpdate.TargetFullRelease.Version.ToString();
+        RememberNotifiedUpdateVersion(version);
+        _updateWindow.ShowAvailable(version,
             _pendingUpdate.TargetFullRelease.NotesMarkdown);
+    }
+
+    private void NotifyUpdateAvailable(string version)
+    {
+        if (_pendingUpdate is null) return;
+        RememberNotifiedUpdateVersion(version);
+        if (_settings.TrayIconStyle == TrayIconStyle.Hidden || !_trayIcon.Visible)
+        {
+            ShowPendingUpdate();
+            return;
+        }
+
+        try
+        {
+            _trayIcon.ShowBalloonTip(10_000, $"dejavu {version} 업데이트",
+                "새 버전을 사용할 수 있습니다. 눌러 변경 내용과 업데이트 옵션을 확인하세요.",
+                Forms.ToolTipIcon.Info);
+        }
+        catch
+        {
+            ShowPendingUpdate();
+        }
+    }
+
+    private void RememberNotifiedUpdateVersion(string version)
+    {
+        if (string.Equals(_settings.LastNotifiedUpdateVersion, version,
+                StringComparison.OrdinalIgnoreCase)) return;
+        _settings.LastNotifiedUpdateVersion = version;
+        _settings.Save();
     }
 
     private async Task DownloadAndApplyUpdateAsync()
@@ -462,6 +561,7 @@ internal sealed class DesktopApplicationController : IDisposable
         }
         _details.UpdateState(_state, _settings);
         _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
+        ConfigureAutomaticUpdateChecks();
         UpdateTrayIcon();
         AppDiagnostics.Write(_state, _widget, _settings.WidgetOpacity);
     }
@@ -633,8 +733,13 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
-        if (e.Mode == PowerModes.Resume) QueueWidgetTopmostRepair("power_resume");
+        if (e.Mode != PowerModes.Resume) return;
+        QueueWidgetTopmostRepair("power_resume");
+        QueueAutomaticUpdateScheduleRecovery(checkIfOverdue: true);
     }
+
+    private void OnSystemTimeChanged(object? sender, EventArgs e) =>
+        QueueAutomaticUpdateScheduleRecovery(checkIfOverdue: true);
 
     private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
     {
@@ -654,6 +759,21 @@ internal sealed class DesktopApplicationController : IDisposable
             if (reposition) _widget.PositionFromSettings();
             _widget.RequestTopmostRepair(reason);
         }));
+    }
+
+    private void QueueAutomaticUpdateScheduleRecovery(bool checkIfOverdue)
+    {
+        if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
+        _ = InvokeOnDispatcherAsync(async () =>
+        {
+            if (_disposed) return;
+            var overdue = checkIfOverdue && _nextAutomaticUpdateAt is DateTimeOffset next &&
+                          DateTimeOffset.Now >= next;
+            _automaticUpdateTimer.Stop();
+            if (overdue && _settings.AutomaticUpdateChecksEnabled && _updateService.IsInstalled)
+                await CheckForUpdatesAutomaticallyAsync();
+            if (!_disposed) ConfigureAutomaticUpdateChecks();
+        });
     }
 
     private async Task InvokeOnDispatcherAsync(Func<Task> action)
@@ -828,8 +948,10 @@ internal sealed class DesktopApplicationController : IDisposable
         SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         SystemEvents.SessionSwitch -= OnSessionSwitch;
+        SystemEvents.TimeChanged -= OnSystemTimeChanged;
         _timer.Stop();
         _loginWatchTimer.Stop();
+        _automaticUpdateTimer.Stop();
         _refreshCancellation?.Cancel();
         _updateCancellation?.Cancel();
         _codexLoginCancellation?.Cancel();
@@ -850,5 +972,5 @@ internal sealed class DesktopApplicationController : IDisposable
 
     private sealed record ProviderResult<T>(UsageStatus Status, T? Snapshot, string Message);
     private sealed record UpdateCheckResult(UpdateCheckStatus Status, string? Version = null);
-    private enum UpdateCheckStatus { Busy, Current, Available, NotInstalled, Error }
+    private enum UpdateCheckStatus { Current, Available, NotInstalled, Error }
 }

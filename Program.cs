@@ -54,9 +54,10 @@ internal static class Program
             var previewDensity = ParsePreview<WidgetDensity>("density");
             var previewLayout = ParsePreview<WidgetLayout>("layout");
             var previewServices = ParsePreview<ServiceDisplayMode>("services");
+            var previewProgress = ParsePreviewSwitch("progress");
             using var controller = new DesktopApplicationController(
                 application, startWithSettings, startWithOnboarding, startWithDetails,
-                previewTheme, previewDensity, previewLayout, previewServices);
+                previewTheme, previewDensity, previewLayout, previewServices, previewProgress);
             var activationRegistration = ThreadPool.RegisterWaitForSingleObject(
                 showSettingsEvent,
                 (_, _) => application.Dispatcher.BeginInvoke(controller.ShowSettingsFromExternalActivation),
@@ -87,6 +88,20 @@ internal static class Program
             .Where(value => !string.IsNullOrWhiteSpace(value))
             .Select(value => Enum.TryParse<T>(value, true, out var parsed) ? parsed : (T?)null)
             .FirstOrDefault(value => value is not null);
+    }
+
+    private static bool? ParsePreviewSwitch(string option)
+    {
+        var prefix = $"--{option}=";
+        var value = Environment.GetCommandLineArgs()
+            .FirstOrDefault(argument => argument.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        if (value is null) return null;
+        return value[prefix.Length..].Trim().ToLowerInvariant() switch
+        {
+            "on" or "true" or "1" => true,
+            "off" or "false" or "0" => false,
+            _ => null
+        };
     }
 
     private static void WriteCrash(Exception exception)

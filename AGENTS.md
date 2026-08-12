@@ -41,6 +41,7 @@ Parse every changed XAML file as XML, then run:
 ```powershell
 git diff --check
 dotnet build -c Release -o C:\tmp\dejavu-build-check
+dotnet run --project .\tools\WidgetLayoutProbe\WidgetLayoutProbe.csproj -c Release
 ```
 
 If a running Dejavu instance locks `bin\Release`, keep it running and use an isolated publish output:
@@ -52,6 +53,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 ```
 
 Review the state matrix in `docs/WIDGET_UI.md` before handoff. Do not treat a successful build as visual verification.
+The WPF layout probe is mandatory for widget geometry changes and must report all 504 combinations with zero clipped cases. Its 180 zero/one-provider comparisons, 72 two-provider split checks, 216 auto-detection equivalence checks and 24 Settings frame states must also report no mismatch.
 
 ## Safety and privacy
 

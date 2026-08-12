@@ -6,6 +6,7 @@
         WindowStartupLocation="CenterScreen" Background="{DynamicResource BackgroundBrush}"
         Foreground="{DynamicResource TextBrush}" FontFamily="{DynamicResource AppFontFamily}"
         WindowStyle="None" ResizeMode="CanResize" ShowInTaskbar="True"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
         StateChanged="OnWindowStateChanged" Closing="OnClosing">
     <shell:WindowChrome.WindowChrome>
         <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="{DynamicResource WindowCornerRadius}"
@@ -39,11 +40,9 @@
         </Style>
     </Window.Resources>
 
-    <Border x:Name="WindowFrame" Background="{DynamicResource BackgroundBrush}"
-            BorderBrush="{DynamicResource WindowFrameBrush}" BorderThickness="{DynamicResource WindowFrameThickness}"
-            CornerRadius="{DynamicResource WindowCornerRadius}" SnapsToDevicePixels="True"
-            SizeChanged="OnWindowFrameSizeChanged">
-    <Grid x:Name="SettingsShell">
+    <Grid x:Name="WindowSurface" Background="{DynamicResource BackgroundBrush}"
+          SnapsToDevicePixels="True">
+    <Grid x:Name="SettingsShell" UseLayoutRounding="True" SnapsToDevicePixels="True">
         <Grid.RowDefinitions><RowDefinition x:Name="SettingsTitleRow" Height="64"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <Rectangle x:Name="SettingsTextureOverlay" Grid.RowSpan="2" IsHitTestVisible="False"
                    Visibility="Collapsed" Opacity="0.12">
@@ -277,5 +276,10 @@
             </Grid>
         </Grid>
     </Grid>
-    </Border>
+    <Border x:Name="WindowFrame" Panel.ZIndex="100" IsHitTestVisible="False"
+            Background="Transparent" BorderBrush="{DynamicResource WindowFrameBrush}"
+            BorderThickness="{DynamicResource WindowFrameThickness}"
+            CornerRadius="{DynamicResource WindowCornerRadius}"
+            SnapsToDevicePixels="True" />
+    </Grid>
 </Window>

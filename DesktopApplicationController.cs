@@ -44,13 +44,15 @@ internal sealed class DesktopApplicationController : IDisposable
     public DesktopApplicationController(System.Windows.Application application, bool startWithSettings = false,
         bool startWithOnboarding = false, bool startWithDetails = false,
         WidgetVisualTheme? previewTheme = null, WidgetDensity? previewDensity = null,
-        WidgetLayout? previewLayout = null, ServiceDisplayMode? previewServices = null)
+        WidgetLayout? previewLayout = null, ServiceDisplayMode? previewServices = null,
+        bool? previewProgress = null)
     {
         _application = application;
         if (previewTheme is not null) _settings.WidgetTheme = previewTheme.Value;
         if (previewDensity is not null) _settings.WidgetDensity = previewDensity.Value;
         if (previewLayout is not null) _settings.WidgetLayout = previewLayout.Value;
         if (previewServices is not null) _settings.ServiceDisplayMode = previewServices.Value;
+        if (previewProgress is not null) _settings.ShowProgressBars = previewProgress.Value;
         ThemeManager.Apply(_settings);
         _updateWindow.ApplyTheme(_settings.WidgetTheme);
         if (_updateService.IsInstalled) MigrateExistingStartupRegistration();

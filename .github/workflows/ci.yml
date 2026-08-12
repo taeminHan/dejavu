@@ -15,3 +15,5 @@ jobs:
           dotnet-version: 10.0.x
       - name: Build Windows app
         run: dotnet build ClaudeUsageTray.csproj -c Release
+      - name: Verify widget layout matrix
+        run: dotnet run --project tools/WidgetLayoutProbe/WidgetLayoutProbe.csproj -c Release

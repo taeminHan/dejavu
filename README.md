@@ -7,13 +7,13 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 ### 리센느 화이팅
 
-현재 공개 배포 버전은 `0.9.0-rc.9`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 정식판 배포 전 확인해야 할 항목은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+현재 공개 배포 버전은 `0.9.0`입니다. rc.2부터 Velopack 기반 설치와 앱 내 자동 업데이트를 지원합니다. 배포 검증 현황은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
-[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0-rc.9 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0-rc.9/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
+[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [0.9.0 바로 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.0/dejavu-Setup.exe) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
 ## Code signing policy
 
-Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/). 서명 대상, 승인 절차, 프로젝트 역할과 검증 방법은 [코드 서명 정책](CODE_SIGNING_POLICY.md)에 공개합니다.
+공인 코드 서명은 [SignPath.io](https://signpath.io/)와 [SignPath Foundation](https://signpath.org/) 승인을 진행 중입니다. 현재 `0.9.0` 배포 파일은 아직 서명되지 않았습니다. 서명 대상, 승인 절차, 프로젝트 역할과 검증 방법은 [코드 서명 정책](CODE_SIGNING_POLICY.md)에 공개합니다.
 
 - Claude: 5시간, 주간 전체, 계정에 제공되는 주간 Fable 사용률
 - Codex: 5시간 및 주간 사용률, 다음 초기화 시각
@@ -49,7 +49,7 @@ GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에
 
 기존 Inno Setup 기반 `0.9.0-rc.1` 사용자는 첫 Velopack 버전만 설치 프로그램으로 한 번 다시 설치해야 합니다. 그 이후 버전부터는 앱 안에서 업데이트됩니다. Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱·바로가기·시작프로그램 등록뿐 아니라 `%LocalAppData%\dejavu`의 설정, 위젯 위치, 캐시와 진단 파일도 함께 삭제됩니다. Claude Code와 Codex의 로그인 정보 및 해당 프로그램의 데이터는 삭제하지 않습니다.
 
-Windows SmartScreen의 게시자 경고가 표시되는 서명되지 않은 빌드는 정식 배포본으로 간주하지 않습니다. 배포 파일은 함께 제공되는 `SHA256SUMS.txt`와 대조할 수 있습니다.
+현재 `0.9.0`은 공인 코드 서명 전 배포이므로 Windows SmartScreen의 게시자 경고가 표시될 수 있습니다. 배포 파일은 함께 제공되는 `SHA256SUMS.txt`와 대조할 수 있습니다.
 
 ## 배포 문서
 

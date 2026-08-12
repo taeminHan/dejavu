@@ -34,6 +34,10 @@ Keep those responsibilities separate. Data availability must not be inferred fro
 
 Its result owns window width and height, Claude/Codex gaps, provider vertical rhythm, and the Small-mode Codex margin. Do not add hard-coded window dimensions back to `UsageWidgetWindow`.
 
+`TwoRows` is a provider split, not a different one-provider presentation. It becomes effective only while Claude and Codex are both visible. With Claude only, Codex only, or no detected provider, selecting `TwoRows` must produce the same window geometry, active panel, spacing and Small-mode orientation as `SingleRow`. If automatic detection later exposes the second provider, the saved `TwoRows` preference becomes effective at that point.
+
+Linear height is composed from the theme's outer chrome, the card/text row that remains visible, and the exact progress visual plus its density-specific top margin. Turning progress off removes only that final progress footprint; it must never remove theme padding or borders. Keep a small layout-rounding guard above the measured natural height.
+
 The XAML still owns intrinsic control geometry such as the 30 px Small-mode rings and 48 px metric cells. If those change, update the calculator and this document together.
 
 Compact and Comfortable linear layouts use 75% of their former base content width. Theme-specific chrome allowances remain unscaled so Retro, Glass, Terminal, Orbit, and Paper treatments do not clip their labels or decoration.
@@ -60,6 +64,8 @@ Important assertions:
 - Codex-only Small mode has no leading 8 px provider gap.
 - The always-visible widget has no product header, update-time row, or normal-state status-dot column.
 - Both-service Small mode uses the 8 px provider gap only between visible providers.
+- Both-service Small `TwoRows` mode orders Codex above Claude, matching the linear two-row layout and Settings copy.
+- With zero or one visible provider, `SingleRow` and `TwoRows` have identical geometry and active visual structure.
 - Auto-detection changing from no providers to one or two providers recalculates right-edge placement after the window resizes.
 - Custom placement retains its saved top-left coordinate and clamps only when the resized widget would leave the working area.
 
@@ -84,6 +90,13 @@ Before a state or setting change, the window may have a different size. After ap
 
 Service auto-detection is a size-changing event and follows the same rule as a density or row-layout change.
 
+## Custom window frames
+
+- `SettingsWindow` keeps `WindowChrome` as the only owner of the native outer shape. Do not add a second full-window `Clip` to its frame.
+- Draw `WindowFrame` as the last, transparent, non-hit-testable overlay above `SettingsShell` so content cannot cover the rounded outline and the outline cannot intercept controls. Inset a rounded frame by one physical pixel and derive its radius concentrically from the native radius at the current DPI; its antialiased edge must not sit on the native crop boundary.
+- Enable layout rounding and pixel snapping across the Settings shell. Normal windows use the theme radius and frame thickness; maximized windows use a zero-radius, zero-thickness WPF overlay while Windows supplies the rectangular maximized region.
+- Do not enable `AllowsTransparency` on the resizable Settings window; it would trade away native resize, shadow and compositor behavior.
+
 ## Always-on-top behavior
 
 - The WPF `Topmost` value and the native `WS_EX_TOPMOST` state must agree while the widget is visible.
@@ -104,3 +117,6 @@ Service auto-detection is a size-changing event and follows the same rule as a d
 8. Left-click without dragging to open details; drag beyond the system threshold to move without opening details.
 9. Check the expanded usage window separately because its separators and density are intentionally independent from the widget.
 10. After Win+L/unlock, sleep/resume, Explorer restart and display changes, confirm the widget remains above normal windows without taking keyboard focus.
+11. Check all four Settings corners in light and dark mode at normal size, then maximize and restore. The outline must remain continuous with no square background leak.
+
+The structural layout probe must also measure and arrange the real WPF tree for all themes, densities, layouts, forced and automatically detected provider states, and progress on/off. Every provider-present case must fit inside the calculated window height, every zero/one-provider `TwoRows` case must match its `SingleRow` visible-element geometry, and automatic detection must match the equivalent forced-provider result; a successful compile alone does not satisfy this check.

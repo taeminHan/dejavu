@@ -145,11 +145,6 @@ public partial class UsageWidgetWindow : Window
         var angular = ThemeManager.UsesAngularChrome(theme);
         var small = settings.WidgetDensity == WidgetDensity.Small;
         var compact = settings.WidgetDensity != WidgetDensity.Comfortable;
-        var singleRow = settings.WidgetLayout == WidgetLayout.SingleRow;
-        SmallPanel.Visibility = small ? Visibility.Visible : Visibility.Collapsed;
-        CompactPanel.Visibility = !small && singleRow ? Visibility.Visible : Visibility.Collapsed;
-        ComfortablePanel.Visibility = !small && !singleRow ? Visibility.Visible : Visibility.Collapsed;
-        SmallProviderPanel.Orientation = singleRow ? System.Windows.Controls.Orientation.Horizontal : System.Windows.Controls.Orientation.Vertical;
         WidgetCard.Style = FindResource(ThemeManager.WidgetCardStyleKey(theme)) as Style;
         WidgetCard.Padding = themed ? new Thickness(0) : small ? new Thickness(7, 6, 7, 6)
             : compact ? new Thickness(11, 9, 11, 9) : new Thickness(15, 12, 15, 12);
@@ -320,7 +315,7 @@ public partial class UsageWidgetWindow : Window
         CompactMessageDot.Fill = statusBrush;
 
         var (showClaude, showCodex) = _settings.ResolveServices(state);
-        ApplyProviderLayout(showClaude, showCodex);
+        var layout = ApplyProviderLayout(showClaude, showCodex);
 
         if (showClaude || showCodex)
         {
@@ -329,8 +324,8 @@ public partial class UsageWidgetWindow : Window
             MessagePanel.Visibility = Visibility.Collapsed;
             var small = _settings.WidgetDensity == WidgetDensity.Small;
             SmallPanel.Visibility = small ? Visibility.Visible : Visibility.Collapsed;
-            CompactPanel.Visibility = !small && _settings.WidgetLayout == WidgetLayout.SingleRow ? Visibility.Visible : Visibility.Collapsed;
-            ComfortablePanel.Visibility = !small && _settings.WidgetLayout == WidgetLayout.TwoRows ? Visibility.Visible : Visibility.Collapsed;
+            CompactPanel.Visibility = !small && layout.EffectiveLayout == WidgetLayout.SingleRow ? Visibility.Visible : Visibility.Collapsed;
+            ComfortablePanel.Visibility = !small && layout.EffectiveLayout == WidgetLayout.TwoRows ? Visibility.Visible : Visibility.Collapsed;
             CompactMessagePanel.Visibility = Visibility.Collapsed;
             SetMetric(FiveHourValue, FiveHourBar, state.Snapshot?.FiveHour);
             SetMetric(WeeklyValue, WeeklyBar, state.Snapshot?.Weekly);
@@ -361,7 +356,7 @@ public partial class UsageWidgetWindow : Window
         PreservePositionAfterResize(previousWidth, previousHeight);
     }
 
-    private void ApplyProviderLayout(bool showClaude, bool showCodex)
+    private WidgetLayoutMetrics ApplyProviderLayout(bool showClaude, bool showCodex)
     {
         var layout = WidgetLayoutCalculator.Calculate(new WidgetLayoutRequest(
             _settings.WidgetDensity,
@@ -380,7 +375,12 @@ public partial class UsageWidgetWindow : Window
         CompactCodexCard.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         SmallClaudePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         SmallCodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
-        SmallCodexPanel.Margin = new Thickness(layout.SmallCodexMarginLeft, layout.SmallCodexMarginTop, 0, 0);
+        SmallProviderPanel.Orientation = layout.EffectiveLayout == WidgetLayout.SingleRow
+            ? System.Windows.Controls.Orientation.Horizontal
+            : System.Windows.Controls.Orientation.Vertical;
+        SetSmallProviderOrder(layout.EffectiveLayout == WidgetLayout.TwoRows);
+        SmallClaudePanel.Margin = new Thickness(0, layout.SmallClaudeMarginTop, 0, 0);
+        SmallCodexPanel.Margin = new Thickness(layout.SmallCodexMarginLeft, 0, 0, 0);
         CompactClaudeFiveColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
         CompactClaudeWeeklyColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
         CompactClaudeFableColumn.Width = new GridLength(showClaude ? 1 : 0, GridUnitType.Star);
@@ -400,6 +400,15 @@ public partial class UsageWidgetWindow : Window
             showClaude && showCodex ? layout.ProviderGap : showClaude ? layout.ProviderTop : 0, 0, 0);
         Width = layout.Width;
         Height = layout.Height;
+        return layout;
+    }
+
+    private void SetSmallProviderOrder(bool codexFirst)
+    {
+        var first = codexFirst ? SmallCodexPanel : SmallClaudePanel;
+        if (SmallProviderPanel.Children.IndexOf(first) == 0) return;
+        SmallProviderPanel.Children.Remove(first);
+        SmallProviderPanel.Children.Insert(0, first);
     }
 
     private void PreservePositionAfterResize(double previousWidth, double previousHeight)

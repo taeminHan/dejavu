@@ -16,7 +16,8 @@ internal readonly record struct WidgetLayoutMetrics(
     double ProviderTop,
     double ProviderGap,
     double SmallCodexMarginLeft,
-    double SmallCodexMarginTop);
+    double SmallClaudeMarginTop,
+    WidgetLayout EffectiveLayout);
 
 /// <summary>
 /// Calculates widget geometry without touching WPF controls so every service and
@@ -29,9 +30,14 @@ internal static class WidgetLayoutCalculator
         var small = request.Density == WidgetDensity.Small;
         var comfortable = request.Density == WidgetDensity.Comfortable;
         var compact = request.Density == WidgetDensity.Compact;
-        var singleRow = request.Layout == WidgetLayout.SingleRow;
         var themed = ThemeManager.UsesThemedChrome(request.Theme);
         var providerCount = (request.ShowClaude ? 1 : 0) + (request.ShowCodex ? 1 : 0);
+        // TwoRows separates Codex and Claude. With fewer than two visible
+        // providers it must be visually identical to SingleRow.
+        var effectiveLayout = request.Layout == WidgetLayout.TwoRows && providerCount == 2
+            ? WidgetLayout.TwoRows
+            : WidgetLayout.SingleRow;
+        var singleRow = effectiveLayout == WidgetLayout.SingleRow;
 
         var compactGap = small ? 6 : request.Theme switch
         {
@@ -51,15 +57,16 @@ internal static class WidgetLayoutCalculator
         const double providerTop = 0;
         var providerGap = compact ? 10 : 12;
         var codexMarginLeft = request.ShowClaude && request.ShowCodex && singleRow ? 8 : 0;
-        var codexMarginTop = request.ShowClaude && request.ShowCodex && !singleRow ? 8 : 0;
+        var claudeMarginTop = request.ShowClaude && request.ShowCodex && !singleRow ? 8 : 0;
 
-        var (width, height) = CalculateWindowSize(request, providerCount, small, comfortable, singleRow, themed);
+        var (width, height) = CalculateWindowSize(
+            request, providerCount, small, comfortable, singleRow, themed, providerGap);
         return new WidgetLayoutMetrics(width, height, compactGap, comfortableGap, providerTop, providerGap,
-            codexMarginLeft, codexMarginTop);
+            codexMarginLeft, claudeMarginTop, effectiveLayout);
     }
 
     private static (double Width, double Height) CalculateWindowSize(WidgetLayoutRequest request,
-        int providerCount, bool small, bool comfortable, bool singleRow, bool themed)
+        int providerCount, bool small, bool comfortable, bool singleRow, bool themed, double providerGap)
     {
         if (providerCount == 0)
             return (small ? 250 : comfortable ? 360 : 300, small ? 34 : comfortable ? 48 : 40);
@@ -78,18 +85,22 @@ internal static class WidgetLayoutCalculator
                 width += chromeExtra;
                 height += chromeExtra;
             }
+            // Keep two DIPs beyond the measured content boundary. Modern's
+            // two-provider vertical stack previously missed its chrome by two
+            // additional DIPs because it has no themed chrome allowance.
+            height += 2;
+            if (!themed && !singleRow && providerCount == 2) height += 2;
             return (width, height);
         }
 
-        var themeBarExtra = request.Theme switch
-        {
-            WidgetVisualTheme.RetroNight => 10,
-            WidgetVisualTheme.FluentGlass => 14,
-            WidgetVisualTheme.TerminalMono => 22,
-            WidgetVisualTheme.Orbit => 44,
-            WidgetVisualTheme.PaperInk => 10,
-            _ => 0
-        };
+        var vertical = LinearHeightMetrics.For(request.Theme);
+        var outerChromeHeight = comfortable ? vertical.ComfortableOuterChromeHeight : vertical.CompactOuterChromeHeight;
+        var rowWithoutProgress = comfortable ? vertical.ComfortableRowWithoutProgress : vertical.CompactRowWithoutProgress;
+        var progressFootprint = request.ShowProgressBars
+            ? vertical.ProgressVisualHeight + (comfortable ? 7 : 5)
+            : 0;
+        var rowHeight = rowWithoutProgress + progressFootprint;
+        const double clippingGuard = 2;
 
         if (singleRow)
         {
@@ -111,8 +122,7 @@ internal static class WidgetLayoutCalculator
                 WidgetVisualTheme.PaperInk => 7,
                 _ => 0
             });
-            var height = request.ShowProgressBars ? comfortable ? 56 : 48 : comfortable ? 44 : 38;
-            if (themed) height += request.ShowProgressBars ? themeBarExtra : 1;
+            var height = outerChromeHeight + rowHeight + clippingGuard;
             return (width, height);
         }
 
@@ -130,13 +140,33 @@ internal static class WidgetLayoutCalculator
             WidgetVisualTheme.PaperInk => 18,
             _ => 0
         };
-        var hiddenBarReduction = request.ShowProgressBars ? 0 : providerCount * (comfortable ? 11 : 9);
-        var heightTwoRows = (providerCount == 2
-            ? comfortable ? 104 : 88
-            : comfortable ? 68 : 58) - hiddenBarReduction;
-        if (themed)
-            heightTwoRows += (request.ShowProgressBars ? providerCount * Math.Max(1, themeBarExtra - 2) : 0)
-                + 2;
+        var heightTwoRows = outerChromeHeight + rowHeight * providerCount +
+                            Math.Max(0, providerCount - 1) * providerGap + clippingGuard;
         return (widthTwoRows, heightTwoRows);
+    }
+
+    /// <summary>
+    /// Vertical geometry shared by every linear widget layout. Values include
+    /// the root chrome and the still-visible metric card/text row, while the
+    /// progress visual is kept separate so hiding it removes only its real
+    /// footprint. The two-DIP guard in CalculateWindowSize absorbs layout
+    /// rounding at fractional display scales.
+    /// </summary>
+    private readonly record struct LinearHeightMetrics(
+        double CompactOuterChromeHeight,
+        double ComfortableOuterChromeHeight,
+        double CompactRowWithoutProgress,
+        double ComfortableRowWithoutProgress,
+        double ProgressVisualHeight)
+    {
+        internal static LinearHeightMetrics For(WidgetVisualTheme theme) => theme switch
+        {
+            WidgetVisualTheme.RetroNight => new(20, 25, 25, 30, 8),
+            WidgetVisualTheme.FluentGlass => new(18, 23, 31, 36, 6),
+            WidgetVisualTheme.TerminalMono => new(18, 23, 28, 33, 16),
+            WidgetVisualTheme.Orbit => new(18, 23, 34, 40, 32),
+            WidgetVisualTheme.PaperInk => new(18, 23, 24, 28, 12),
+            _ => new(20, 26, 16, 17, 4)
+        };
     }
 }

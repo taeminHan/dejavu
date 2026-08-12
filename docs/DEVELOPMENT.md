@@ -62,13 +62,14 @@ The executable accepts these diagnostic UI options:
 --density=Small|Compact|Comfortable
 --layout=SingleRow|TwoRows
 --services=AutoDetect|ClaudeAndCodex|ClaudeOnly|CodexOnly
+--progress=on|off
 ```
 
 Example:
 
 ```powershell
 .\bin\Release\net10.0-windows\win-x64\dejavu.exe `
-  --settings --theme=PaperInk --density=Small --layout=TwoRows --services=ClaudeAndCodex
+  --settings --theme=PaperInk --density=Small --layout=TwoRows --services=ClaudeAndCodex --progress=off
 ```
 
 Preview arguments override the loaded values for the current process. Treat them as developer aids, not a public command-line compatibility promise.
@@ -97,9 +98,10 @@ foreach ($file in $changedXaml) {
 
 git diff --check
 dotnet build .\ClaudeUsageTray.csproj -c Release
+dotnet run --project .\tools\WidgetLayoutProbe\WidgetLayoutProbe.csproj -c Release
 ```
 
-For widget changes, exercise the matrix in `WIDGET_UI.md`: four service states, three densities, two layouts, progress on/off, all six themes, provider error/loading states and all placement modes. Verify that text and progress geometry use the same percentage.
+For widget changes, the layout probe must pass all 504 combinations of seven forced/auto-detected service states, three densities, two layouts, progress on/off and all six themes. It loads and arranges the actual WPF tree, fails when `WidgetCard.DesiredSize.Height` exceeds the calculated window height, compares 180 zero/one-provider pairs to ensure `TwoRows` is visually identical to `SingleRow`, verifies 72 two-provider splits including Codex-above-Claude order, and compares 216 auto-detected states with their forced-provider equivalents. It also checks 24 Settings frame states across all visual themes, light/dark preferences and normal/maximized modes. Then exercise provider error/loading states, placement modes and pointer behavior manually. Verify that text and progress geometry use the same percentage.
 
 For lifecycle changes, exercise first start, second-instance activation, forced refresh during a refresh, settings/details open-close, Win+L/unlock, sleep/resume, Explorer restart, RDP/display transitions and tray exit. Confirm topmost recovery does not steal foreground focus or change widget geometry. For Claude file-access changes, confirm Claude Desktop files are opened read-only and handles are released before parsing or network work.
 

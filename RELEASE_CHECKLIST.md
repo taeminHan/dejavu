@@ -1,6 +1,8 @@
 # Public release checklist
 
-## Required before public distribution
+`0.9.0`은 제품 소유자의 결정으로 아래 신뢰·호환성 검토가 완료되기 전에 공개됩니다. 특히 SignPath 승인 전 설치 파일은 미서명 상태이며 SmartScreen 경고가 표시될 수 있습니다.
+
+## Outstanding before signed/trusted distribution
 
 - [x] 제품 소유자와 MIT 배포 라이선스 확정
 - [ ] `dejavu` 상표 및 제품명 충돌 검토

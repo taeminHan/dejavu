@@ -1,12 +1,12 @@
 # dejavu productization status
 
-기준 버전: `0.9.0-rc.9` (2026-08-11)
+기준 버전: `0.9.0` (2026-08-12)
 
-이 버전은 기능 완성도를 확인하기 위한 공개 릴리스 후보입니다. 아래 P0 항목이 해결되기 전에는 정식 GA 또는 신뢰된 설치 프로그램으로 표시하지 않습니다.
+이 버전은 첫 정식 버전 번호로 공개합니다. 다만 아래 P0 항목이 해결되기 전에는 공인 서명되거나 신뢰된 설치 프로그램으로 표시하지 않습니다.
 
 ## Release priorities
 
-### P0 — release blockers
+### P0 — signed/trusted distribution blockers
 
 1. Replace or formally approve the undocumented usage-data integration.
    The current implementation reads Claude Code's local OAuth credential and calls an endpoint that is not documented as a public third-party API.
@@ -22,7 +22,7 @@
 4. Persistent position, opacity, density, progress-bar, refresh, tray, startup, and theme preferences.
 5. Multi-monitor placement, DPI awareness, keyboard access, and recoverable position reset.
 
-### P2 — general availability
+### P2 — 1.0 general availability
 
 1. Validate automatic updates, failed-download recovery, and rollback behavior on clean Windows 11 environments.
 2. Korean and English localization.
@@ -30,7 +30,7 @@
 4. Accessibility audit, Windows high-contrast validation, and screen-reader labels.
 5. Support, privacy, trademark, license, and release-note pages.
 
-## Implemented in this release candidate
+## Implemented in this release
 
 - WPF product shell replacing the prototype WinForms UI.
 - Compact always-on widget and a richer details panel.

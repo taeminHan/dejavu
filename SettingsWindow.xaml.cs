@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace ClaudeUsageTray;
 
@@ -69,6 +70,7 @@ public partial class SettingsWindow : Window
             new Choice<TrayIconStyle>(TrayIconStyle.Hidden, "숨김")
         };
         ApplyThemeStructure();
+        UpdateWindowFrameAppearance();
         _loading = false;
     }
 
@@ -218,7 +220,7 @@ public partial class SettingsWindow : Window
         {
             ThemeManager.Apply(_settings);
             ApplyThemeStructure();
-            UpdateWindowFrameClip();
+            UpdateWindowFrameAppearance();
         }
         SaveStateText.Text = saved ? "저장됨" : "저장 실패";
         SaveStateText.SetResourceReference(TextBlock.ForegroundProperty, saved ? "MutedTextBrush" : "DangerBrush");
@@ -307,23 +309,52 @@ public partial class SettingsWindow : Window
     private void ToggleMaximize() =>
         WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
 
-    private void OnWindowFrameSizeChanged(object sender, SizeChangedEventArgs e) => UpdateWindowFrameClip();
+    private void OnWindowStateChanged(object? sender, EventArgs e) => UpdateWindowFrameAppearance();
 
-    private void OnWindowStateChanged(object? sender, EventArgs e) => UpdateWindowFrameClip();
+    private void UpdateWindowFrameAppearance()
+        => UpdateWindowFrameAppearance(VisualTreeHelper.GetDpi(this));
 
-    private void UpdateWindowFrameClip()
+    private void UpdateWindowFrameAppearance(DpiScale dpi)
     {
-        if (WindowFrame is null || WindowFrame.ActualWidth <= 0 || WindowFrame.ActualHeight <= 0) return;
+        if (WindowFrame is null) return;
         var maximized = WindowState == WindowState.Maximized;
-        var configured = TryFindResource("WindowCornerRadius") is CornerRadius corners ? corners.TopLeft : 12d;
-        var radius = maximized ? 0d : configured;
+        var configuredRadius = TryFindResource("WindowCornerRadius") is CornerRadius corners
+            ? corners.TopLeft
+            : 12d;
+        var configuredThickness = TryFindResource("WindowFrameThickness") is Thickness thickness
+            ? thickness
+            : new Thickness(1);
+        var frameThickness = Math.Max(
+            Math.Max(configuredThickness.Left, configuredThickness.Top),
+            Math.Max(configuredThickness.Right, configuredThickness.Bottom));
+        var scale = Math.Max(dpi.DpiScaleX, 1d);
+        // WindowChrome forwards its radius as the Win32 rounded-region ellipse width,
+        // while Border uses a stroke-center radius. Match those geometries in physical pixels.
+        var strokePixels = Math.Round(frameThickness * scale);
+        var nativeRadiusPixels = Math.Ceiling(configuredRadius * scale) / 2d;
+        var insetPixels = maximized || nativeRadiusPixels <= 1d + (strokePixels / 2d)
+            ? 0d
+            : 1d;
+        var inset = insetPixels / scale;
+        var radius = maximized
+            ? 0d
+            : Math.Max(0d, (nativeRadiusPixels - insetPixels - (strokePixels / 2d)) / scale);
+
+        WindowFrame.Margin = new Thickness(inset);
         WindowFrame.CornerRadius = new CornerRadius(radius);
-        WindowFrame.BorderThickness = maximized ? new Thickness(0)
-            : TryFindResource("WindowFrameThickness") is Thickness thickness ? thickness : new Thickness(1);
-        WindowFrame.Clip = maximized
-            ? null
-            : new System.Windows.Media.RectangleGeometry(
-                new Rect(0, 0, WindowFrame.ActualWidth, WindowFrame.ActualHeight), radius, radius);
+        WindowFrame.BorderThickness = maximized ? new Thickness(0) : configuredThickness;
+    }
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        UpdateWindowFrameAppearance();
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        UpdateWindowFrameAppearance(newDpi);
     }
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Hide();

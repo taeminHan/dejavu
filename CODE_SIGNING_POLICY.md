@@ -1,6 +1,9 @@
 # Code signing policy
 
-Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+After approval, free code signing is planned through [SignPath.io](https://signpath.io/),
+with a certificate provided by [SignPath Foundation](https://signpath.org/).
+Until that integration is active, release artifacts are unsigned and may trigger
+Windows SmartScreen publisher warnings.
 
 ## Signed artifacts
 

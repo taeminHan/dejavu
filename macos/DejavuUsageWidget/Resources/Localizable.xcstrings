@@ -1,0 +1,46 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Dejavu Usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 사용량" } }
+      }
+    },
+    "No providers connected" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결된 공급자 없음" } }
+      }
+    },
+    "Open Dejavu to refresh" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu를 열어 새로 고침" } }
+      }
+    },
+    "Usage data is unavailable" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 데이터를 사용할 수 없음" } }
+      }
+    },
+    "Usage is not available yet" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "아직 사용량 정보가 없음" } }
+      }
+    },
+    "Usage needs an update" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 업데이트 필요" } }
+      }
+    },
+    "Week" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간" } }
+      }
+    },
+    "Your local Claude and Codex usage at a glance." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로컬 Claude와 Codex 사용량을 한눈에 확인합니다." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dejavu.local/contracts/usage/claude-status-line.schema.json",
+  "title": "Sanitized Claude Code status-line rate limits",
+  "type": "object",
+  "properties": {
+    "rate_limits": {
+      "oneOf": [
+        { "$ref": "#/$defs/rateLimits" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "rateLimits": {
+      "type": "object",
+      "properties": {
+        "five_hour": {
+          "oneOf": [
+            { "$ref": "#/$defs/window" },
+            { "type": "null" }
+          ]
+        },
+        "seven_day": {
+          "oneOf": [
+            { "$ref": "#/$defs/window" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "window": {
+      "type": "object",
+      "required": ["used_percentage"],
+      "properties": {
+        "used_percentage": {
+          "type": "number"
+        },
+        "resets_at": {
+          "oneOf": [
+            { "type": "number" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

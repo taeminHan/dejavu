@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dejavu.local/contracts/usage/claude-oauth-usage.schema.json",
+  "title": "Sanitized Claude OAuth usage response",
+  "type": "object",
+  "required": ["limits"],
+  "properties": {
+    "limits": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/limit" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "limit": {
+      "type": "object",
+      "required": ["kind", "percent", "resets_at"],
+      "properties": {
+        "kind": {
+          "enum": ["session", "weekly_all", "weekly_scoped"]
+        },
+        "percent": { "type": "number" },
+        "resets_at": { "type": "string", "format": "date-time" },
+        "scope": {
+          "type": "object",
+          "required": ["model"],
+          "properties": {
+            "model": {
+              "type": "object",
+              "required": ["display_name"],
+              "properties": {
+                "display_name": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

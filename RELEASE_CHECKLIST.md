@@ -36,3 +36,27 @@
 - [ ] 제거 시 실행 프로세스를 닫고 dejavu 사용자 데이터가 완전히 삭제되는지 확인
 - [ ] `SHA256SUMS.txt`가 모든 공개 Velopack 자산의 해시와 일치
 - [ ] 깨끗한 Windows 11 VM에서 Claude만, Codex만, 둘 다, 둘 다 없음 검증
+
+## macOS release and Sparkle checks
+
+- [ ] 태그 `v<version>`, `ClaudeUsageTray.csproj`의 Windows 버전, macOS `CFBundleShortVersionString`, Sparkle `shortVersionString`이 모두 일치함
+- [ ] 태그 workflow에서 Windows와 macOS 자산이 모두 검증된 뒤 하나의 GitHub Release가 공개됨
+- [ ] Developer ID Application 인증서와 `group.dev.taemtaem.dejavu` App Group이 같은 Team에 등록됨
+- [ ] Release build에 Sparkle EdDSA 공개 키가 포함되고 private key는 CI secret에만 존재함
+- [ ] `BuildMacRelease.sh`가 app/DMG 공증, staple, `codesign`, `spctl`을 모두 통과함
+- [ ] `Dejavu-macOS-arm64.dmg`, 업데이트 ZIP, `appcast-macos.xml`, macOS SHA-256 생성 확인
+- [ ] 깨끗한 Apple Silicon Mac에서 DMG 설치와 Gatekeeper 최초 실행 확인
+- [ ] 이전 macOS beta에서 다음 beta 감지, EdDSA 검증, 설치, 재시작, 설정·위치 유지 확인
+- [ ] 자동 확인 ON/OFF, 시작 4초 후, 다음 로컬 정각, 절전 복귀, 시간 변경 동작 확인
+- [ ] 수동 current/offline/error UI와 자동 오류 무표시, 같은 버전 알림 1회 정책 확인
+- [ ] signed app에서 Widget gallery, Desktop/Notification Center와 App Group snapshot 확인
+
+### Temporary free-distribution route
+
+- [ ] `BuildMacFreeRelease.sh`로 ad-hoc DMG/ZIP과 EdDSA appcast 생성
+- [ ] ZIP 내부 앱의 ad-hoc 서명과 appcast `sparkle:edSignature` 확인
+- [ ] SHA-256을 GitHub Release 설명 또는 asset으로 함께 공개
+- [ ] 다운로드 페이지에 Apple 미공증 build와 **개인정보 보호 및 보안 → 확인 없이 열기** 절차 명시
+- [ ] 깨끗한 Mac에서 최초 실행 경고, 수동 승인, 메뉴 막대, 플로팅 오버레이 검증
+- [ ] 0.9.0에서 더 높은 `CFBundleVersion` 테스트 build로 Sparkle 설치·재시작 검증
+- [ ] 시스템 Widget의 App Group 공유는 Developer ID 전까지 보장 기능에서 제외

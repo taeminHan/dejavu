@@ -1,0 +1,31 @@
+{
+  "id": 6,
+  "result": {
+    "rateLimits": {
+      "limitId": "codex",
+      "planType": "legacy-must-not-fill-multi-bucket",
+      "primary": {
+        "usedPercent": 10,
+        "windowDurationMins": 300,
+        "resetsAt": 1786503600
+      }
+    },
+    "rateLimitsByLimitId": {
+      "codex_other": {
+        "limitId": "codex_other",
+        "planType": "unrelated-plan",
+        "primary": {
+          "usedPercent": 99,
+          "windowDurationMins": 300,
+          "resetsAt": 1786503600
+        },
+        "secondary": {
+          "usedPercent": 98,
+          "windowDurationMins": 10080,
+          "resetsAt": 1787108400
+        }
+      }
+    },
+    "rateLimitResetCredits": null
+  }
+}

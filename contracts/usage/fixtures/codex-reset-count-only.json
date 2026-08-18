@@ -1,0 +1,16 @@
+{
+  "id": 6,
+  "result": {
+    "rateLimitsByLimitId": {
+      "codex": {
+        "limitId": "codex",
+        "primary": null,
+        "secondary": null
+      }
+    },
+    "rateLimitResetCredits": {
+      "availableCount": 5,
+      "credits": null
+    }
+  }
+}

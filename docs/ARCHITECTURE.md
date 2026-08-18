@@ -96,7 +96,7 @@ Installed builds use `VelopackUpdateService`; plain `dotnet run`, build output a
 
 When automatic checks are enabled, an installed build checks after startup and at the next local wall-clock hour. Every tick recalculates the following clock-hour boundary instead of adding a fixed interval, so delayed ticks do not drift. Resume and system-time changes perform at most one overdue check and then realign the schedule. Startup, hourly and manual requests share one in-flight query; automatic failures stay silent, the same version is notified only once across restarts, and manual checks always remain available. Disabling the setting stops the schedule immediately.
 
-The tag workflow in `.github/workflows/release.yml` installs Velopack CLI, downloads the previous package for delta generation, calls `tools/BuildRelease.ps1`, publishes the GitHub Release and uploads the stable `dejavu-Setup.exe` alias plus checksums.
+The tag workflow in `.github/workflows/release.yml` treats the Windows project version as the shared product version, builds the Windows Velopack and free ad-hoc macOS/Sparkle assets in separate runners, and publishes one GitHub Release only after both sets pass validation. It downloads the previous Windows package for delta generation, calls `tools/BuildRelease.ps1` and `tools/BuildMacFreeRelease.sh`, then uploads the stable `dejavu-Setup.exe` alias, macOS DMG/ZIP/appcast and checksums.
 
 ## Extension rules
 

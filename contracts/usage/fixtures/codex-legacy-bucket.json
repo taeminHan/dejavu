@@ -1,0 +1,23 @@
+{
+  "id": 6,
+  "result": {
+    "rateLimits": {
+      "limitId": "codex",
+      "planType": "team",
+      "primary": {
+        "usedPercent": 11,
+        "windowDurationMins": 300,
+        "resetsAt": 1786503600
+      },
+      "secondary": {
+        "usedPercent": 22,
+        "windowDurationMins": 10080,
+        "resetsAt": 1787108400
+      }
+    },
+    "rateLimitResetCredits": {
+      "availableCount": 0,
+      "credits": []
+    }
+  }
+}

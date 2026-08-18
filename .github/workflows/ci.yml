@@ -17,3 +17,34 @@ jobs:
         run: dotnet build ClaudeUsageTray.csproj -c Release
       - name: Verify widget layout matrix
         run: dotnet run --project tools/WidgetLayoutProbe/WidgetLayoutProbe.csproj -c Release
+
+  macos:
+    runs-on: macos-latest
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - name: Test macOS core package
+        run: swift test --package-path macos/Packages/DejavuKit -Xswiftc -warnings-as-errors
+      - name: Build macOS core package in Release
+        run: swift build -c release --package-path macos/Packages/DejavuKit -Xswiftc -warnings-as-errors
+      - name: Build native macOS app
+        run: >-
+          xcodebuild
+          -project macos/DejavuMac.xcodeproj
+          -scheme DejavuMac
+          -configuration Release
+          -destination 'platform=macOS'
+          -derivedDataPath /tmp/dejavu-mac-derived
+          CODE_SIGNING_ALLOWED=NO
+          build
+      - name: Build Claude status-line bridge
+        run: >-
+          xcodebuild
+          -project macos/DejavuMac.xcodeproj
+          -scheme DejavuClaudeBridge
+          -configuration Release
+          -destination 'platform=macOS'
+          -derivedDataPath /tmp/dejavu-bridge-derived
+          CODE_SIGNING_ALLOWED=NO
+          build

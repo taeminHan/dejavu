@@ -22,3 +22,14 @@ crash.log
 .idea/
 .DS_Store
 Thumbs.db
+
+# Swift and Xcode
+.build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.dSYM/
+
+# Apple and Sparkle signing credentials
+*.p8
+sparkle-private-key*

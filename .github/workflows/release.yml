@@ -9,7 +9,70 @@ permissions:
   contents: write
 
 jobs:
+  build-macos-free:
+    runs-on: macos-latest
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+      OUTPUT_ROOT: ${{ runner.temp }}/dejavu-macos-free-release
+      SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Read and verify shared release version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          project_version="$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' ClaudeUsageTray.csproj | head -1)"
+          build_number="$(git rev-list --count HEAD)"
+          test -n "${version}"
+          test "${version}" = "${project_version}"
+          test "${build_number}" -gt 0
+          printf 'VERSION=%s\n' "${version}" >> "${GITHUB_ENV}"
+          printf 'BUILD_NUMBER=%s\n' "${build_number}" >> "${GITHUB_ENV}"
+
+      - name: Verify Sparkle signing secret
+        shell: bash
+        run: test -n "${SPARKLE_ED_PRIVATE_KEY}"
+
+      - name: Test macOS package
+        run: swift test --package-path macos/Packages/DejavuKit -Xswiftc -warnings-as-errors
+
+      - name: Build ad-hoc macOS release and signed update feed
+        run: ./tools/BuildMacFreeRelease.sh
+
+      - name: Verify macOS release artifacts
+        shell: bash
+        run: |
+          (cd "${OUTPUT_ROOT}" && shasum -a 256 -c SHA256SUMS-macOS.txt)
+          unzip -q "${OUTPUT_ROOT}/Dejavu-macOS-arm64.zip" -d "${RUNNER_TEMP}/dejavu-macos-verify"
+          codesign --verify --deep --strict --verbose=2 "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app"
+          file "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/MacOS/Dejavu" | grep -q arm64
+          test -x "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/Helpers/dejavu-claude-bridge"
+          test -d "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/PlugIns/DejavuUsageWidget.appex"
+          test "$(plutil -extract CFBundleShortVersionString raw "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/Info.plist")" = "${VERSION}"
+          test "$(plutil -extract CFBundleVersion raw "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/Info.plist")" = "${BUILD_NUMBER}"
+          test "$(plutil -extract SUPublicEDKey raw "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/Info.plist")" = "bCWiRQh8qw0hCNQBihOz/OSg1GJYymWoGTxvm7k2WLg="
+          grep -q "<sparkle:version>${BUILD_NUMBER}</sparkle:version>" "${OUTPUT_ROOT}/appcast-macos.xml"
+          grep -q "<sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>" "${OUTPUT_ROOT}/appcast-macos.xml"
+          grep -q 'sparkle:edSignature=' "${OUTPUT_ROOT}/appcast-macos.xml"
+          xmllint --noout "${OUTPUT_ROOT}/appcast-macos.xml"
+
+      - name: Upload verified macOS assets
+        uses: actions/upload-artifact@v6
+        with:
+          name: dejavu-macos-release-assets
+          path: |
+            ${{ runner.temp }}/dejavu-macos-free-release/Dejavu-macOS-arm64.dmg
+            ${{ runner.temp }}/dejavu-macos-free-release/Dejavu-macOS-arm64.zip
+            ${{ runner.temp }}/dejavu-macos-free-release/appcast-macos.xml
+            ${{ runner.temp }}/dejavu-macos-free-release/SHA256SUMS-macOS.txt
+          if-no-files-found: error
+
   release:
+    needs: build-macos-free
     runs-on: windows-latest
     steps:
       - name: Check out source
@@ -85,6 +148,29 @@ jobs:
             "${{ steps.paths.outputs.release_dir }}\dejavu-Setup.exe" `
             --repo "${{ github.repository }}" `
             --clobber
+
+      - name: Download verified macOS assets
+        uses: actions/download-artifact@v7
+        with:
+          name: dejavu-macos-release-assets
+          path: ${{ runner.temp }}/dejavu-macos-release-assets
+
+      - name: Upload macOS release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $macAssets = Join-Path $env:RUNNER_TEMP "dejavu-macos-release-assets"
+          gh release upload "${{ github.ref_name }}" `
+            (Join-Path $macAssets "Dejavu-macOS-arm64.dmg") `
+            (Join-Path $macAssets "Dejavu-macOS-arm64.zip") `
+            (Join-Path $macAssets "appcast-macos.xml") `
+            (Join-Path $macAssets "SHA256SUMS-macOS.txt") `
+            --repo "${{ github.repository }}" `
+            --clobber
+          if ($LASTEXITCODE -ne 0) {
+            throw "Verified macOS assets could not be uploaded."
+          }
 
       - name: Generate checksums from uploaded release assets
         shell: pwsh

@@ -1,0 +1,916 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "120 seconds" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "120초" } }
+      }
+    },
+    "Automatic" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동" } }
+      }
+    },
+    "Automatically check for updates" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동으로 업데이트 확인" } }
+      }
+    },
+    "Automatic checks run at startup and the next local clock hour. Downloads are verified before installation." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "앱 시작 시와 다음 로컬 정각에 자동으로 확인합니다. 다운로드는 설치 전에 검증됩니다." } }
+      }
+    },
+    "Automatic updates will be available after the native app lifecycle is validated." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "네이티브 앱 수명 주기 검증이 완료되면 자동 업데이트를 사용할 수 있습니다." } }
+      }
+    },
+    "Choose the 5h, weekly, Fable, or hidden menu bar metric in Settings." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정에서 메뉴 막대 지표를 5h, 주간, Fable 또는 숨김으로 선택할 수 있습니다." } }
+      }
+    },
+    "Show Codex usage in the menu bar, or hide it." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대에 Codex 사용량을 표시하거나 숨길 수 있습니다." } }
+      }
+    },
+    "Click the menu bar item to open details and controls." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 항목을 클릭하면 상세 정보와 제어 항목이 열립니다." } }
+      }
+    },
+    "Click the menu bar item to open the standard Dejavu menu." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 항목을 클릭하면 표준 Dejavu 메뉴가 열립니다." } }
+      }
+    },
+    "Compact" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "컴팩트" } }
+      }
+    },
+    "Data on this Mac" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 Mac의 데이터" } }
+      }
+    },
+    "Dejavu has no server and does not send your usage data to us." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu는 별도 서버를 운영하지 않으며 사용량 데이터를 전송하지 않습니다." } }
+      }
+    },
+    "Dejavu is a native menu bar companion for local Claude and Codex usage." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu는 로컬 Claude와 Codex 사용량을 보여주는 Mac 네이티브 메뉴 막대 앱입니다." } }
+      }
+    },
+    "Local usage snapshots" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로컬 사용량 스냅샷" } }
+      }
+    },
+    "Login item support will be available after the native app lifecycle is validated." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "네이티브 앱 수명 주기 검증이 완료되면 로그인 항목을 지원합니다." } }
+      }
+    },
+    "Menu bar summary" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 요약" } }
+      }
+    },
+    "Menu bar metrics and widget visibility are saved. Other widget options are preview-only." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 지표와 위젯 표시 여부는 저장됩니다. 그 밖의 위젯 옵션은 미리보기 전용입니다." } }
+      }
+    },
+    "No conversations" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "대화 내용 수집 안 함" } }
+      }
+    },
+    "No provider credentials" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공급자 인증 정보 수집 안 함" } }
+      }
+    },
+    "Credentials are never stored" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "인증 정보 저장 안 함" } }
+      }
+    },
+    "Not checked" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "확인하지 않음" } }
+      }
+    },
+    "Not connected" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결되지 않음" } }
+      }
+    },
+    "One row" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 줄" } }
+      }
+    },
+    "One-click access" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "한 번의 클릭으로 열기" } }
+      }
+    },
+    "Onboarding progress" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작 안내 진행률" } }
+      }
+    },
+    "Optional floating widget" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선택형 플로팅 위젯" } }
+      }
+    },
+    "Two optional widgets" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 가지 선택형 위젯" } }
+      }
+    },
+    "Placement" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "위치" } }
+      }
+    },
+    "Private by design" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "개인정보 보호 중심 설계" } }
+      }
+    },
+    "Prompts, transcripts, browser content, and working directories are not saved." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프롬프트, 대화 기록, 브라우저 콘텐츠 및 작업 디렉터리는 저장하지 않습니다." } }
+      }
+    },
+    "Provider connections are not enabled in this preview." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 미리보기에서는 공급자 연결을 사용할 수 없습니다." } }
+      }
+    },
+    "Reads only rate-limit fields supplied by the Claude Code status line. Dejavu never reads Keychain credentials." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 상태 줄이 제공하는 사용량 제한 필드만 읽습니다. Dejavu는 키체인 인증 정보를 읽지 않습니다." } }
+      }
+    },
+    "Ready" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "준비됨" } }
+      }
+    },
+    "Ready when you are" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "바로 시작할 수 있습니다" } }
+      }
+    },
+    "Refreshing" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새로고침 중" } }
+      }
+    },
+    "Review how Dejavu shows local usage and protects provider data." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu가 로컬 사용량을 표시하고 공급자 데이터를 보호하는 방식을 확인합니다." } }
+      }
+    },
+    "See Claude 5h and Codex usage at a glance." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 5h와 Codex 사용량을 한눈에 확인합니다." } }
+      }
+    },
+    "Show Welcome…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작 안내 보기…" } }
+      }
+    },
+    "Skip" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "건너뛰기" } }
+      }
+    },
+    "Start with sensible defaults. Provider metrics and the optional widget remain under your control." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "권장 기본값으로 시작하세요. 공급자 지표와 선택형 위젯은 언제든 직접 설정할 수 있습니다." } }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "상태" } }
+      }
+    },
+    "Stored locally" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Mac에만 저장" } }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시스템" } }
+      }
+    },
+    "Tokens, authorization headers, and Keychain items are never read or stored." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "토큰, 인증 헤더 및 키체인 항목을 읽거나 저장하지 않습니다." } }
+      }
+    },
+    "Codex credentials are not read. Optional Fable access uses the Claude Code Keychain only after you enable it." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 인증 정보는 읽지 않습니다. 선택형 Fable 접근은 사용자가 켠 뒤에만 Claude Code 키체인을 사용합니다." } }
+      }
+    },
+    "Top right" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오른쪽 상단" } }
+      }
+    },
+    "Turn the widget on or off at any time in Settings." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정에서 언제든 위젯을 켜거나 끌 수 있습니다." } }
+      }
+    },
+    "Use the floating overlay or add Dejavu from the macOS widget gallery." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "플로팅 오버레이를 사용하거나 macOS 위젯 갤러리에서 Dejavu를 추가할 수 있습니다." } }
+      }
+    },
+    "Usage at a glance" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량을 한눈에" } }
+      }
+    },
+    "Usage snapshots remain in your user Application Support directory." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 스냅샷은 사용자의 Application Support 폴더에만 보관됩니다." } }
+      }
+    },
+    "Usage snapshots stay in your user Application Support directory." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 스냅샷은 사용자의 Application Support 폴더에만 보관됩니다." } }
+      }
+    },
+    "Uses the local Codex app-server. Dejavu never reads ChatGPT credentials directly." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로컬 Codex app-server를 사용합니다. Dejavu는 ChatGPT 인증 정보를 직접 읽지 않습니다." } }
+      }
+    },
+    "Welcome" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시작 안내" } }
+      }
+    },
+    "Widget options" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "위젯 옵션" } }
+      }
+    },
+    "You can change these choices later in Settings." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 선택은 나중에 설정에서 변경할 수 있습니다." } }
+      }
+    },
+    "Your usage stays on this Mac. Dejavu does not collect credentials or conversation content." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량은 이 Mac에만 보관됩니다. Dejavu는 인증 정보나 대화 내용을 수집하지 않습니다." } }
+      }
+    },
+    "Usage stays on this Mac. Dejavu never stores credentials or collects conversation content." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량은 이 Mac에만 보관됩니다. Dejavu는 인증 정보를 저장하거나 대화 내용을 수집하지 않습니다." } }
+      }
+    },
+    "5 hour" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "5시간" } }
+      }
+    },
+    "Floating widget" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "플로팅 위젯" } }
+      }
+    },
+    "Appearance" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모양" } }
+      }
+    },
+    "Application" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "애플리케이션" } }
+      }
+    },
+    "Back" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "뒤로" } }
+      }
+    },
+    "Check for Updates…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "업데이트 확인…" } }
+      }
+    },
+    "Checking for updates…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "업데이트 확인 중…" } }
+      }
+    },
+    "Couldn’t check for updates. Try again later." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "업데이트를 확인하지 못했습니다. 나중에 다시 시도하십시오." } }
+      }
+    },
+    "Dejavu %@ is available." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu %@ 버전을 사용할 수 있습니다." } }
+      }
+    },
+    "Connect" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결" } }
+      }
+    },
+    "Connect Claude Status Line…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 상태 줄 연결…" } }
+      }
+    },
+    "Connected" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결됨" } }
+      }
+    },
+    "Connecting…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결 중…" } }
+      }
+    },
+    "Connection failed" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결 실패" } }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "계속" } }
+      }
+    },
+    "Disconnect" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결 해제" } }
+      }
+    },
+    "Disconnecting…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결 해제 중…" } }
+      }
+    },
+    "Density" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "밀도" } }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "완료" } }
+      }
+    },
+    "First run" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "첫 실행" } }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "일반" } }
+      }
+    },
+    "Hidden" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "숨김" } }
+      }
+    },
+    "Layout" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "레이아웃" } }
+      }
+    },
+    "Local-only by design" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로컬 전용 설계" } }
+      }
+    },
+    "Login required" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 필요" } }
+      }
+    },
+    "Menu bar metric" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 지표" } }
+      }
+    },
+    "Menu bar metrics and widget visibility are saved. Other values are preview-only." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 지표와 위젯 표시 여부는 저장됩니다. 다른 값은 미리보기 전용입니다." } }
+      }
+    },
+    "No provider connected" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결된 공급자가 없습니다" } }
+      }
+    },
+    "Offline" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오프라인" } }
+      }
+    },
+    "Open at login" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 시 열기" } }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정 열기" } }
+      }
+    },
+    "Preview" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "미리보기" } }
+      }
+    },
+    "Privacy" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "개인정보 보호" } }
+      }
+    },
+    "Providers" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공급자" } }
+      }
+    },
+    "Quit Dejavu" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 종료" } }
+      }
+    },
+    "Review required" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "검토 필요" } }
+      }
+    },
+    "Rate limited" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 제한" } }
+      }
+    },
+    "Refresh" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새로고침" } }
+      }
+    },
+    "Refresh interval" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새로고침 간격" } }
+      }
+    },
+    "Reset credits" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "초기화권" } }
+      }
+    },
+    "Services" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "서비스" } }
+      }
+    },
+    "Settings…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정…" } }
+      }
+    },
+    "Allows read-only access to the Claude Code Keychain item after macOS approval." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "macOS 승인 후 Claude Code 키체인 항목을 읽기 전용으로 사용합니다." } }
+      }
+    },
+    "Enable Fable usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Fable 사용량 활성화" } }
+      }
+    },
+    "Extended Claude access" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 확장 접근" } }
+      }
+    },
+    "Fable uses an undocumented Claude Code usage interface and may stop working after an update. Tokens are kept only in memory and are never saved by Dejavu." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Fable은 문서화되지 않은 Claude Code 사용량 인터페이스를 사용하므로 업데이트 후 중단될 수 있습니다. 토큰은 메모리에서만 사용하며 Dejavu가 저장하지 않습니다." } }
+      }
+    },
+    "Claude Code status line" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 상태 줄" } }
+      }
+    },
+    "Dejavu reads or changes ~/.claude/settings.json only after you choose Connect. An existing command is preserved and chained." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결을 선택한 뒤에만 Dejavu가 ~/.claude/settings.json을 읽거나 변경합니다. 기존 명령은 보존하고 이어서 실행합니다." } }
+      }
+    },
+    "The default connection reads only 5h and weekly rate-limit fields supplied by the Claude Code status line." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 연결은 Claude Code 상태 줄이 제공하는 5h와 주간 사용량 제한 필드만 읽습니다." } }
+      }
+    },
+    "Codex credentials are never read. Fable access reads the Claude Code Keychain item only after you enable it and keeps the token in memory." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 인증 정보는 읽지 않습니다. Fable 접근은 사용자가 켠 뒤에만 Claude Code 키체인 항목을 읽으며 토큰은 메모리에만 둡니다." } }
+      }
+    },
+    "Show floating widget" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "플로팅 위젯 표시" } }
+      }
+    },
+    "Show Floating Overlay" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "플로팅 오버레이 표시" } }
+      }
+    },
+    "Show progress bars" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진행률 막대 표시" } }
+      }
+    },
+    "Show Widget" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "위젯 표시" } }
+      }
+    },
+    "Software updates" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "소프트웨어 업데이트" } }
+      }
+    },
+    "Update signing must be configured for this build." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 빌드에는 업데이트 서명 설정이 필요합니다." } }
+      }
+    },
+    "Updates are checked securely with Sparkle." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Sparkle로 업데이트를 안전하게 확인합니다." } }
+      }
+    },
+    "Turn this off to use Dejavu from the menu bar only." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "끄면 메뉴 막대에서만 Dejavu를 사용할 수 있습니다." } }
+      }
+    },
+    "This optional panel is separate from the macOS system widget." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이 선택형 패널은 macOS 시스템 위젯과 별개입니다." } }
+      }
+    },
+    "Add or remove the system widget from the macOS widget gallery." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "macOS 위젯 갤러리에서 시스템 위젯을 추가하거나 제거할 수 있습니다." } }
+      }
+    },
+    "System Widget" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시스템 위젯" } }
+      }
+    },
+    "Dejavu Usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 사용량" } }
+      }
+    },
+    "Desktop and Notification Center" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "데스크탑 및 알림 센터" } }
+      }
+    },
+    "Floating Overlay options" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "플로팅 오버레이 옵션" } }
+      }
+    },
+    "Overlay visibility is saved. Other overlay options are preview-only." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이 표시 여부는 저장됩니다. 다른 오버레이 옵션은 미리보기 전용입니다." } }
+      }
+    },
+    "Overlay visibility is saved. Additional layout controls are being added incrementally." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이 표시 여부는 저장됩니다. 추가 레이아웃 제어 기능은 단계적으로 제공됩니다." } }
+      }
+    },
+    "Unavailable" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용할 수 없음" } }
+      }
+    },
+    "Updates" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "업데이트" } }
+      }
+    },
+    "You’re up to date." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "최신 버전입니다." } }
+      }
+    },
+    "Usage details" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 상세" } }
+      }
+    },
+    "Usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량" } }
+      }
+    },
+    "Menu bar metrics" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대 지표" } }
+      }
+    },
+    "Weekly" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "주간" } }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "라이트" } }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "다크" } }
+      }
+    },
+    "Small" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "작게" } }
+      }
+    },
+    "Comfortable" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "여유롭게" } }
+      }
+    },
+    "Two rows" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "두 줄" } }
+      }
+    },
+    "Claude and Codex" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 및 Codex" } }
+      }
+    },
+    "Claude only" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude만" } }
+      }
+    },
+    "Codex only" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex만" } }
+      }
+    },
+    "Bottom right" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오른쪽 하단" } }
+      }
+    },
+    "Custom" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용자 지정" } }
+      }
+    },
+    "Use threshold colors" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 구간별 색상 사용" } }
+      }
+    },
+    "Background color" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "배경 색상" } }
+      }
+    },
+    "Accent color" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "강조 색상" } }
+      }
+    },
+    "Text color" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "텍스트 색상" } }
+      }
+    },
+    "Reset Overlay Colors" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이 색상 초기화" } }
+      }
+    },
+    "Overlay opacity" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이 불투명도" } }
+      }
+    },
+    "Reset Overlay Position" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이 위치 초기화" } }
+      }
+    },
+    "Dragging the overlay saves its position. Edge placements remain anchored when its size changes." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이를 드래그하면 위치가 저장됩니다. 크기가 바뀌어도 가장자리 배치는 기준 위치를 유지합니다." } }
+      }
+    },
+    "Login items are managed by macOS and can also be changed in System Settings." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 항목은 macOS가 관리하며 시스템 설정에서도 변경할 수 있습니다." } }
+      }
+    },
+    "Open Login Items Settings…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 항목 설정 열기…" } }
+      }
+    },
+    "Allow Dejavu in System Settings to open it automatically." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "자동으로 열려면 시스템 설정에서 Dejavu를 허용하세요." } }
+      }
+    },
+    "Login item registration is unavailable for this app installation." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "현재 앱 설치에서는 로그인 항목을 등록할 수 없습니다." } }
+      }
+    },
+    "The login item status could not be determined." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 항목 상태를 확인할 수 없습니다." } }
+      }
+    },
+    "Dejavu could not be added to Login Items." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu를 로그인 항목에 추가하지 못했습니다." } }
+      }
+    },
+    "Dejavu could not be removed from Login Items." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu를 로그인 항목에서 제거하지 못했습니다." } }
+      }
+    },
+    "Reset All Settings…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모든 설정 초기화…" } }
+      }
+    },
+    "Reset all settings?" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "모든 설정을 초기화할까요?" } }
+      }
+    },
+    "This restores display, refresh, provider, and update preferences. It does not remove provider logins or Claude configuration." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "표시, 새로고침, 공급자 및 업데이트 설정을 기본값으로 복원합니다. 공급자 로그인이나 Claude 구성은 삭제하지 않습니다." } }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "취소" } }
+      }
+    },
+    "Reset" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "초기화" } }
+      }
+    },
+    "Sign In in Terminal…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "터미널에서 로그인…" } }
+      }
+    },
+    "Installation Guide…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설치 안내…" } }
+      }
+    },
+    "Provider sign-in" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공급자 로그인" } }
+      }
+    },
+    "Dejavu copies the official login command and opens Terminal. You decide whether to run it; Dejavu never receives the resulting credentials." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu는 공식 로그인 명령을 복사하고 터미널을 엽니다. 실행 여부는 사용자가 결정하며 Dejavu는 생성된 자격 증명을 받지 않습니다." } }
+      }
+    },
+    "The login command could not be copied." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 명령을 복사하지 못했습니다." } }
+      }
+    },
+    "The login command was copied, but Terminal could not be opened." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 명령은 복사했지만 터미널을 열지 못했습니다." } }
+      }
+    },
+    "The %@ login command was copied. Paste it in Terminal and press Return." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@ 로그인 명령을 복사했습니다. 터미널에 붙여 넣고 Return 키를 누르세요." } }
+      }
+    },
+    "Support and local data" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지원 및 로컬 데이터" } }
+      }
+    },
+    "Create Diagnostics Snapshot…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진단 스냅샷 생성…" } }
+      }
+    },
+    "Open Dejavu Data Folder" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 데이터 폴더 열기" } }
+      }
+    },
+    "Reset Dejavu Data…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 데이터 초기화…" } }
+      }
+    },
+    "The diagnostics snapshot contains only allow-listed status, percentage, timestamp, and overlay fields. It contains no credentials, paths, prompts, or conversations." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진단 스냅샷에는 허용된 상태, 백분율, 시간 및 오버레이 필드만 포함됩니다. 자격 증명, 경로, 프롬프트 또는 대화는 포함되지 않습니다." } }
+      }
+    },
+    "Reset Dejavu data?" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 데이터를 초기화할까요?" } }
+      }
+    },
+    "Reset Data" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "데이터 초기화" } }
+      }
+    },
+    "Dejavu will stop refreshing, restore its managed Claude status line when safe, and remove only Dejavu settings, snapshots, diagnostics, and its installed helper. Provider logins and conversations are never removed." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu는 새로고침을 중지하고 안전한 경우 관리 중인 Claude 상태 표시줄을 복원한 뒤 Dejavu 설정, 스냅샷, 진단 및 설치한 도우미만 제거합니다. 공급자 로그인과 대화는 절대 제거하지 않습니다." } }
+      }
+    },
+    "The diagnostics snapshot could not be created." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "진단 스냅샷을 생성하지 못했습니다." } }
+      }
+    },
+    "A privacy-safe diagnostics snapshot was created." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "개인정보를 보호하는 진단 스냅샷을 생성했습니다." } }
+      }
+    },
+    "Dejavu local data was reset." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 로컬 데이터를 초기화했습니다." } }
+      }
+    },
+    "Nothing was removed because the Claude status line changed after Dejavu connected it. Disconnect it manually or restore the managed value first." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu가 연결한 뒤 Claude 상태 표시줄이 변경되어 아무것도 제거하지 않았습니다. 먼저 수동으로 연결을 해제하거나 관리 값으로 복원하세요." } }
+      }
+    },
+    "Dejavu local data could not be reset safely. Nothing outside the Dejavu data folder was removed." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 로컬 데이터를 안전하게 초기화하지 못했습니다. Dejavu 데이터 폴더 밖의 항목은 제거하지 않았습니다." } }
+      }
+    },
+    "%d seconds" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%d초" } }
+      }
+    },
+    "Widget" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "위젯" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

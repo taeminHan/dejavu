@@ -1,0 +1,914 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000101 /* DejavuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* DejavuApp.swift */; };
+		A10000000000000000000102 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000002 /* AppDelegate.swift */; };
+		A10000000000000000000103 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000003 /* AppCoordinator.swift */; };
+		A10000000000000000000104 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* AppModel.swift */; };
+		A10000000000000000000105 /* StatusItemController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* StatusItemController.swift */; };
+		A10000000000000000000106 /* ModernWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* ModernWidgetView.swift */; };
+		A10000000000000000000107 /* UsageDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000007 /* UsageDetailsView.swift */; };
+		A10000000000000000000108 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000008 /* SettingsView.swift */; };
+		A10000000000000000000109 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000009 /* OnboardingView.swift */; };
+		A1000000000000000000010A /* WidgetPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000A /* WidgetPanelController.swift */; };
+		A1000000000000000000010B /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000D /* main.swift */; };
+		A1000000000000000000010C /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* Localizable.xcstrings */; };
+		A1000000000000000000010D /* DejavuDomain in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000902 /* DejavuDomain */; };
+		A1000000000000000000010E /* DejavuPersistence in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000903 /* DejavuPersistence */; };
+		A1000000000000000000010F /* DejavuUsageWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* DejavuUsageWidgetBundle.swift */; };
+		A10000000000000000000110 /* DejavuUsageWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* DejavuUsageWidget.swift */; };
+		A10000000000000000000111 /* UsageTimelineProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* UsageTimelineProvider.swift */; };
+		A10000000000000000000112 /* UsageWidgetEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* UsageWidgetEntry.swift */; };
+		A10000000000000000000113 /* UsageWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* UsageWidgetView.swift */; };
+		A10000000000000000000114 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000018 /* Localizable.xcstrings */; };
+		A10000000000000000000115 /* DejavuDomain in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000907 /* DejavuDomain */; };
+		A10000000000000000000116 /* DejavuWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000908 /* DejavuWidgetShared */; };
+		A10000000000000000000117 /* DejavuApplication in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000904 /* DejavuApplication */; };
+		A10000000000000000000118 /* DejavuProviders in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000905 /* DejavuProviders */; };
+		A10000000000000000000119 /* DejavuWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000906 /* DejavuWidgetShared */; };
+		A1000000000000000000011A /* DejavuUsageWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000019 /* DejavuUsageWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000011B /* dejavu-claude-bridge in Embed Helper Tools */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000F /* dejavu-claude-bridge */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000011C /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* BrandAssets.xcassets */; };
+		A1000000000000000000011D /* ProviderBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001B /* ProviderBrand.swift */; };
+		A1000000000000000000011E /* ProviderBrand.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001B /* ProviderBrand.swift */; };
+		A1000000000000000000011F /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001A /* BrandAssets.xcassets */; };
+		A10000000000000000000120 /* UsageColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* UsageColor.swift */; };
+		A10000000000000000000121 /* UsageColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* UsageColor.swift */; };
+		A10000000000000000000122 /* UpdateCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* UpdateCoordinator.swift */; };
+		A10000000000000000000123 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000090A /* Sparkle */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000A01 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000403;
+			remoteInfo = DejavuUsageWidget;
+		};
+		A10000000000000000000A02 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000601 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000402;
+			remoteInfo = DejavuClaudeBridge;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10000000000000000000504 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A1000000000000000000011A /* DejavuUsageWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000505 /* Embed Helper Tools */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				A1000000000000000000011B /* dejavu-claude-bridge in Embed Helper Tools */,
+			);
+			name = "Embed Helper Tools";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000001 /* DejavuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DejavuApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000002 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		A10000000000000000000003 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
+		A10000000000000000000004 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		A10000000000000000000005 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
+		A10000000000000000000006 /* ModernWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernWidgetView.swift; sourceTree = "<group>"; };
+		A10000000000000000000007 /* UsageDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageDetailsView.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A10000000000000000000009 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		A1000000000000000000000A /* WidgetPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetPanelController.swift; sourceTree = "<group>"; };
+		A1000000000000000000000B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1000000000000000000000C /* DejavuMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DejavuMac.entitlements; sourceTree = "<group>"; };
+		A1000000000000000000000D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		A1000000000000000000000E /* Dejavu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Dejavu.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000000000000000000000F /* dejavu-claude-bridge */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "dejavu-claude-bridge"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000010 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A10000000000000000000011 /* DejavuUsageWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DejavuUsageWidgetBundle.swift; sourceTree = "<group>"; };
+		A10000000000000000000012 /* DejavuUsageWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DejavuUsageWidget.swift; sourceTree = "<group>"; };
+		A10000000000000000000013 /* UsageTimelineProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTimelineProvider.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* UsageWidgetEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageWidgetEntry.swift; sourceTree = "<group>"; };
+		A10000000000000000000015 /* UsageWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageWidgetView.swift; sourceTree = "<group>"; };
+		A10000000000000000000016 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000017 /* DejavuUsageWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DejavuUsageWidget.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000018 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		A10000000000000000000019 /* DejavuUsageWidget.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = DejavuUsageWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1000000000000000000001A /* BrandAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = BrandAssets.xcassets; sourceTree = "<group>"; };
+		A1000000000000000000001B /* ProviderBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderBrand.swift; sourceTree = "<group>"; };
+		A1000000000000000000001C /* UsageColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageColor.swift; sourceTree = "<group>"; };
+		A1000000000000000000001D /* UpdateCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCoordinator.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000201 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000123 /* Sparkle in Frameworks */,
+				A1000000000000000000010D /* DejavuDomain in Frameworks */,
+				A1000000000000000000010E /* DejavuPersistence in Frameworks */,
+				A10000000000000000000117 /* DejavuApplication in Frameworks */,
+				A10000000000000000000118 /* DejavuProviders in Frameworks */,
+				A10000000000000000000119 /* DejavuWidgetShared in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000202 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000203 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000115 /* DejavuDomain in Frameworks */,
+				A10000000000000000000116 /* DejavuWidgetShared in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000300 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000301 /* DejavuMac */,
+				A10000000000000000000314 /* SharedUI */,
+				A10000000000000000000311 /* DejavuUsageWidget */,
+				A10000000000000000000308 /* DejavuClaudeBridge */,
+				A10000000000000000000309 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000301 /* DejavuMac */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000302 /* App */,
+				A10000000000000000000303 /* Features */,
+				A10000000000000000000307 /* Platform */,
+				A10000000000000000000306 /* Config */,
+				A10000000000000000000310 /* Resources */,
+			);
+			path = DejavuMac;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000302 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000001 /* DejavuApp.swift */,
+				A10000000000000000000002 /* AppDelegate.swift */,
+				A10000000000000000000003 /* AppCoordinator.swift */,
+				A10000000000000000000004 /* AppModel.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000303 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000030A /* MenuBar */,
+				A1000000000000000000030B /* Widget */,
+				A1000000000000000000030C /* Details */,
+				A1000000000000000000030D /* Settings */,
+				A1000000000000000000030E /* Onboarding */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000306 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000B /* Info.plist */,
+				A1000000000000000000000C /* DejavuMac.entitlements */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000307 /* Platform */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000030F /* Windowing */,
+				A10000000000000000000315 /* Updates */,
+			);
+			path = Platform;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000308 /* DejavuClaudeBridge */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000D /* main.swift */,
+			);
+			path = DejavuClaudeBridge;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000309 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000E /* Dejavu.app */,
+				A1000000000000000000000F /* dejavu-claude-bridge */,
+				A10000000000000000000019 /* DejavuUsageWidget.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000030A /* MenuBar */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000005 /* StatusItemController.swift */,
+			);
+			path = MenuBar;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000030B /* Widget */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000006 /* ModernWidgetView.swift */,
+			);
+			path = Widget;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000030C /* Details */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000007 /* UsageDetailsView.swift */,
+			);
+			path = Details;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000030D /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000008 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000030E /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000009 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000030F /* Windowing */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000000A /* WidgetPanelController.swift */,
+			);
+			path = Windowing;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000310 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001A /* BrandAssets.xcassets */,
+				A10000000000000000000010 /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000311 /* DejavuUsageWidget */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000011 /* DejavuUsageWidgetBundle.swift */,
+				A10000000000000000000012 /* DejavuUsageWidget.swift */,
+				A10000000000000000000013 /* UsageTimelineProvider.swift */,
+				A10000000000000000000014 /* UsageWidgetEntry.swift */,
+				A10000000000000000000015 /* UsageWidgetView.swift */,
+				A10000000000000000000312 /* Config */,
+				A10000000000000000000313 /* Resources */,
+			);
+			path = DejavuUsageWidget;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000312 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000016 /* Info.plist */,
+				A10000000000000000000017 /* DejavuUsageWidget.entitlements */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000313 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000018 /* Localizable.xcstrings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000314 /* SharedUI */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001B /* ProviderBrand.swift */,
+				A1000000000000000000001C /* UsageColor.swift */,
+			);
+			path = SharedUI;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000315 /* Updates */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000001D /* UpdateCoordinator.swift */,
+			);
+			path = Updates;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000401 /* DejavuMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000702 /* Build configuration list for PBXNativeTarget "DejavuMac" */;
+			buildPhases = (
+				A10000000000000000000501 /* Sources */,
+				A10000000000000000000201 /* Frameworks */,
+				A10000000000000000000503 /* Resources */,
+				A10000000000000000000505 /* Embed Helper Tools */,
+				A10000000000000000000504 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000A11 /* PBXTargetDependency */,
+				A10000000000000000000A12 /* PBXTargetDependency */,
+			);
+			name = DejavuMac;
+			packageProductDependencies = (
+				A1000000000000000000090A /* Sparkle */,
+				A10000000000000000000902 /* DejavuDomain */,
+				A10000000000000000000903 /* DejavuPersistence */,
+				A10000000000000000000904 /* DejavuApplication */,
+				A10000000000000000000905 /* DejavuProviders */,
+				A10000000000000000000906 /* DejavuWidgetShared */,
+			);
+			productName = Dejavu;
+			productReference = A1000000000000000000000E /* Dejavu.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000402 /* DejavuClaudeBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000703 /* Build configuration list for PBXNativeTarget "DejavuClaudeBridge" */;
+			buildPhases = (
+				A10000000000000000000502 /* Sources */,
+				A10000000000000000000202 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DejavuClaudeBridge;
+			packageProductDependencies = (
+			);
+			productName = "dejavu-claude-bridge";
+			productReference = A1000000000000000000000F /* dejavu-claude-bridge */;
+			productType = "com.apple.product-type.tool";
+		};
+		A10000000000000000000403 /* DejavuUsageWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000704 /* Build configuration list for PBXNativeTarget "DejavuUsageWidget" */;
+			buildPhases = (
+				A10000000000000000000506 /* Sources */,
+				A10000000000000000000203 /* Frameworks */,
+				A10000000000000000000507 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DejavuUsageWidget;
+			packageProductDependencies = (
+				A10000000000000000000907 /* DejavuDomain */,
+				A10000000000000000000908 /* DejavuWidgetShared */,
+			);
+			productName = DejavuUsageWidget;
+			productReference = A10000000000000000000019 /* DejavuUsageWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000601 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				ORGANIZATIONNAME = taeminHan;
+				TargetAttributes = {
+					A10000000000000000000401 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					A10000000000000000000402 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					A10000000000000000000403 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000701 /* Build configuration list for PBXProject "DejavuMac" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				ko,
+				Base,
+			);
+			mainGroup = A10000000000000000000300;
+			packageReferences = (
+				A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */,
+				A10000000000000000000909 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
+			productRefGroup = A10000000000000000000309 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000401 /* DejavuMac */,
+				A10000000000000000000402 /* DejavuClaudeBridge */,
+				A10000000000000000000403 /* DejavuUsageWidget */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000503 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000011C /* BrandAssets.xcassets in Resources */,
+				A1000000000000000000010C /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000507 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000011F /* BrandAssets.xcassets in Resources */,
+				A10000000000000000000114 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000501 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000101 /* DejavuApp.swift in Sources */,
+				A1000000000000000000011D /* ProviderBrand.swift in Sources */,
+				A10000000000000000000120 /* UsageColor.swift in Sources */,
+				A10000000000000000000102 /* AppDelegate.swift in Sources */,
+				A10000000000000000000103 /* AppCoordinator.swift in Sources */,
+				A10000000000000000000104 /* AppModel.swift in Sources */,
+				A10000000000000000000122 /* UpdateCoordinator.swift in Sources */,
+				A10000000000000000000105 /* StatusItemController.swift in Sources */,
+				A10000000000000000000106 /* ModernWidgetView.swift in Sources */,
+				A10000000000000000000107 /* UsageDetailsView.swift in Sources */,
+				A10000000000000000000108 /* SettingsView.swift in Sources */,
+				A10000000000000000000109 /* OnboardingView.swift in Sources */,
+				A1000000000000000000010A /* WidgetPanelController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000502 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000010B /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000506 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000010F /* DejavuUsageWidgetBundle.swift in Sources */,
+				A1000000000000000000011E /* ProviderBrand.swift in Sources */,
+				A10000000000000000000121 /* UsageColor.swift in Sources */,
+				A10000000000000000000110 /* DejavuUsageWidget.swift in Sources */,
+				A10000000000000000000111 /* UsageTimelineProvider.swift in Sources */,
+				A10000000000000000000112 /* UsageWidgetEntry.swift in Sources */,
+				A10000000000000000000113 /* UsageWidgetView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000A11 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000403 /* DejavuUsageWidget */;
+			targetProxy = A10000000000000000000A01 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000A12 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000402 /* DejavuClaudeBridge */;
+			targetProxy = A10000000000000000000A02 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000801 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10000000000000000000802 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A10000000000000000000803 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
+				DEJAVU_SPARKLE_PUBLIC_KEY = "";
+				DEJAVU_UPDATE_FEED_URL = "https://github.com/taeminHan/dejavu/releases/latest/download/appcast-macos.xml";
+				CODE_SIGN_ENTITLEMENTS = DejavuMac/Config/DejavuMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DejavuMac/Config/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LM_FILTER_WARNINGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.9.1;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu;
+				PRODUCT_NAME = Dejavu;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000804 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
+				DEJAVU_SPARKLE_PUBLIC_KEY = "bCWiRQh8qw0hCNQBihOz/OSg1GJYymWoGTxvm7k2WLg=";
+				DEJAVU_UPDATE_FEED_URL = "https://github.com/taeminHan/dejavu/releases/latest/download/appcast-macos.xml";
+				CODE_SIGN_ENTITLEMENTS = DejavuMac/Config/DejavuMac.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DejavuMac/Config/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				LM_FILTER_WARNINGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.9.1;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu;
+				PRODUCT_NAME = Dejavu;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A10000000000000000000805 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = "dejavu-claude-bridge";
+				SDKROOT = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000806 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = "dejavu-claude-bridge";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A10000000000000000000807 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ARCHS = arm64;
+				CODE_SIGN_ENTITLEMENTS = DejavuUsageWidget/Config/DejavuUsageWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DejavuUsageWidget/Config/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.9.1;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu.widget;
+				PRODUCT_NAME = DejavuUsageWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000808 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				ARCHS = arm64;
+				CODE_SIGN_ENTITLEMENTS = DejavuUsageWidget/Config/DejavuUsageWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DejavuUsageWidget/Config/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.9.1;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu.widget;
+				PRODUCT_NAME = DejavuUsageWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000701 /* Build configuration list for PBXProject "DejavuMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000801 /* Debug */,
+				A10000000000000000000802 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000702 /* Build configuration list for PBXNativeTarget "DejavuMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000803 /* Debug */,
+				A10000000000000000000804 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000703 /* Build configuration list for PBXNativeTarget "DejavuClaudeBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000805 /* Debug */,
+				A10000000000000000000806 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000704 /* Build configuration list for PBXNativeTarget "DejavuUsageWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000807 /* Debug */,
+				A10000000000000000000808 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/DejavuKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A10000000000000000000909 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000902 /* DejavuDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuDomain;
+		};
+		A10000000000000000000903 /* DejavuPersistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuPersistence;
+		};
+		A10000000000000000000904 /* DejavuApplication */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuApplication;
+		};
+		A10000000000000000000905 /* DejavuProviders */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuProviders;
+		};
+		A10000000000000000000906 /* DejavuWidgetShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuWidgetShared;
+		};
+		A10000000000000000000907 /* DejavuDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuDomain;
+		};
+		A10000000000000000000908 /* DejavuWidgetShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000901 /* XCLocalSwiftPackageReference "Packages/DejavuKit" */;
+			productName = DejavuWidgetShared;
+		};
+		A1000000000000000000090A /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000909 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A10000000000000000000601 /* Project object */;
+}

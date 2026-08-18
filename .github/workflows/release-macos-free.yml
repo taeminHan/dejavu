@@ -1,0 +1,89 @@
+name: Build free macOS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_to_release:
+        description: Upload verified assets to the GitHub release matching the Windows project version
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release-macos-free:
+    runs-on: macos-latest
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+      SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+      OUTPUT_ROOT: ${{ runner.temp }}/dejavu-macos-free-release
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Read Windows project version
+        id: version
+        shell: bash
+        run: |
+          version="$(sed -n 's:.*<Version>\([^<]*\)</Version>.*:\1:p' ClaudeUsageTray.csproj | head -1)"
+          build_number="$(git rev-list --count HEAD)"
+          test -n "${version}"
+          test "${build_number}" -gt 0
+          printf 'VERSION=%s\n' "${version}" >> "${GITHUB_ENV}"
+          printf 'BUILD_NUMBER=%s\n' "${build_number}" >> "${GITHUB_ENV}"
+          printf 'value=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify Sparkle signing secret
+        shell: bash
+        run: test -n "${SPARKLE_ED_PRIVATE_KEY}"
+
+      - name: Test macOS package
+        run: swift test --package-path macos/Packages/DejavuKit -Xswiftc -warnings-as-errors
+
+      - name: Build ad-hoc release and signed update feed
+        run: ./tools/BuildMacFreeRelease.sh
+
+      - name: Verify free-distribution artifacts
+        run: |
+          (cd "${OUTPUT_ROOT}" && shasum -a 256 -c SHA256SUMS-macOS.txt)
+          unzip -q "${OUTPUT_ROOT}/Dejavu-macOS-arm64.zip" -d "${RUNNER_TEMP}/dejavu-verify"
+          codesign --verify --deep --strict --verbose=2 "${RUNNER_TEMP}/dejavu-verify/Dejavu.app"
+          file "${RUNNER_TEMP}/dejavu-verify/Dejavu.app/Contents/MacOS/Dejavu" | grep -q arm64
+          test -x "${RUNNER_TEMP}/dejavu-verify/Dejavu.app/Contents/Helpers/dejavu-claude-bridge"
+          test -d "${RUNNER_TEMP}/dejavu-verify/Dejavu.app/Contents/PlugIns/DejavuUsageWidget.appex"
+          test "$(plutil -extract CFBundleShortVersionString raw "${RUNNER_TEMP}/dejavu-verify/Dejavu.app/Contents/Info.plist")" = "${VERSION}"
+          test "$(plutil -extract CFBundleVersion raw "${RUNNER_TEMP}/dejavu-verify/Dejavu.app/Contents/Info.plist")" = "${BUILD_NUMBER}"
+          test "$(plutil -extract SUPublicEDKey raw "${RUNNER_TEMP}/dejavu-verify/Dejavu.app/Contents/Info.plist")" = "bCWiRQh8qw0hCNQBihOz/OSg1GJYymWoGTxvm7k2WLg="
+          grep -q "<sparkle:version>${BUILD_NUMBER}</sparkle:version>" "${OUTPUT_ROOT}/appcast-macos.xml"
+          grep -q "<sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>" "${OUTPUT_ROOT}/appcast-macos.xml"
+          grep -q 'sparkle:edSignature=' "${OUTPUT_ROOT}/appcast-macos.xml"
+          grep -q 'Dejavu-macOS-arm64.zip' "${OUTPUT_ROOT}/appcast-macos.xml"
+          xmllint --noout "${OUTPUT_ROOT}/appcast-macos.xml"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: Dejavu-macOS-free-${{ steps.version.outputs.value }}
+          path: |
+            ${{ runner.temp }}/dejavu-macos-free-release/Dejavu-macOS-arm64.dmg
+            ${{ runner.temp }}/dejavu-macos-free-release/Dejavu-macOS-arm64.zip
+            ${{ runner.temp }}/dejavu-macos-free-release/appcast-macos.xml
+            ${{ runner.temp }}/dejavu-macos-free-release/SHA256SUMS-macOS.txt
+          if-no-files-found: error
+
+      - name: Upload to GitHub release
+        if: inputs.publish_to_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "v${VERSION}" \
+            "${OUTPUT_ROOT}/Dejavu-macOS-arm64.dmg" \
+            "${OUTPUT_ROOT}/Dejavu-macOS-arm64.zip" \
+            "${OUTPUT_ROOT}/appcast-macos.xml" \
+            "${OUTPUT_ROOT}/SHA256SUMS-macOS.txt" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber

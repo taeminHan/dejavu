@@ -1,0 +1,56 @@
+{
+  "id": 6,
+  "result": {
+    "rateLimits": {
+      "limitId": "codex",
+      "planType": "legacy-plan-must-not-win",
+      "primary": {
+        "usedPercent": 91,
+        "windowDurationMins": 300,
+        "resetsAt": 1786507200
+      },
+      "secondary": {
+        "usedPercent": 92,
+        "windowDurationMins": 10080,
+        "resetsAt": 1787112000
+      }
+    },
+    "rateLimitsByLimitId": {
+      "codex": {
+        "limitId": "codex",
+        "planType": "plus",
+        "primary": {
+          "usedPercent": 25,
+          "windowDurationMins": 300,
+          "resetsAt": 1786503600
+        },
+        "secondary": {
+          "usedPercent": 40,
+          "windowDurationMins": 10080,
+          "resetsAt": 1787108400
+        }
+      },
+      "codex_other": {
+        "limitId": "codex_other",
+        "planType": "unrelated-plan",
+        "primary": {
+          "usedPercent": 77,
+          "windowDurationMins": 300,
+          "resetsAt": 1786505400
+        },
+        "secondary": {
+          "usedPercent": 88,
+          "windowDurationMins": 10080,
+          "resetsAt": 1787110200
+        }
+      }
+    },
+    "rateLimitResetCredits": {
+      "availableCount": 3,
+      "credits": [
+        { "expiresAt": 1787000000 },
+        { "expiresAt": 1786900000 }
+      ]
+    }
+  }
+}

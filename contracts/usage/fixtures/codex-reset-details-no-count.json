@@ -1,0 +1,18 @@
+{
+  "id": 6,
+  "result": {
+    "rateLimitsByLimitId": {
+      "codex": {
+        "limitId": "codex",
+        "primary": null,
+        "secondary": null
+      }
+    },
+    "rateLimitResetCredits": {
+      "credits": [
+        { "expiresAt": 1786900000 },
+        { "expiresAt": 1787000000 }
+      ]
+    }
+  }
+}

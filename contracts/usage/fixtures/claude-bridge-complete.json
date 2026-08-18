@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "captured_at": "2026-08-12T01:00:00Z",
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 23.5,
+      "resets_at": "2026-08-12T03:00:00Z"
+    },
+    "seven_day": {
+      "used_percentage": 41.25,
+      "resets_at": "2026-08-19T03:00:00Z"
+    }
+  }
+}

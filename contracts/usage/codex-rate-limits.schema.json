@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dejavu.local/contracts/usage/codex-rate-limits.schema.json",
+  "title": "Codex app-server account/rateLimits/read response",
+  "type": "object",
+  "required": ["id", "result"],
+  "properties": {
+    "id": {
+      "oneOf": [
+        { "type": "integer" },
+        { "type": "string" }
+      ]
+    },
+    "result": {
+      "$ref": "#/$defs/result"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "result": {
+      "type": "object",
+      "properties": {
+        "rateLimits": {
+          "oneOf": [
+            { "$ref": "#/$defs/bucket" },
+            { "type": "null" }
+          ]
+        },
+        "rateLimitsByLimitId": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/bucket"
+          }
+        },
+        "rateLimitResetCredits": {
+          "oneOf": [
+            { "$ref": "#/$defs/resetCredits" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "bucket": {
+      "type": "object",
+      "properties": {
+        "limitId": {
+          "type": ["string", "null"]
+        },
+        "limitName": {
+          "type": ["string", "null"]
+        },
+        "planType": {
+          "type": ["string", "null"]
+        },
+        "rateLimitReachedType": {
+          "type": ["string", "null"]
+        },
+        "primary": {
+          "oneOf": [
+            { "$ref": "#/$defs/window" },
+            { "type": "null" }
+          ]
+        },
+        "secondary": {
+          "oneOf": [
+            { "$ref": "#/$defs/window" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "window": {
+      "type": "object",
+      "required": ["usedPercent", "windowDurationMins"],
+      "properties": {
+        "usedPercent": {
+          "type": "number"
+        },
+        "windowDurationMins": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "resetsAt": {
+          "type": ["integer", "null"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "resetCredits": {
+      "type": "object",
+      "properties": {
+        "availableCount": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "credits": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/resetCreditDetail"
+              }
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "resetCreditDetail": {
+      "type": "object",
+      "properties": {
+        "expiresAt": {
+          "type": ["integer", "null"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

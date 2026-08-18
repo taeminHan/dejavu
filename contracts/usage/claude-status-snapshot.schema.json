@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dejavu.local/contracts/usage/claude-status-snapshot.schema.json",
+  "title": "Dejavu Claude bridge snapshot",
+  "type": "object",
+  "required": ["schema_version", "captured_at"],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rate_limits": {
+      "oneOf": [
+        { "$ref": "#/$defs/rateLimits" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "rateLimits": {
+      "type": "object",
+      "properties": {
+        "five_hour": {
+          "oneOf": [
+            { "$ref": "#/$defs/window" },
+            { "type": "null" }
+          ]
+        },
+        "seven_day": {
+          "oneOf": [
+            { "$ref": "#/$defs/window" },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "window": {
+      "type": "object",
+      "required": ["used_percentage"],
+      "properties": {
+        "used_percentage": {
+          "type": "number"
+        },
+        "resets_at": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

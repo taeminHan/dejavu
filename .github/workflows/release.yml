@@ -198,7 +198,11 @@ jobs:
             $hash = (Get-FileHash -LiteralPath $artifact.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($artifact.Name)"
           }
-          Set-Content -LiteralPath $checksumsPath -Value $checksumLines -Encoding utf8NoBOM
+          $checksumText = ($checksumLines -join "`n") + "`n"
+          [System.IO.File]::WriteAllText(
+            $checksumsPath,
+            $checksumText,
+            [System.Text.UTF8Encoding]::new($false))
           gh release upload "${{ github.ref_name }}" $checksumsPath `
             --repo "${{ github.repository }}" `
             --clobber

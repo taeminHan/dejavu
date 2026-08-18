@@ -23,7 +23,7 @@ jobs:
       APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
       SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
       SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
-      OUTPUT_ROOT: ${{ runner.temp }}/dejavu-macos-release
+      OUTPUT_ROOT: ${{ github.workspace }}/outputs/dejavu-macos-release
     steps:
       - name: Check out source
         uses: actions/checkout@v7

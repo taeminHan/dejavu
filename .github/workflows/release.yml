@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-latest
     env:
       DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
-      OUTPUT_ROOT: ${{ runner.temp }}/dejavu-macos-free-release
+      OUTPUT_ROOT: ${{ github.workspace }}/outputs/dejavu-macos-free-release
       SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
     steps:
       - name: Check out source

@@ -65,10 +65,10 @@ jobs:
         with:
           name: dejavu-macos-release-assets
           path: |
-            ${{ runner.temp }}/dejavu-macos-free-release/Dejavu-macOS-arm64.dmg
-            ${{ runner.temp }}/dejavu-macos-free-release/Dejavu-macOS-arm64.zip
-            ${{ runner.temp }}/dejavu-macos-free-release/appcast-macos.xml
-            ${{ runner.temp }}/dejavu-macos-free-release/SHA256SUMS-macOS.txt
+            ${{ github.workspace }}/outputs/dejavu-macos-free-release/Dejavu-macOS-arm64.dmg
+            ${{ github.workspace }}/outputs/dejavu-macos-free-release/Dejavu-macOS-arm64.zip
+            ${{ github.workspace }}/outputs/dejavu-macos-free-release/appcast-macos.xml
+            ${{ github.workspace }}/outputs/dejavu-macos-free-release/SHA256SUMS-macOS.txt
           if-no-files-found: error
 
   release:

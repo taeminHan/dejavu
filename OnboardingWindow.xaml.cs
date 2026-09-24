@@ -13,32 +13,28 @@ public partial class OnboardingWindow : Window
     {
         InitializeComponent();
         _settings = settings;
-        PlacementCombo.ItemsSource = new[]
+        var placements = new[]
         {
             new PlacementChoice(WidgetPlacement.TaskbarRight, "작업표시줄 위 · 오른쪽"),
+            new PlacementChoice(WidgetPlacement.InTaskbar, "작업표시줄 안 · 시계 옆"),
             new PlacementChoice(WidgetPlacement.TopRight, "화면 오른쪽 위"),
             new PlacementChoice(WidgetPlacement.Custom, "직접 배치")
         };
-        ServiceCombo.ItemsSource = new[]
+        var services = new[]
         {
             new ServiceChoice(ServiceDisplayMode.AutoDetect, "자동 감지"),
             new ServiceChoice(ServiceDisplayMode.ClaudeAndCodex, "Claude + Codex"),
             new ServiceChoice(ServiceDisplayMode.ClaudeOnly, "Claude만"),
             new ServiceChoice(ServiceDisplayMode.CodexOnly, "Codex만")
         };
-        ServiceCombo.SelectedIndex = settings.ServiceDisplayMode switch
-        {
-            ServiceDisplayMode.ClaudeAndCodex => 1,
-            ServiceDisplayMode.ClaudeOnly => 2,
-            ServiceDisplayMode.CodexOnly => 3,
-            _ => 0
-        };
-        PlacementCombo.SelectedIndex = settings.WidgetPlacement switch
-        {
-            WidgetPlacement.TopRight => 1,
-            WidgetPlacement.Custom => 2,
-            _ => 0
-        };
+        PlacementCombo.ItemsSource = placements;
+        ServiceCombo.ItemsSource = services;
+        // Select by value: the selection handlers write back to settings, so an index
+        // mismatch would silently rewrite a saved choice on every launch.
+        ServiceCombo.SelectedItem = services.FirstOrDefault(choice => choice.Value == settings.ServiceDisplayMode)
+                                    ?? services[0];
+        PlacementCombo.SelectedItem = placements.FirstOrDefault(choice => choice.Value == settings.WidgetPlacement)
+                                      ?? placements[0];
         ApplyTheme(settings.WidgetTheme);
         UpdateCredentialState();
     }

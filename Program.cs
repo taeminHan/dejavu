@@ -55,9 +55,10 @@ internal static class Program
             var previewLayout = ParsePreview<WidgetLayout>("layout");
             var previewServices = ParsePreview<ServiceDisplayMode>("services");
             var previewProgress = ParsePreviewSwitch("progress");
+            var previewPlacement = ParsePreview<WidgetPlacement>("placement");
             using var controller = new DesktopApplicationController(
                 application, startWithSettings, startWithOnboarding, startWithDetails,
-                previewTheme, previewDensity, previewLayout, previewServices, previewProgress);
+                previewTheme, previewDensity, previewLayout, previewServices, previewProgress, previewPlacement);
             var activationRegistration = ThreadPool.RegisterWaitForSingleObject(
                 showSettingsEvent,
                 (_, _) => application.Dispatcher.BeginInvoke(controller.ShowSettingsFromExternalActivation),

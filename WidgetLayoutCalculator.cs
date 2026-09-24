@@ -6,7 +6,27 @@ internal readonly record struct WidgetLayoutRequest(
     WidgetVisualTheme Theme,
     bool ShowClaude,
     bool ShowCodex,
-    bool ShowProgressBars);
+    bool ShowProgressBars,
+    bool InTaskbar = false,
+    double TaskbarBandHeight = WidgetLayoutCalculator.DefaultTaskbarBandHeight);
+
+/// <summary>
+/// Geometry of the in-taskbar overlay. Every length is in DIPs and is applied
+/// by UsageWidgetWindow to the TaskbarPanel cells without further arithmetic.
+/// </summary>
+internal readonly record struct TaskbarLayoutMetrics(
+    double CellWidth,
+    double CellGap,
+    double ProviderGap,
+    double PaddingX,
+    double PaddingY,
+    double LabelLineHeight,
+    double ValueLineHeight,
+    double ProgressHeight,
+    double ProgressTopMargin,
+    double ProgressSideMargin,
+    bool ProgressVisible,
+    double AnchorGap);
 
 internal readonly record struct WidgetLayoutMetrics(
     double Width,
@@ -17,7 +37,8 @@ internal readonly record struct WidgetLayoutMetrics(
     double ProviderGap,
     double SmallCodexMarginLeft,
     double SmallClaudeMarginTop,
-    WidgetLayout EffectiveLayout);
+    WidgetLayout EffectiveLayout,
+    TaskbarLayoutMetrics? Taskbar = null);
 
 /// <summary>
 /// Calculates widget geometry without touching WPF controls so every service and
@@ -25,6 +46,24 @@ internal readonly record struct WidgetLayoutMetrics(
 /// </summary>
 internal static class WidgetLayoutCalculator
 {
+    internal const double DefaultTaskbarBandHeight = 48;
+    internal const double MinimumTaskbarBandHeight = 32;
+
+    // In-taskbar overlay geometry. It ignores density, row layout and visual
+    // theme so the overlay keeps one shape inside every supported band height.
+    private const double TaskbarCellWidth = 38;
+    private const double TaskbarCellGap = 4;
+    private const double TaskbarProviderGap = 8;
+    private const double TaskbarPaddingX = 6;
+    private const double TaskbarPaddingY = 2;
+    private const double TaskbarLabelLineHeight = 12;
+    private const double TaskbarValueLineHeight = 14;
+    private const double TaskbarProgressHeight = 3;
+    private const double TaskbarProgressTopMargin = 2;
+    private const double TaskbarProgressSideMargin = 3;
+    private const double TaskbarAnchorGap = 4;
+    private const double TaskbarClippingGuard = 1;
+
     internal static WidgetLayoutMetrics Calculate(WidgetLayoutRequest request)
     {
         var small = request.Density == WidgetDensity.Small;
@@ -33,8 +72,9 @@ internal static class WidgetLayoutCalculator
         var themed = ThemeManager.UsesThemedChrome(request.Theme);
         var providerCount = (request.ShowClaude ? 1 : 0) + (request.ShowCodex ? 1 : 0);
         // TwoRows separates Codex and Claude. With fewer than two visible
-        // providers it must be visually identical to SingleRow.
-        var effectiveLayout = request.Layout == WidgetLayout.TwoRows && providerCount == 2
+        // providers it must be visually identical to SingleRow. The in-taskbar
+        // overlay is always a single row.
+        var effectiveLayout = !request.InTaskbar && request.Layout == WidgetLayout.TwoRows && providerCount == 2
             ? WidgetLayout.TwoRows
             : WidgetLayout.SingleRow;
         var singleRow = effectiveLayout == WidgetLayout.SingleRow;
@@ -59,10 +99,57 @@ internal static class WidgetLayoutCalculator
         var codexMarginLeft = request.ShowClaude && request.ShowCodex && singleRow ? 8 : 0;
         var claudeMarginTop = request.ShowClaude && request.ShowCodex && !singleRow ? 8 : 0;
 
+        if (request.InTaskbar)
+        {
+            var (taskbarWidth, taskbarHeight, taskbar) = CalculateTaskbarSize(request);
+            return new WidgetLayoutMetrics(taskbarWidth, taskbarHeight, compactGap, comfortableGap, providerTop,
+                providerGap, codexMarginLeft, claudeMarginTop, effectiveLayout, taskbar);
+        }
+
         var (width, height) = CalculateWindowSize(
             request, providerCount, small, comfortable, singleRow, themed, providerGap);
         return new WidgetLayoutMetrics(width, height, compactGap, comfortableGap, providerTop, providerGap,
             codexMarginLeft, claudeMarginTop, effectiveLayout);
+    }
+
+    /// <summary>
+    /// Sizes the in-taskbar overlay: three Claude cells separated by the cell
+    /// gap, one Codex cell after the provider gap, and one message cell when no
+    /// provider is visible. Hidden providers contribute neither a cell nor a gap.
+    /// The progress row is dropped when the band cannot keep one DIP above and
+    /// below it, so the height fits every band of at least MinimumTaskbarBandHeight.
+    /// </summary>
+    private static (double Width, double Height, TaskbarLayoutMetrics Metrics) CalculateTaskbarSize(
+        WidgetLayoutRequest request)
+    {
+        var claudeCells = request.ShowClaude ? 3 : 0;
+        var codexCells = request.ShowCodex ? 1 : 0;
+        var cells = claudeCells + codexCells;
+        var contentWidth = cells == 0
+            ? TaskbarCellWidth
+            : cells * TaskbarCellWidth + Math.Max(0, claudeCells - 1) * TaskbarCellGap +
+              (request.ShowClaude && request.ShowCodex ? TaskbarProviderGap : 0);
+        var width = 2 * TaskbarPaddingX + contentWidth;
+
+        var baseHeight = TaskbarLabelLineHeight + TaskbarValueLineHeight + 2 * TaskbarPaddingY +
+                         TaskbarClippingGuard;
+        var heightWithProgress = baseHeight + TaskbarProgressTopMargin + TaskbarProgressHeight;
+        var progressVisible = request.ShowProgressBars && cells > 0 &&
+                              request.TaskbarBandHeight >= heightWithProgress + 2;
+        var metrics = new TaskbarLayoutMetrics(
+            TaskbarCellWidth,
+            TaskbarCellGap,
+            TaskbarProviderGap,
+            TaskbarPaddingX,
+            TaskbarPaddingY,
+            TaskbarLabelLineHeight,
+            TaskbarValueLineHeight,
+            TaskbarProgressHeight,
+            TaskbarProgressTopMargin,
+            TaskbarProgressSideMargin,
+            progressVisible,
+            TaskbarAnchorGap);
+        return (width, progressVisible ? heightWithProgress : baseHeight, metrics);
     }
 
     private static (double Width, double Height) CalculateWindowSize(WidgetLayoutRequest request,

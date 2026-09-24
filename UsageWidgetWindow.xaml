@@ -199,6 +199,72 @@
                                Foreground="{DynamicResource WidgetMutedTextBrush}" />
                 </Grid>
             </Grid>
+
+            <!-- In-taskbar overlay: one fixed row that ignores density, row layout and theme.
+                 Cell widths, gaps, line heights, bars and card padding come from TaskbarLayoutMetrics. -->
+            <StackPanel x:Name="TaskbarPanel" Orientation="Horizontal" Visibility="Collapsed"
+                        HorizontalAlignment="Left" VerticalAlignment="Top">
+                <StackPanel x:Name="TaskbarClaudePanel" Orientation="Horizontal">
+                    <StackPanel x:Name="TaskbarFiveCell">
+                        <TextBlock x:Name="TaskbarFiveHourLabel" Text="5H" FontSize="10" FontWeight="Medium"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <TextBlock x:Name="TaskbarFiveHourValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <ProgressBar x:Name="TaskbarFiveHourBar" Style="{StaticResource TaskbarUsageProgress}"
+                                     Minimum="0" Maximum="100" />
+                    </StackPanel>
+                    <StackPanel x:Name="TaskbarWeeklyCell">
+                        <TextBlock x:Name="TaskbarWeeklyLabel" Text="주간" FontSize="10" FontWeight="Medium"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <TextBlock x:Name="TaskbarWeeklyValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <ProgressBar x:Name="TaskbarWeeklyBar" Style="{StaticResource TaskbarUsageProgress}"
+                                     Minimum="0" Maximum="100" />
+                    </StackPanel>
+                    <StackPanel x:Name="TaskbarFableCell">
+                        <TextBlock x:Name="TaskbarFableLabel" Text="Fable" FontSize="10" FontWeight="Medium"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <TextBlock x:Name="TaskbarFableValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <ProgressBar x:Name="TaskbarFableBar" Style="{StaticResource TaskbarUsageProgress}"
+                                     Minimum="0" Maximum="100" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel x:Name="TaskbarCodexPanel">
+                    <TextBlock x:Name="TaskbarCodexLabel" Text="Codex" FontSize="10" FontWeight="Medium"
+                               TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                               Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                               FontFamily="{DynamicResource TaskbarFontFamily}" />
+                    <TextBlock x:Name="TaskbarCodexValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                               TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                               Foreground="{DynamicResource TaskbarTextBrush}"
+                               FontFamily="{DynamicResource TaskbarFontFamily}" />
+                    <ProgressBar x:Name="TaskbarCodexBar" Style="{StaticResource TaskbarUsageProgress}"
+                                 Minimum="0" Maximum="100" />
+                </StackPanel>
+                <StackPanel x:Name="TaskbarMessageCell">
+                    <TextBlock x:Name="TaskbarMessageLabel" Text="dejavu" FontSize="10" FontWeight="Medium"
+                               TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                               Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                               FontFamily="{DynamicResource TaskbarFontFamily}" />
+                    <TextBlock x:Name="TaskbarMessageValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                               TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                               Foreground="{DynamicResource TaskbarTextBrush}"
+                               FontFamily="{DynamicResource TaskbarFontFamily}" />
+                </StackPanel>
+            </StackPanel>
             </Grid>
         </Grid>
     </Border>

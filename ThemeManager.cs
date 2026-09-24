@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
 
@@ -6,6 +7,16 @@ namespace ClaudeUsageTray;
 
 internal static class ThemeManager
 {
+    // GetSysColor indexes for the high-contrast taskbar palette.
+    private const int ColorWindow = 5;
+    private const int ColorWindowText = 8;
+    private const int ColorHighlight = 13;
+    private const int ColorGrayText = 17;
+    private const uint SpiGetHighContrast = 0x0042;
+    private const uint HcfHighContrastOn = 0x00000001;
+    // The user accent as last applied by Apply; the in-taskbar palette reuses it for its bars.
+    private static string _taskbarAccent = "#6D8EFF";
+
     public static void Apply(TraySettings settings)
     {
         var light = settings.Theme switch
@@ -15,6 +26,7 @@ internal static class ThemeManager
             _ => IsSystemLight()
         };
         var accent = NormalizeColor(settings.AccentColor, "#6D8EFF");
+        _taskbarAccent = accent;
         var palette = CreatePalette(settings.WidgetTheme, light, accent);
         // Transparent chrome exposes the text to an unpredictable desktop background.
         // Preserve the theme at normal opacity, then progressively prioritize legibility
@@ -64,6 +76,60 @@ internal static class ThemeManager
             WidgetVisualTheme.PaperInk => new Thickness(4, 16, 4, 16),
             _ => new Thickness(0, 15, 0, 15)
         });
+    }
+
+    /// <summary>
+    /// Colors the in-taskbar overlay after the taskbar itself (SystemUsesLightTheme),
+    /// not the app theme, so its text reads like the clock beside it. The visual
+    /// theme and widget opacity intentionally do not apply inside the taskbar.
+    /// </summary>
+    internal static void ApplyTaskbarPalette(bool lightTaskbar, bool highContrast)
+    {
+        if (highContrast)
+        {
+            // GetSysColor reads the current contrast theme. WPF's SystemColors values stay cached
+            // until WPF itself processes WM_SYSCOLORCHANGE, which can arrive after this call.
+            var window = SystemColorText(ColorWindow);
+            var windowText = SystemColorText(ColorWindowText);
+            var grayText = SystemColorText(ColorGrayText);
+            var highlight = SystemColorText(ColorHighlight);
+            SetBrush("TaskbarTextBrush", windowText);
+            SetBrush("TaskbarMutedTextBrush", grayText);
+            SetBrush("TaskbarTrackBrush", grayText);
+            SetBrush("TaskbarAccentBrush", highlight);
+            // Threshold values keep the most legible system pair; the bar still
+            // changes from the highlight color to the text color.
+            SetBrush("TaskbarWarningBrush", windowText);
+            SetBrush("TaskbarDangerBrush", windowText);
+            // System colors are only guaranteed legible on their own window
+            // color, so the high-contrast plate is opaque.
+            SetBrush("TaskbarSurfaceBrush", WithOpacity(window, 1));
+            SetBrush("TaskbarHoverBrush", WithOpacity(Blend(window, windowText, 0.16), 1));
+            return;
+        }
+
+        SetBrush("TaskbarTextBrush", lightTaskbar ? "#E6000000" : "#FFFFFFFF");
+        SetBrush("TaskbarMutedTextBrush", lightTaskbar ? "#99000000" : "#B3FFFFFF");
+        SetBrush("TaskbarTrackBrush", lightTaskbar ? "#26000000" : "#33FFFFFF");
+        SetBrush("TaskbarAccentBrush", _taskbarAccent);
+        SetBrush("TaskbarWarningBrush", lightTaskbar ? "#FF9D5D00" : "#FFFCE100");
+        SetBrush("TaskbarDangerBrush", lightTaskbar ? "#FFC42B1C" : "#FFFF99A4");
+        // Alpha 1/255 keeps the whole card hit-testable while the taskbar shows through.
+        SetBrush("TaskbarSurfaceBrush", "#01000000");
+        SetBrush("TaskbarHoverBrush", lightTaskbar ? "#0F000000" : "#14FFFFFF");
+    }
+
+    /// <summary>
+    /// The live high-contrast state (SPI_GETHIGHCONTRAST, a message-free local read). WPF's
+    /// SystemParameters.HighContrast stays cached until WPF's own notification window processes the
+    /// broadcast, which can come after this process's other windows have handled it.
+    /// </summary>
+    internal static bool IsHighContrastOn()
+    {
+        var highContrast = new HIGHCONTRAST { cbSize = (uint)Marshal.SizeOf<HIGHCONTRAST>() };
+        return SystemParametersInfo(SpiGetHighContrast, highContrast.cbSize, ref highContrast, 0)
+            ? (highContrast.dwFlags & HcfHighContrastOn) != 0
+            : System.Windows.SystemParameters.HighContrast;
     }
 
     internal static string WidgetCardStyleKey(WidgetVisualTheme theme) => theme switch
@@ -171,6 +237,17 @@ internal static class ThemeManager
         catch { return fallback; }
     }
 
+    private static string ColorText(System.Windows.Media.Color color) =>
+        $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}";
+
+    // GetSysColor returns a COLORREF (0x00BBGGRR).
+    private static string SystemColorText(int index)
+    {
+        var colorRef = GetSysColor(index);
+        return ColorText(System.Windows.Media.Color.FromRgb(
+            (byte)(colorRef & 0xFF), (byte)((colorRef >> 8) & 0xFF), (byte)((colorRef >> 16) & 0xFF)));
+    }
+
     private static string WithOpacity(string value, double opacity)
     {
         var color = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(value);
@@ -212,4 +289,20 @@ internal static class ThemeManager
         string WidgetMutedText, string WidgetTrack, string Grid, string AppFont, string WidgetFont,
         double WindowRadius, double CardRadius, double ControlRadius, double BadgeRadius, double ProgressRadius,
         double FrameThickness, double CardBorderThickness, double ProgressHeight, string Mark);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct HIGHCONTRAST
+    {
+        public uint cbSize;
+        public uint dwFlags;
+        public nint lpszDefaultScheme;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetSysColor(int index);
+
+    [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SystemParametersInfo(uint action, uint parameter, ref HIGHCONTRAST value,
+        uint winIni);
 }

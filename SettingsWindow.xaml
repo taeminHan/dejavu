@@ -128,19 +128,21 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="BarsStatus" VerticalAlignment="Center" Margin="0,0,11,0" FontSize="11" FontWeight="SemiBold"/><CheckBox x:Name="BarsToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="프로그레스 바 표시" Checked="OnToggleChanged" Unchecked="OnToggleChanged"/></StackPanel></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 크기"/><TextBlock Style="{StaticResource SettingDescription}" Text="작음, 중간, 큼 중 화면에 맞는 밀도를 선택합니다"/></StackPanel>
-                                <ComboBox x:Name="DensityCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnDensityChanged" /></Grid>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,12,0"><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 크기"/><TextBlock x:Name="DensityDescriptionText" Style="{StaticResource SettingDescription}" TextWrapping="Wrap" Text="작음, 중간, 큼 중 화면에 맞는 밀도를 선택합니다"/></StackPanel>
+                                <ComboBox x:Name="DensityCombo" Grid.Column="1" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" VerticalAlignment="Center" SelectionChanged="OnDensityChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 배치"/><TextBlock Style="{StaticResource SettingDescription}" Text="한 줄 또는 Codex 위 · Claude 아래 배치를 선택합니다"/></StackPanel>
-                                <ComboBox x:Name="LayoutCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnLayoutChanged" /></Grid>
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <StackPanel Margin="0,0,12,0"><TextBlock Style="{StaticResource SettingTitle}" Text="위젯 배치"/><TextBlock x:Name="LayoutDescriptionText" Style="{StaticResource SettingDescription}" TextWrapping="Wrap" Text="한 줄 또는 Codex 위 · Claude 아래 배치를 선택합니다"/></StackPanel>
+                                <ComboBox x:Name="LayoutCombo" Grid.Column="1" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" VerticalAlignment="Center" SelectionChanged="OnLayoutChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
                             <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="표시할 서비스"/><TextBlock Style="{StaticResource SettingDescription}" Text="자동 감지는 사용 가능한 서비스만 표시합니다"/></StackPanel>
                                 <ComboBox x:Name="ServicesCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnServicesChanged" /></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}">
-                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="배경 투명도"/><TextBlock Style="{StaticResource SettingDescription}" Text="글자와 진행률은 선명하게 유지하고 배경만 조절합니다"/></StackPanel>
+                            <Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="배경 투명도"/><TextBlock x:Name="OpacityDescriptionText" Style="{StaticResource SettingDescription}" Text="글자와 진행률은 선명하게 유지하고 배경만 조절합니다"/></StackPanel>
                                 <StackPanel Width="210" HorizontalAlignment="Right"><TextBlock x:Name="OpacityValue" HorizontalAlignment="Right" Foreground="{DynamicResource MutedTextBrush}"/><Slider x:Name="OpacitySlider" Minimum="55" Maximum="100" ValueChanged="OnOpacityChanged" /></StackPanel></Grid>
                         </Border>
                         <Border Style="{StaticResource SettingRow}" BorderThickness="0">
@@ -163,7 +165,7 @@
                     <StackPanel>
                         <TextBlock Style="{StaticResource SectionTitle}" Text="동작" />
                         <TextBlock Text="표시 위치와 앱 동작을 설정합니다." Margin="0,5,0,18" Foreground="{DynamicResource MutedTextBrush}" />
-                        <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="기본 표시 위치"/><TextBlock Style="{StaticResource SettingDescription}" Text="직접 이동하면 마지막 위치를 기억합니다"/></StackPanel><ComboBox x:Name="PlacementCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnPlacementChanged"/></Grid></Border>
+                        <Border Style="{StaticResource SettingRow}"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Margin="0,0,12,0"><TextBlock Style="{StaticResource SettingTitle}" Text="기본 표시 위치"/><TextBlock x:Name="PlacementDescriptionText" Style="{StaticResource SettingDescription}" TextWrapping="Wrap" Text="직접 이동하면 마지막 위치를 기억합니다"/></StackPanel><ComboBox x:Name="PlacementCombo" Grid.Column="1" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" VerticalAlignment="Center" SelectionChanged="OnPlacementChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="자동 갱신"/><TextBlock Style="{StaticResource SettingDescription}" Text="요청 제한 시에는 자동으로 간격을 늘립니다"/></StackPanel><ComboBox x:Name="RefreshCombo" Style="{StaticResource AppComboBox}" Width="190" HorizontalAlignment="Right" SelectionChanged="OnRefreshChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="트레이 아이콘"/><TextBlock Style="{StaticResource SettingDescription}" Text="아이콘을 숨겨도 상시 위젯은 유지됩니다"/></StackPanel><ComboBox x:Name="TrayCombo" Style="{StaticResource AppComboBox}" Width="220" HorizontalAlignment="Right" SelectionChanged="OnTrayChanged"/></Grid></Border>
                         <Border Style="{StaticResource SettingRow}"><Grid><StackPanel><TextBlock Style="{StaticResource SettingTitle}" Text="Windows 시작 시 실행"/><TextBlock Style="{StaticResource SettingDescription}" Text="로그인 후 위젯을 자동으로 표시합니다"/></StackPanel><StackPanel Orientation="Horizontal" HorizontalAlignment="Right"><TextBlock x:Name="StartupStatus" VerticalAlignment="Center" Margin="0,0,11,0" FontSize="11" FontWeight="SemiBold"/><CheckBox x:Name="StartupToggle" Style="{StaticResource ToggleSwitch}" AutomationProperties.Name="Windows 시작 시 실행" Checked="OnStartupChanged" Unchecked="OnStartupChanged"/></StackPanel></Grid></Border>

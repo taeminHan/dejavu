@@ -29,6 +29,7 @@ internal sealed class DesktopApplicationController : IDisposable
     private readonly DispatcherTimer _loginWatchTimer = new() { Interval = TimeSpan.FromSeconds(3) };
     private readonly DispatcherTimer _automaticUpdateTimer = new();
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
+    private readonly TaskbarTracker _taskbarTracker;
     private CancellationTokenSource? _refreshCancellation;
     private CancellationTokenSource? _updateCancellation;
     private CancellationTokenSource? _codexLoginCancellation;
@@ -39,13 +40,19 @@ internal sealed class DesktopApplicationController : IDisposable
     private Drawing.Icon? _generatedIcon;
     private bool _loginWatchRequiresClaudeCode;
     private bool _codexLoginInProgress;
+    // The widget has been asked to appear (first run completed or onboarding closed).
+    private bool _widgetRequested;
+    // The tracker reports Suppressed: a fullscreen app or a settling taskbar hides the widget.
+    private bool _taskbarSuppressed;
+    // The widget cancels every close except shutdown; a closed Window can never be shown again.
+    private bool _widgetClosed;
     private bool _disposed;
 
     public DesktopApplicationController(System.Windows.Application application, bool startWithSettings = false,
         bool startWithOnboarding = false, bool startWithDetails = false,
         WidgetVisualTheme? previewTheme = null, WidgetDensity? previewDensity = null,
         WidgetLayout? previewLayout = null, ServiceDisplayMode? previewServices = null,
-        bool? previewProgress = null)
+        bool? previewProgress = null, WidgetPlacement? previewPlacement = null)
     {
         _application = application;
         if (previewTheme is not null) _settings.WidgetTheme = previewTheme.Value;
@@ -53,6 +60,7 @@ internal sealed class DesktopApplicationController : IDisposable
         if (previewLayout is not null) _settings.WidgetLayout = previewLayout.Value;
         if (previewServices is not null) _settings.ServiceDisplayMode = previewServices.Value;
         if (previewProgress is not null) _settings.ShowProgressBars = previewProgress.Value;
+        if (previewPlacement is not null) _settings.WidgetPlacement = previewPlacement.Value;
         ThemeManager.Apply(_settings);
         _updateWindow.ApplyTheme(_settings.WidgetTheme);
         if (_updateService.IsInstalled) MigrateExistingStartupRegistration();
@@ -91,6 +99,20 @@ internal sealed class DesktopApplicationController : IDisposable
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
         SystemEvents.SessionSwitch += OnSessionSwitch;
         SystemEvents.TimeChanged += OnSystemTimeChanged;
+        // Must exist before the first ShowWidget below. Nothing earlier in this constructor
+        // dereferences it: WireWindows and ConfigureTray only register handlers, and the
+        // SystemEvents handlers reach the tracker only through dispatcher work, which cannot
+        // run until this constructor has returned.
+        _taskbarTracker = new TaskbarTracker(_application.Dispatcher);
+        _taskbarTracker.StateChanged += OnTaskbarStateChanged;
+        // Forward every request: the widget applies its own visibility, dock, raise-block and
+        // rate-limit checks. The tracker raises these only while Docked (the widget is then
+        // shown); a hidden widget's raise block is lifted by the "docked" check that follows
+        // the next show, or by the backstop once the foreground window has changed.
+        _taskbarTracker.RaiseRequested += (_, reason) =>
+        {
+            if (!_disposed) _widget.RaiseAboveTaskbarIfCovered(_taskbarTracker.TaskbarHandle, reason);
+        };
 
         if (startWithDetails)
         {
@@ -123,6 +145,7 @@ internal sealed class DesktopApplicationController : IDisposable
         _widget.WidgetClicked += (_, _) => ToggleDetails();
         _widget.SettingsRequested += (_, _) => ShowSettings();
         _widget.PositionChangedByUser += (_, _) => _settings.Save();
+        _widget.Closed += (_, _) => _widgetClosed = true;
 
         _details.RefreshRequested += async (_, _) => await RefreshAsync(force: true);
         _details.SettingsRequested += (_, _) => ShowSettings();
@@ -130,7 +153,15 @@ internal sealed class DesktopApplicationController : IDisposable
         _details.CodexLoginRequested += async (_, _) => await StartCodexLoginAsync();
 
         _settingsWindow.SettingsChanged += (_, _) => ApplySettings();
-        _settingsWindow.PositionResetRequested += (_, _) => _widget.PositionFromSettings(forceDefault: true);
+        _settingsWindow.PositionResetRequested += (_, _) =>
+        {
+            _widget.PositionFromSettings(forceDefault: true);
+            if (_settings.WidgetPlacement != WidgetPlacement.Custom) return;
+            // Switching to Custom shows the default point; save it so the saved custom point
+            // matches the screen and a later settings change or restart does not move the widget.
+            _widget.KeepCurrentPositionVisible();
+            _settings.Save();
+        };
         _settingsWindow.StartupChanged += (_, enabled) => SetStartup(enabled);
         _settingsWindow.UpdateCheckRequested += async (_, _) => await CheckForUpdatesFromSettingsAsync();
         _settingsWindow.UpdateDetailsRequested += (_, _) => ShowPendingUpdate();
@@ -545,8 +576,12 @@ internal sealed class DesktopApplicationController : IDisposable
         _settingsWindow.UpdateClaudeConnectionState(state);
         _onboarding.UpdateState(state);
         UpdateTrayIcon();
-        AppDiagnostics.Write(state, _widget, _settings.WidgetOpacity);
+        WriteDiagnostics(state);
     }
+
+    private void WriteDiagnostics(ApplicationState state) =>
+        AppDiagnostics.Write(state, _widget, _settings.WidgetOpacity, _settings.WidgetPlacement,
+            _taskbarTracker.State, _taskbarTracker.RediscoveryCount);
 
     private void ApplySettings()
     {
@@ -555,6 +590,9 @@ internal sealed class DesktopApplicationController : IDisposable
         _widget.ApplySettings(_settings);
         _updateWindow.ApplyTheme(_settings.WidgetTheme);
         _onboarding.ApplyTheme(_settings.WidgetTheme);
+        // Placement changes, Reset position and Restore defaults all arrive here; leaving
+        // InTaskbar disables the tracker and clears the dock before the widget is positioned.
+        SyncTaskbarTracking();
         if (_settings.WidgetPlacement != WidgetPlacement.Custom) _widget.PositionFromSettings(forceDefault: true);
         else
         {
@@ -565,15 +603,78 @@ internal sealed class DesktopApplicationController : IDisposable
         _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
         ConfigureAutomaticUpdateChecks();
         UpdateTrayIcon();
-        AppDiagnostics.Write(_state, _widget, _settings.WidgetOpacity);
+        WriteDiagnostics(_state);
     }
 
     private void ShowWidget()
     {
         if (_disposed) return;
-        _widget.PositionFromSettings();
+        _widgetRequested = true;
+        // SyncTaskbarTracking always finishes with UpdateWidgetVisibility.
+        SyncTaskbarTracking();
+    }
+
+    private bool TaskbarTrackingRequested =>
+        !_disposed && _widgetRequested && _settings.WidgetPlacement == WidgetPlacement.InTaskbar;
+
+    private void SyncTaskbarTracking()
+    {
+        // SetEnabled is idempotent and never raises StateChanged synchronously, so the
+        // current state is applied here directly (Suppressed "settling" right after enabling).
+        _taskbarTracker.SetEnabled(TaskbarTrackingRequested);
+        ApplyTaskbarState(_taskbarTracker.State);
+    }
+
+    private void OnTaskbarStateChanged(object? sender, TaskbarTrackerState state)
+    {
+        if (_disposed) return;
+        ApplyTaskbarState(state);
+        WriteDiagnostics(_state);
+    }
+
+    private void ApplyTaskbarState(TaskbarTrackerState state)
+    {
+        if (_disposed) return;
+        switch (state.Status)
+        {
+            case TaskbarDockStatus.Docked:
+                // The widget ignores an unchanged dock, so repeated settings saves stay cheap.
+                _widget.SetTaskbarDock(state.Dock);
+                _taskbarSuppressed = false;
+                break;
+            case TaskbarDockStatus.Suppressed:
+                // Keep the last dock so the widget returns to the same slot afterwards.
+                _taskbarSuppressed = true;
+                break;
+            default:
+                // Fallback shows the ordinary floating widget; Inactive means another placement.
+                _widget.SetTaskbarDock(null);
+                _taskbarSuppressed = false;
+                break;
+        }
+        UpdateWidgetVisibility();
+        _settingsWindow.UpdateTaskbarStatus(state);
+    }
+
+    private void UpdateWidgetVisibility()
+    {
+        if (_disposed || !_widgetRequested || _widgetClosed) return;
+        if (_taskbarSuppressed)
+        {
+            // Really hide while a fullscreen app owns the monitor or the taskbar is settling.
+            // Positioning afterwards keeps a valid anchor for the details window.
+            if (_widget.IsVisible) _widget.Hide();
+            _widget.PositionFromSettings();
+            return;
+        }
+
+        // A shown Custom widget keeps its displayed top-left point; ApplySettings clamps and saves it.
+        if (_settings.WidgetPlacement != WidgetPlacement.Custom || !_widget.IsVisible)
+            _widget.PositionFromSettings();
         if (!_widget.IsVisible) _widget.Show();
         _widget.RequestTopmostRepair("show_widget");
+        if (_widget.IsTaskbarDocked)
+            _widget.RaiseAboveTaskbarIfCovered(_taskbarTracker.TaskbarHandle, "docked");
     }
 
     private void ToggleDetails()
@@ -736,7 +837,7 @@ internal sealed class DesktopApplicationController : IDisposable
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
         if (e.Mode != PowerModes.Resume) return;
-        QueueWidgetTopmostRepair("power_resume");
+        QueueWidgetTopmostRepair("power_resume", notifyTaskbar: true);
         QueueAutomaticUpdateScheduleRecovery(checkIfOverdue: true);
     }
 
@@ -748,16 +849,23 @@ internal sealed class DesktopApplicationController : IDisposable
         if (e.Reason is SessionSwitchReason.SessionUnlock or SessionSwitchReason.SessionLogon
             or SessionSwitchReason.ConsoleConnect or SessionSwitchReason.RemoteConnect)
         {
-            QueueWidgetTopmostRepair($"session_{e.Reason}");
+            QueueWidgetTopmostRepair($"session_{e.Reason}", notifyTaskbar: true);
         }
     }
 
-    private void QueueWidgetTopmostRepair(string reason, bool reposition = false)
+    private void QueueWidgetTopmostRepair(string reason, bool reposition = false, bool notifyTaskbar = false)
     {
         if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
         _application.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() =>
         {
             if (_disposed) return;
+            if (notifyTaskbar && TaskbarTrackingRequested)
+            {
+                // Explorer may rebuild or move the taskbar while the session was away.
+                // The tracker re-settles without raising StateChanged synchronously.
+                _taskbarTracker.NotifyShellChanged(reason);
+                ApplyTaskbarState(_taskbarTracker.State);
+            }
             if (reposition) _widget.PositionFromSettings();
             _widget.RequestTopmostRepair(reason);
         }));
@@ -951,6 +1059,8 @@ internal sealed class DesktopApplicationController : IDisposable
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         SystemEvents.SessionSwitch -= OnSessionSwitch;
         SystemEvents.TimeChanged -= OnSystemTimeChanged;
+        // Unhooks the WinEvent hook and destroys the hidden broadcast window before the widget hides.
+        _taskbarTracker.Dispose();
         _timer.Stop();
         _loginWatchTimer.Stop();
         _automaticUpdateTimer.Stop();
@@ -962,6 +1072,7 @@ internal sealed class DesktopApplicationController : IDisposable
         _generatedIcon?.Dispose();
         _widget.Hide();
         _details.Hide();
+        _widget.AllowClose = true;
         _settingsWindow.AllowClose = true;
         _updateWindow.AllowClose = true;
         _settingsWindow.Hide();

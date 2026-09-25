@@ -13,7 +13,7 @@ The project intentionally depends on local and non-public integration surfaces. 
 | Component | Responsibility |
 |---|---|
 | `Program.cs` | Velopack bootstrap, single-instance mutex, second-instance activation event, WPF application creation, global crash logging and preview argument parsing. |
-| `DesktopApplicationController.cs` | Composition root. Owns windows, provider clients, timers, refresh serialization, tray actions, login flows, updates, startup registration and shutdown. |
+| `DesktopApplicationController.cs` | Composition root. Owns windows, provider clients, timers, refresh serialization, tray actions, login flows, updates, startup registration, taskbar tracking and shutdown. |
 | `ApplicationState.cs` | Immutable combined Claude/Codex state delivered to every view. |
 | `ClaudeEnvironmentDetector.cs` | Finds Claude Code credentials and executables; launches official login or setup pages after a user action. |
 | `ClaudeUsageClient.cs` | Reads a Claude Code credential snapshot, queries Anthropic usage, parses 5-hour, weekly and Fable limits, then falls back to Desktop history when login is unavailable. |
@@ -23,8 +23,9 @@ The project intentionally depends on local and non-public integration surfaces. 
 | `AppDiagnostics.cs` | Writes a credential-free status snapshot for support diagnostics. |
 | `VelopackUpdateService.cs` | Checks GitHub Releases, downloads Velopack packages and applies an installed update. |
 | `ThemeManager.cs` / `ThemeResources.xaml` | Semantic theme values and shared WPF control styles. |
-| `WidgetLayoutCalculator.cs` | Pure source of truth for widget geometry. |
-| `UsageWidgetWindow*` | Always-visible widget rendering, pointer interaction, monitor positioning and native topmost-band recovery. |
+| `WidgetLayoutCalculator.cs` | Pure source of truth for widget geometry, including the in-taskbar branch (`TaskbarLayoutMetrics`). |
+| `TaskbarTracker.cs` | Enabled only for `WidgetPlacement.InTaskbar`. Finds the primary Windows 11 taskbar band with message-free local reads, listens for `TaskbarCreated`, display and setting broadcasts plus an out-of-context foreground WinEvent hook, and reports `Docked`, `Suppressed` or `Fallback` with a device-pixel `TaskbarDock`. It never modifies, parents or owns Explorer windows and sends them no window messages of its own. Its only call into Explorer is the `SHAppBarMessage(ABM_GETSTATE)` auto-hide query (shell32 delivers it as a synchronous `WM_COPYDATA` to `Shell_TrayWnd`), which runs on a single thread-pool worker with a 2 s timeout on enable, every settle, `WM_SETTINGCHANGE` and every 15 s. |
+| `UsageWidgetWindow*` | Always-visible widget rendering, pointer interaction, DPI-correct monitor positioning, the docked taskbar look and anchor, native topmost-band recovery and the scoped raise above a covering taskbar. |
 | `UsageDetailsWindow*` | Expanded usage values, reset credits and reset times. |
 | `SettingsWindow*`, `OnboardingWindow*`, `UpdateWindow*` | Configuration, first-run connection guidance and update decisions. |
 
@@ -34,7 +35,7 @@ The project intentionally depends on local and non-public integration surfaces. 
 2. `Local\dejavu.SingleInstance` becomes the process owner. A second process signals `Local\dejavu.ShowSettings` and exits.
 3. WPF starts with `ShutdownMode.OnExplicitShutdown`; closing settings and update windows hides them instead of ending the process.
 4. `DesktopApplicationController` loads settings, applies theme resources, wires windows and timers, migrates old startup entries and begins provider refresh.
-5. `Dispose` cancels owned asynchronous work, stops timers, hides windows and disposes tray resources. `Exit` then calls `Application.Shutdown()`.
+5. `Dispose` cancels owned asynchronous work, stops timers, unsubscribes `SystemEvents`, disposes `TaskbarTracker` (unhooking its WinEvent hook and hidden window), hides windows and disposes tray resources. `Exit` then calls `Application.Shutdown()`.
 
 Do not change this into close-on-last-window behavior. The widget and tray application must survive while auxiliary windows are hidden.
 
@@ -81,9 +82,9 @@ If no runnable executable exists, the UI links to the official Codex Windows ins
 
 | Path or registry value | Contents and policy |
 |---|---|
-| `%LocalAppData%\dejavu\settings.json` | User settings, including the last automatically notified update version. Written through `settings.json.tmp` and atomically replaced. Never stores provider credentials. |
+| `%LocalAppData%\dejavu\settings.json` | User settings, including the last automatically notified update version. Enums such as `WidgetPlacement` are stored as integers and are append-only. Written through `settings.json.tmp` and atomically replaced. Never stores provider credentials. |
 | `%LocalAppData%\dejavu\settings.corrupt-*.json` | Preserved invalid settings. Startup continues with normalized defaults. |
-| `%LocalAppData%\dejavu\status.json` | Support status, percentages, timestamps, geometry and source availability. Must never contain tokens or conversations. |
+| `%LocalAppData%\dejavu\status.json` | Support status, percentages, timestamps, geometry, source availability, placement, taskbar tracker state and raise counters. Must never contain tokens, conversations, or titles/classes of other processes' windows. |
 | `%LocalAppData%\dejavu\crash.log` | Append-only crash details. Rotates to `crash.previous.log` above 256 KiB. |
 | `%LocalAppData%\ClaudeUsageTray\settings.json` | Legacy settings source migrated on load. |
 | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\dejavu` | Optional current-user startup entry. Legacy `UsageBarForClaude` and `ClaudeUsageTray` entries are removed during migration. |
@@ -97,6 +98,16 @@ Installed builds use `VelopackUpdateService`; plain `dotnet run`, build output a
 When automatic checks are enabled, an installed build checks after startup and at the next local wall-clock hour. Every tick recalculates the following clock-hour boundary instead of adding a fixed interval, so delayed ticks do not drift. Resume and system-time changes perform at most one overdue check and then realign the schedule. Startup, hourly and manual requests share one in-flight query; automatic failures stay silent, the same version is notified only once across restarts, and manual checks always remain available. Disabling the setting stops the schedule immediately.
 
 The tag workflow in `.github/workflows/release.yml` treats the Windows project version as the shared product version, builds the Windows Velopack and free ad-hoc macOS/Sparkle assets in separate runners, and publishes one GitHub Release only after both sets pass validation. It downloads the previous Windows package for delta generation, calls `tools/BuildRelease.ps1` and `tools/BuildMacFreeRelease.sh`, then uploads the stable `dejavu-Setup.exe` alias, macOS DMG/ZIP/appcast and checksums.
+
+## Taskbar docking boundary
+
+`InTaskbar` places Dejavu's own topmost widget window over the primary taskbar band; the window is never a child or owned window of Explorer.
+
+1. `DesktopApplicationController.SyncTaskbarTracking` enables the tracker only while the widget is requested and the placement is `InTaskbar`, then applies the tracker state: `Docked` passes the dock to `UsageWidgetWindow.SetTaskbarDock`, `Suppressed` hides the widget, `Fallback` clears the dock and places the widget with the `TaskbarRight` formula, and `Inactive` (another placement is selected, or the widget is not requested) clears the dock so the selected placement's normal rules apply and a `Custom` top-left point is kept. The saved placement never changes.
+2. `TaskbarTracker` evaluates on its timer, its hidden broadcast window and its foreground hook. It detects shell mismatch, non-XAML (Windows 10, ExplorerPatcher, StartAllBack), vertical, auto-hide, mirrored, too-small and missing taskbar/tray states, fullscreen and geometry settling.
+3. `RaiseRequested` asks the widget to verify it is still above the taskbar; the widget reorders only itself and only when covered.
+
+Explorer and registry failures must degrade to `Fallback` or `Suppressed`, and a failed raise is only recorded (`LastTaskbarRaiseError`); none may throw on the dispatcher. `docs/STABILITY.md` lists the permitted Win32 calls and the hook lifetime.
 
 ## Extension rules
 
@@ -117,5 +128,6 @@ Put semantic resources and reusable styles in `ThemeResources.xaml`, palette/cap
 - Claude usage integration is not a public third-party API contract and may change without notice.
 - Claude Desktop history cannot provide Fable or reset times when Claude Code authentication is unavailable.
 - Codex requires a runnable Codex Desktop bundled binary or native CLI.
-- The Windows taskbar has no supported API for arbitrary third-party usage text; Dejavu remains a separate topmost widget.
+- The Windows taskbar has no supported API for arbitrary third-party usage text. Dejavu remains a separate topmost widget; `InTaskbar` overlays that widget on the taskbar band instead of embedding it.
+- `InTaskbar` supports only the primary horizontal Windows 11 XAML taskbar. It is covered while Start, Search, Quick Settings or Notification Center is open, can drop behind the taskbar briefly after a taskbar click, and may overlap task buttons on a crowded taskbar because v1 does not measure free space.
 - A successful compile is not visual validation, and a portable executable is not an update/install validation.

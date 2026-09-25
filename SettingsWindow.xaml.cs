@@ -9,9 +9,16 @@ namespace ClaudeUsageTray;
 
 public partial class SettingsWindow : Window
 {
+    private const string OutsideTaskbarOnlyDescription = "작업표시줄 밖에 표시될 때만 적용됩니다";
     private readonly TraySettings _settings;
+    // The XAML text stays the single source of the default descriptions.
+    private readonly string _defaultPlacementDescription;
+    private readonly string _defaultDensityDescription;
+    private readonly string _defaultLayoutDescription;
+    private readonly string _defaultOpacityDescription;
     private bool _loading;
     private ApplicationState? _applicationState;
+    private TaskbarTrackerState? _taskbarState;
     internal bool AllowClose { get; set; }
 
     internal SettingsWindow(TraySettings settings)
@@ -19,6 +26,10 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _loading = true;
         InitializeComponent();
+        _defaultPlacementDescription = PlacementDescriptionText.Text;
+        _defaultDensityDescription = DensityDescriptionText.Text;
+        _defaultLayoutDescription = LayoutDescriptionText.Text;
+        _defaultOpacityDescription = OpacityDescriptionText.Text;
 
         ThemeCombo.ItemsSource = new[]
         {
@@ -56,6 +67,7 @@ public partial class SettingsWindow : Window
         PlacementCombo.ItemsSource = new[]
         {
             new Choice<WidgetPlacement>(WidgetPlacement.TaskbarRight, "작업표시줄 위 · 오른쪽"),
+            new Choice<WidgetPlacement>(WidgetPlacement.InTaskbar, "작업표시줄 안 · 시계 옆"),
             new Choice<WidgetPlacement>(WidgetPlacement.TopRight, "화면 오른쪽 위"),
             new Choice<WidgetPlacement>(WidgetPlacement.Custom, "직접 배치")
         };
@@ -246,7 +258,53 @@ public partial class SettingsWindow : Window
         SetToggleStatus(StartupStatus, StartupToggle.IsChecked == true);
         SetToggleStatus(UpdateToggleStatus, _settings.AutomaticUpdateChecksEnabled);
         OpacityValue.Text = $"{OpacitySlider.Value:0}%";
+        UpdatePlacementDescriptions();
     }
+
+    internal void UpdateTaskbarStatus(TaskbarTrackerState state)
+    {
+        _taskbarState = state;
+        UpdatePlacementDescriptions();
+    }
+
+    private void UpdatePlacementDescriptions()
+    {
+        if (PlacementDescriptionText is null) return;
+        var inTaskbar = _settings.WidgetPlacement == WidgetPlacement.InTaskbar;
+        PlacementDescriptionText.Text = inTaskbar ? TaskbarPlacementDescription(_taskbarState) : _defaultPlacementDescription;
+        // Density, row layout and widget background opacity do not change the in-taskbar look; they
+        // still apply to the floating fallback, so the controls stay enabled.
+        DensityDescriptionText.Text = inTaskbar ? OutsideTaskbarOnlyDescription : _defaultDensityDescription;
+        LayoutDescriptionText.Text = inTaskbar ? OutsideTaskbarOnlyDescription : _defaultLayoutDescription;
+        OpacityDescriptionText.Text = inTaskbar ? OutsideTaskbarOnlyDescription : _defaultOpacityDescription;
+    }
+
+    private static string TaskbarPlacementDescription(TaskbarTrackerState? taskbar)
+    {
+        if (taskbar is not TaskbarTrackerState state) return "알림 영역 왼쪽에 표시합니다 · 드래그 이동은 지원하지 않습니다";
+        return state.Status switch
+        {
+            TaskbarDockStatus.Docked => "알림 영역 왼쪽에 표시 중 · 드래그 이동은 지원하지 않습니다",
+            TaskbarDockStatus.Suppressed when state.Reason == "fullscreen" => "전체 화면 앱이 실행 중이라 잠시 숨겼습니다",
+            TaskbarDockStatus.Suppressed => "작업표시줄 위치를 확인하는 중입니다",
+            TaskbarDockStatus.Fallback =>
+                "작업표시줄 안에 넣을 수 없어 작업표시줄 위에 표시합니다 (" + TaskbarFallbackReason(state.Reason) + ")",
+            _ => "알림 영역 왼쪽에 표시합니다 · 드래그 이동은 지원하지 않습니다"
+        };
+    }
+
+    private static string TaskbarFallbackReason(string? reason) => reason switch
+    {
+        "autohide" => "자동 숨기기",
+        "vertical" => "세로 작업표시줄",
+        "non_xaml_taskbar" => "지원하지 않는 작업표시줄",
+        "taskbar_missing" => "작업표시줄 없음",
+        "tray_missing" => "알림 영역 없음",
+        "rtl_or_mirrored" => "오른쪽→왼쪽 배치",
+        "band_too_small" => "작업표시줄이 너무 낮음",
+        "shell_mismatch" => "다른 셸 사용 중",
+        _ => "지원하지 않는 환경"
+    };
 
     private static void SetToggleStatus(TextBlock label, bool enabled)
     {

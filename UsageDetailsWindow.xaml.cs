@@ -248,10 +248,16 @@ public partial class UsageDetailsWindow : Window
 
     internal void ShowNear(UsageWidgetWindow widget)
     {
+        // Screen coordinates are device pixels; Left/Top are DIPs. Use the shown
+        // widget's transform because this window may not have an HWND yet.
+        var toDip = UsageWidgetWindow.DeviceToDip(widget);
         var widgetCenter = new System.Drawing.Point(
-            (int)Math.Round(widget.Left + widget.Width / 2),
-            (int)Math.Round(widget.Top + widget.Height / 2));
-        var work = Forms.Screen.FromPoint(widgetCenter).WorkingArea;
+            (int)Math.Round((widget.Left + widget.Width / 2) / toDip.M11),
+            (int)Math.Round((widget.Top + widget.Height / 2) / toDip.M22));
+        var workPixels = Forms.Screen.FromPoint(widgetCenter).WorkingArea;
+        var work = new System.Windows.Rect(
+            toDip.Transform(new System.Windows.Point(workPixels.Left, workPixels.Top)),
+            toDip.Transform(new System.Windows.Point(workPixels.Right, workPixels.Bottom)));
         Left = Math.Clamp(widget.Left + widget.Width - Width, work.Left + 8, Math.Max(work.Left + 8, work.Right - Width - 8));
         // A WPF Window cannot be measured safely before its native HWND exists.
         // .NET 10 treats that path as an invariant violation and terminates the

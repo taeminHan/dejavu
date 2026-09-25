@@ -33,6 +33,10 @@ Do not duplicate widget size formulas in a window or controller. Extend `WidgetL
 - Displayed percentages and progress geometry must use the same clamped value.
 - Missing data uses `--%`; it must never reuse a stale percentage with a zero-length bar.
 - Keep Korean labels readable and unclipped at the smallest supported dimensions.
+- The opt-in `InTaskbar` placement uses dedicated geometry from the `WidgetLayoutCalculator` taskbar branch (`WidgetLayoutRequest.InTaskbar`, `TaskbarLayoutMetrics`). It is independent of density, row layout and visual theme, must fit every taskbar band of at least `MinimumTaskbarBandHeight`, and is never draggable or converted to `Custom`.
+- When `TaskbarTracker` reports `Fallback`, show the ordinary floating `TaskbarRight` widget and keep the saved placement `InTaskbar`. Only `Suppressed` (fullscreen or taskbar settling) may hide the widget, and it must be shown again afterwards. These are the only exceptions to the always-visible behavior.
+- Never `SetParent`, set an Explorer owner (`GWLP_HWNDPARENT`, `WindowInteropHelper.Owner`), `AttachThreadInput`, inject, use `SetWindowBand`/uiAccess, or send/post messages to Explorer windows. The raise above a covering taskbar is the scoped z-order exception described in `docs/STABILITY.md`. The tracker's only call into Explorer is `SHAppBarMessage(ABM_GETSTATE)` (internally a synchronous `WM_COPYDATA` to `Shell_TrayWnd`); keep it on the single thread-pool worker with the 2 s timeout described there and never call it on the dispatcher.
+- Placement code converts device pixels (WinForms `Screen`, Win32 rectangles) to DIPs before assigning `Left`/`Top`.
 
 ## Validation
 
@@ -53,7 +57,7 @@ dotnet publish -c Release -r win-x64 --self-contained true `
 ```
 
 Review the state matrix in `docs/WIDGET_UI.md` before handoff. Do not treat a successful build as visual verification.
-The WPF layout probe is mandatory for widget geometry changes and must report all 504 combinations with zero clipped cases. Its 180 zero/one-provider comparisons, 72 two-provider split checks, 216 auto-detection equivalence checks and 24 Settings frame states must also report no mismatch.
+The WPF layout probe is mandatory for widget geometry changes and must report all 504 combinations with zero clipped cases. Its 180 zero/one-provider comparisons, 72 two-provider split checks, 216 auto-detection equivalence checks and 24 Settings frame states must also report no mismatch. The probe must also print `Taskbar layout matrix: 1512 checked, 0 clipped, 0 over band, 0 mismatched` and `Taskbar tracker transitions: 166 checked, 0 mismatched`. When a settle, fallback or suppression rule in `TaskbarTracker` changes, add a timeline to that matrix and update the expected count here and in `docs/DEVELOPMENT.md`.
 
 ## Safety and privacy
 

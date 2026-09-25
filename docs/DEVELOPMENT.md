@@ -63,6 +63,7 @@ The executable accepts these diagnostic UI options:
 --layout=SingleRow|TwoRows
 --services=AutoDetect|ClaudeAndCodex|ClaudeOnly|CodexOnly
 --progress=on|off
+--placement=TaskbarRight|TopRight|Custom|InTaskbar
 ```
 
 Example:
@@ -70,9 +71,11 @@ Example:
 ```powershell
 .\bin\Release\net10.0-windows\win-x64\dejavu.exe `
   --settings --theme=PaperInk --density=Small --layout=TwoRows --services=ClaudeAndCodex --progress=off
+
+.\bin\Release\net10.0-windows\win-x64\dejavu.exe --placement=InTaskbar --services=ClaudeAndCodex
 ```
 
-Preview arguments override the loaded values for the current process. Treat them as developer aids, not a public command-line compatibility promise.
+Preview arguments are applied to the in-memory settings at startup and are not written by themselves. Any later save in that session writes them to `%LocalAppData%\dejavu\settings.json`: a Settings change, Reset position, a Custom move, onboarding completion, or a new-version notification. Restore the value in Settings afterwards if needed. Exit the running tray instance first: a second `dejavu.exe` only opens Settings in the existing instance and ignores its arguments. Outside a preview, the in-taskbar placement is turned on in Settings → 동작 → 기본 표시 위치 → 작업표시줄 안 · 시계 옆. Treat preview arguments as developer aids, not a public command-line compatibility promise.
 
 ## Provider test overrides
 
@@ -101,9 +104,9 @@ dotnet build .\ClaudeUsageTray.csproj -c Release
 dotnet run --project .\tools\WidgetLayoutProbe\WidgetLayoutProbe.csproj -c Release
 ```
 
-For widget changes, the layout probe must pass all 504 combinations of seven forced/auto-detected service states, three densities, two layouts, progress on/off and all six themes. It loads and arranges the actual WPF tree, fails when `WidgetCard.DesiredSize.Height` exceeds the calculated window height, compares 180 zero/one-provider pairs to ensure `TwoRows` is visually identical to `SingleRow`, verifies 72 two-provider splits including Codex-above-Claude order, and compares 216 auto-detected states with their forced-provider equivalents. It also checks 24 Settings frame states across all visual themes, light/dark preferences and normal/maximized modes. Then exercise provider error/loading states, placement modes and pointer behavior manually. Verify that text and progress geometry use the same percentage.
+For widget changes, the layout probe must pass all 504 combinations of seven forced/auto-detected service states, three densities, two layouts, progress on/off and all six themes. It loads and arranges the actual WPF tree, fails when `WidgetCard.DesiredSize.Height` exceeds the calculated window height, compares 180 zero/one-provider pairs to ensure `TwoRows` is visually identical to `SingleRow`, verifies 72 two-provider splits including Codex-above-Claude order, and compares 216 auto-detected states with their forced-provider equivalents. It also checks 24 Settings frame states across all visual themes, light/dark preferences and normal/maximized modes. Finally it docks a synthetic taskbar band for the same 504 axes at 32, 40 and 48 DIP and must print `Taskbar layout matrix: 1512 checked, 0 clipped, 0 over band, 0 mismatched`; failures are written to standard error with a `TASKBAR` prefix and make the exit code non-zero. It runs at the machine's system DPI, so repeat it at 125 % and 150 % after changing taskbar geometry: change the scale, then start a new probe process. It then replays `TaskbarTracker` settle timelines with synthetic evaluations and clock readings (hard-fallback confirmation, reason changes, off-cadence evaluations, missing taskbar or tray, stable, unstable and auto-hide-pending geometry, fullscreen, outside-settling resolution and leaving a fallback) without enabling the tracker, and must print `Taskbar tracker transitions: 166 checked, 0 mismatched`; failures use a `TRACKER` prefix. Then exercise provider error/loading states, placement modes and pointer behavior manually. Verify that text and progress geometry use the same percentage.
 
-For lifecycle changes, exercise first start, second-instance activation, forced refresh during a refresh, settings/details open-close, Win+L/unlock, sleep/resume, Explorer restart, RDP/display transitions and tray exit. Confirm topmost recovery does not steal foreground focus or change widget geometry. For Claude file-access changes, confirm Claude Desktop files are opened read-only and handles are released before parsing or network work.
+For lifecycle changes, exercise first start, second-instance activation, forced refresh during a refresh, settings/details open-close, Win+L/unlock, sleep/resume, Explorer restart, RDP/display transitions and tray exit. Confirm topmost recovery does not steal foreground focus or change widget geometry. With `--placement=InTaskbar`, also follow the in-taskbar items of the manual checklist in `WIDGET_UI.md` and read the tracker status, reason and raise counters in `status.json`. For Claude file-access changes, confirm Claude Desktop files are opened read-only and handles are released before parsing or network work.
 
 ## Manual data-path tests
 
@@ -180,6 +183,9 @@ For an actual release, update the project version, `CHANGELOG.md`, public-versio
 | Codex is unavailable | Verify a runnable native executable and `app-server`; WindowsApps aliases are intentionally excluded. |
 | Update check says installed version required | Expected for `dotnet run`, publish and portable builds. Install through Velopack for update testing. |
 | Widget shifts after a layout change | Geometry belongs in `WidgetLayoutCalculator`; custom and right-edge placements have different anchoring rules. |
+| Widget is off-screen or misplaced above 100 % scaling | A device-pixel rectangle was assigned to WPF `Left`/`Top` without `TransformFromDevice`. |
+| In-taskbar widget floats instead of docking | Expected for `Fallback`. Check the tracker reason in `status.json` (`non_xaml_taskbar`, `vertical`, `autohide`, `rtl_or_mirrored`, `band_too_small`, `shell_mismatch`, `taskbar_missing`, `tray_missing`). |
+| In-taskbar widget disappears | Expected while `Suppressed`: `fullscreen`, or `settling` after startup, Explorer restart, display change, resume/unlock or leaving a fallback (a hard fallback such as `non_xaml_taskbar` appears about 2 s after settling began). |
 
 ## Change and commit discipline
 

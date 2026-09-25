@@ -9,7 +9,8 @@ internal enum TrayIconStyle { ClaudeMark, Percentage, Hidden }
 internal enum WidgetDensity { Compact = 0, Comfortable = 1, Small = 2 }
 internal enum WidgetLayout { SingleRow, TwoRows }
 internal enum ServiceDisplayMode { AutoDetect, ClaudeAndCodex, ClaudeOnly, CodexOnly }
-internal enum WidgetPlacement { TaskbarRight, TopRight, Custom }
+// Persisted as integers in settings.json. Append new values only; never reorder.
+internal enum WidgetPlacement { TaskbarRight = 0, TopRight = 1, Custom = 2, InTaskbar = 3 }
 internal enum ThemePreference { System, Light, Dark }
 internal enum WidgetVisualTheme { Modern, RetroNight, FluentGlass, TerminalMono, Orbit, PaperInk }
 

@@ -33,8 +33,20 @@
     <SolidColorBrush x:Key="OrbitSaturnBandBrush" Color="#A8753F" />
     <SolidColorBrush x:Key="OrbitSaturnRingBrush" Color="#DCE5F2" />
     <SolidColorBrush x:Key="OrbitBodyOutlineBrush" Color="#18324F" />
+    <!-- In-taskbar overlay defaults (dark taskbar). ThemeManager.ApplyTaskbarPalette
+         replaces them from the taskbar's own light/dark and high-contrast state. -->
+    <SolidColorBrush x:Key="TaskbarTextBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="TaskbarMutedTextBrush" Color="#B3FFFFFF" />
+    <SolidColorBrush x:Key="TaskbarTrackBrush" Color="#33FFFFFF" />
+    <SolidColorBrush x:Key="TaskbarAccentBrush" Color="#6D8EFF" />
+    <SolidColorBrush x:Key="TaskbarWarningBrush" Color="#FFFCE100" />
+    <SolidColorBrush x:Key="TaskbarDangerBrush" Color="#FFFF99A4" />
+    <!-- Alpha 1/255 keeps the whole overlay hit-testable while the taskbar shows through. -->
+    <SolidColorBrush x:Key="TaskbarSurfaceBrush" Color="#01000000" />
+    <SolidColorBrush x:Key="TaskbarHoverBrush" Color="#14FFFFFF" />
     <FontFamily x:Key="AppFontFamily">Segoe UI Variable Text</FontFamily>
     <FontFamily x:Key="WidgetFontFamily">Segoe UI Variable Text</FontFamily>
+    <FontFamily x:Key="TaskbarFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
     <CornerRadius x:Key="WindowCornerRadius">12</CornerRadius>
     <CornerRadius x:Key="CardCornerRadius">12</CornerRadius>
     <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
@@ -178,6 +190,21 @@
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="4" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!-- In-taskbar overlay: blends into the taskbar instead of drawing widget chrome.
+         No border or shadow; hover uses the shell's subtle highlight. -->
+    <Style x:Key="WidgetCardTaskbar" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource TaskbarSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TaskbarHoverBrush}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="ColorSwatchButton" TargetType="RadioButton">
@@ -679,6 +706,27 @@
                                                  VisualMode="{TemplateBinding VisualMode}"
                                                  Fill="{TemplateBinding Foreground}"
                                                  Track="{TemplateBinding Background}" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Height and margins are applied from TaskbarLayoutMetrics; 3 is only the default. -->
+    <Style x:Key="TaskbarUsageProgress" TargetType="ProgressBar">
+        <Setter Property="Height" Value="3" />
+        <Setter Property="Minimum" Value="0" />
+        <Setter Property="Maximum" Value="100" />
+        <Setter Property="Foreground" Value="{DynamicResource TaskbarAccentBrush}" />
+        <Setter Property="Background" Value="{DynamicResource TaskbarTrackBrush}" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ProgressBar">
+                    <Grid x:Name="PART_Track" ClipToBounds="True">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="1.5" />
+                        <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}"
+                                HorizontalAlignment="Left" CornerRadius="1.5" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

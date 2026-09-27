@@ -667,7 +667,7 @@
 				);
 				LM_FILTER_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu;
 				PRODUCT_NAME = Dejavu;
 				SDKROOT = macosx;
@@ -700,7 +700,7 @@
 				);
 				LM_FILTER_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu;
 				PRODUCT_NAME = Dejavu;
 				SDKROOT = macosx;
@@ -762,7 +762,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu.widget;
 				PRODUCT_NAME = DejavuUsageWidget;
 				SDKROOT = macosx;
@@ -795,7 +795,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.1;
+				MARKETING_VERSION = 0.9.2;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu.widget;
 				PRODUCT_NAME = DejavuUsageWidget;
 				SDKROOT = macosx;

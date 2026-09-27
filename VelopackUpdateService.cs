@@ -28,6 +28,9 @@ internal sealed class VelopackUpdateService
     internal Task DownloadAsync(UpdateInfo update, Action<int> progress, CancellationToken cancellationToken) =>
         _manager.DownloadUpdatesAsync(update, progress, cancellationToken);
 
-    internal void ApplyAndRestart(UpdateInfo update) =>
-        _manager.ApplyUpdatesAndRestart(update.TargetFullRelease, []);
+    // Starts the updater and returns; it waits for this process to exit, then applies the update and
+    // restarts. ApplyUpdatesAndRestart would end the process at once, skipping the controller's
+    // shutdown, so the old tray icon would linger next to the new one.
+    internal void ApplyAfterExitAndRestart(UpdateInfo update) =>
+        _manager.WaitExitThenApplyUpdates(update.TargetFullRelease, silent: false, restart: true, []);
 }

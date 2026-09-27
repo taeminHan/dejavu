@@ -14,6 +14,17 @@ public partial class UsageDetailsWindow : Window
     internal event EventHandler? ClaudeLoginRequested;
     internal event EventHandler? CodexLoginRequested;
     private DetailsAction _action;
+    // When deactivation last hid the popup. A widget or tray click activates another window on press,
+    // which hides the popup before the click's toggle arrives; that toggle must not reopen it.
+    private long _hiddenByDeactivationAt;
+    // When ShowNear last showed the popup. A deactivation within the double-click time of showing it is
+    // the second press of a double-click on the widget, whose release reopens the popup as before.
+    private long _shownAt;
+
+    internal bool WasJustDismissed =>
+        _hiddenByDeactivationAt != 0 &&
+        Environment.TickCount64 - _hiddenByDeactivationAt < 500 &&
+        _hiddenByDeactivationAt - _shownAt >= Forms.SystemInformation.DoubleClickTime;
 
     internal void UpdateState(ApplicationState state, TraySettings settings)
     {
@@ -37,7 +48,8 @@ public partial class UsageDetailsWindow : Window
             : showClaude ? state.ClaudeMessage
             : showCodex ? state.CodexMessage
             : "사용 가능한 서비스를 찾지 못했습니다";
-        FooterText.Text = state.RetryAt is not null
+        // RetryAt is Claude's rate-limit retry time.
+        FooterText.Text = state.RetryAt is not null && showClaude
             ? $"{state.RetryAt.Value.LocalDateTime:HH:mm}에 자동 재시도"
             : state.UpdatedAt is not null ? $"마지막 확인 {state.UpdatedAt.Value.LocalDateTime:HH:mm:ss}" : "아직 확인된 값이 없습니다";
         _action = showClaude && state.ClaudeStatus == UsageStatus.LoginRequired
@@ -60,7 +72,9 @@ public partial class UsageDetailsWindow : Window
             FableValue.Text = "미제공";
             FableReset.Text = "Fable 확인에는 Claude Code 로그인 필요";
         }
-        else if (state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode && state.Snapshot.Fable is null)
+        // A carried Fable limit whose window reset is unknown (--%), not absent from the account.
+        else if (state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode && state.Snapshot.Fable is null &&
+                 !state.Snapshot.FableExpired)
         {
             FableValue.Text = "미제공";
             FableReset.Text = "현재 계정에 Fable 전용 한도 없음";
@@ -250,6 +264,7 @@ public partial class UsageDetailsWindow : Window
 
     internal void ShowNear(UsageWidgetWindow widget)
     {
+        _shownAt = Environment.TickCount64;
         // Screen coordinates are device pixels; Left/Top are DIPs. Use the shown
         // widget's transform because this window may not have an HWND yet.
         var toDip = UsageWidgetWindow.DeviceToDip(widget);
@@ -298,7 +313,12 @@ public partial class UsageDetailsWindow : Window
         else RefreshRequested?.Invoke(this, EventArgs.Empty);
     }
     private void OnSettingsClick(object sender, RoutedEventArgs e) => SettingsRequested?.Invoke(this, EventArgs.Empty);
-    private void OnDeactivated(object? sender, EventArgs e) => Hide();
+    private void OnDeactivated(object? sender, EventArgs e)
+    {
+        if (!IsVisible) return;
+        _hiddenByDeactivationAt = Environment.TickCount64;
+        Hide();
+    }
 
     private enum DetailsAction { Refresh, ClaudeLogin, CodexLogin }
 }

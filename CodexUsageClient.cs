@@ -8,7 +8,15 @@ internal sealed record CodexUsageSnapshot(
     UsageLimit? Weekly,
     int? ResetCredits,
     DateTimeOffset? ResetCreditsExpireAt,
-    string? PlanType);
+    string? PlanType)
+{
+    // Not positional: the WidgetLayoutProbe reflects the 5-parameter constructor. Set only on a
+    // carried snapshot whose weekly window has reset, so the weekly value is unknown, not absent.
+    public bool WeeklyExpired { get; init; }
+
+    // The always-visible Codex value: weekly, or the 5-hour window only for accounts with no weekly window.
+    public UsageLimit? DisplayLimit => Weekly ?? (WeeklyExpired ? null : FiveHour);
+}
 
 internal sealed class CodexLoginRequiredException(bool accountMissing = false) : Exception
 {
@@ -149,7 +157,9 @@ internal sealed class CodexUsageClient
         }
     }
 
-    public async Task LoginAsync(CancellationToken cancellationToken = default)
+    // `onBrowserOpened` receives the official login page once it has been opened, so a repeated login
+    // request can reopen the same pending flow. The URL is never logged or displayed.
+    public async Task LoginAsync(CancellationToken cancellationToken = default, Action<string>? onBrowserOpened = null)
     {
         var executable = FindExecutable() ?? throw new CodexCliUnavailableException();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -158,7 +168,7 @@ internal sealed class CodexUsageClient
         // A pending read on a redirected pipe does not observe the token on Windows; killing
         // Dejavu's own child closes the pipe so the 5-minute timeout and shutdown end the read.
         using var killOnCancel = timeout.Token.Register(() => KillChild(process));
-        var browserOpened = false;
+        var pageOpened = false;
 
         try
         {
@@ -187,12 +197,14 @@ internal sealed class CodexUsageClient
                     if (!root.TryGetProperty("result", out var result) ||
                         !result.TryGetProperty("authUrl", out var authUrlNode) ||
                         string.IsNullOrWhiteSpace(authUrlNode.GetString())) throw new CodexLoginFailedException();
-                    Process.Start(new ProcessStartInfo(authUrlNode.GetString()!) { UseShellExecute = true });
-                    browserOpened = true;
+                    var authUrl = authUrlNode.GetString()!;
+                    Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+                    pageOpened = true;
+                    onBrowserOpened?.Invoke(authUrl);
                     continue;
                 }
 
-                if (!browserOpened || !root.TryGetProperty("method", out var method) ||
+                if (!pageOpened || !root.TryGetProperty("method", out var method) ||
                     method.GetString() != "account/login/completed" ||
                     !root.TryGetProperty("params", out var parameters)) continue;
                 if (parameters.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True)

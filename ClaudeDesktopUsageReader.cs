@@ -5,7 +5,10 @@ namespace ClaudeUsageTray;
 
 internal static class ClaudeDesktopUsageReader
 {
-    private static readonly TimeSpan MaximumSampleAge = TimeSpan.FromMinutes(15);
+    // Claude Desktop writes a sample about every 15 minutes while it runs, often a little later, and
+    // occasionally skips one. The window covers a late or skipped write so a running Desktop does not
+    // flip between available and stale at every write boundary.
+    internal static readonly TimeSpan MaximumSampleAge = TimeSpan.FromMinutes(40);
     private static readonly TimeSpan MaximumFutureSkew = TimeSpan.FromMinutes(2);
     private const long MaximumHistoryBytes = 16 * 1024 * 1024;
     private static readonly object CacheLock = new();

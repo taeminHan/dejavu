@@ -31,6 +31,9 @@ public partial class UsageWidgetWindow : Window
     private static readonly nint HwndTopmost = new(-1);
     private static readonly uint TaskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
     private ApplicationState _state = ApplicationState.Loading();
+    // The no-provider message, its dot and the docked tooltip keep the last settled reading while a
+    // refresh is in flight; "사용량을 확인하고 있어요" appears only before any provider has reported.
+    private ApplicationState? _settledMessageState;
     private TraySettings _settings;
     private bool _leftPointerDown;
     private bool _isDragging;
@@ -474,7 +477,11 @@ public partial class UsageWidgetWindow : Window
         var previousWidth = Width;
         var previousHeight = Height;
         _state = state;
-        var statusBrush = FindResource(state.Status switch
+        if (state.Status != UsageStatus.Loading || _settledMessageState is null ||
+            state.ClaudeStatus == UsageStatus.Loading && state.CodexStatus == UsageStatus.Loading)
+            _settledMessageState = state;
+        var messageState = _settledMessageState ?? state;
+        var statusBrush = FindResource(messageState.Status switch
         {
             UsageStatus.Ready or UsageStatus.Loading => ThemeManager.UsesThemedChrome(_settings.WidgetTheme)
                 ? "WidgetAccentBrush" : "AccentBrush",
@@ -489,7 +496,7 @@ public partial class UsageWidgetWindow : Window
         TaskbarPanel.Visibility = _taskbarLayoutActive ? Visibility.Visible : Visibility.Collapsed;
         if (_taskbarLayoutActive)
         {
-            UpdateTaskbarState(state, showClaude, showCodex);
+            UpdateTaskbarState(state, messageState.Message, showClaude, showCodex);
         }
         else if (showClaude || showCodex)
         {
@@ -510,7 +517,7 @@ public partial class UsageWidgetWindow : Window
             SetCircularMetric(SmallFiveHourValue, SmallFiveHourArc, SmallFiveHourPlanet, state.Snapshot?.FiveHour);
             SetCircularMetric(SmallWeeklyValue, SmallWeeklyArc, SmallWeeklyPlanet, state.Snapshot?.Weekly);
             SetCircularMetric(SmallFableValue, SmallFableArc, SmallFablePlanet, state.Snapshot?.Fable);
-            var codexLimit = state.CodexSnapshot?.Weekly ?? state.CodexSnapshot?.FiveHour;
+            var codexLimit = state.CodexSnapshot?.DisplayLimit;
             SetMetric(CodexValue, CodexBar, codexLimit);
             SetMetric(CompactCodexValue, CompactCodexBar, codexLimit);
             SetCircularMetric(SmallCodexValue, SmallCodexArc, SmallCodexPlanet, codexLimit);
@@ -521,10 +528,10 @@ public partial class UsageWidgetWindow : Window
             SmallPanel.Visibility = Visibility.Collapsed;
             ComfortablePanel.Visibility = Visibility.Collapsed;
             MessagePanel.Visibility = Visibility.Visible;
-            MessageText.Text = state.Message;
+            MessageText.Text = messageState.Message;
             CompactPanel.Visibility = Visibility.Collapsed;
             CompactMessagePanel.Visibility = Visibility.Visible;
-            CompactMessageText.Text = state.Message;
+            CompactMessageText.Text = messageState.Message;
         }
 
         PreservePositionAfterResize(previousWidth, previousHeight);
@@ -534,7 +541,7 @@ public partial class UsageWidgetWindow : Window
     /// In-taskbar values. Only TaskbarPanel is visible, hidden providers were
     /// collapsed by ApplyProviderLayout, and reset credits never appear here.
     /// </summary>
-    private void UpdateTaskbarState(ApplicationState state, bool showClaude, bool showCodex)
+    private void UpdateTaskbarState(ApplicationState state, string message, bool showClaude, bool showCodex)
     {
         SmallPanel.Visibility = Visibility.Collapsed;
         CompactPanel.Visibility = Visibility.Collapsed;
@@ -551,14 +558,14 @@ public partial class UsageWidgetWindow : Window
         }
         if (showCodex)
         {
-            var codexLimit = state.CodexSnapshot?.Weekly ?? state.CodexSnapshot?.FiveHour;
+            var codexLimit = state.CodexSnapshot?.DisplayLimit;
             summary.Add($"Codex {SetTaskbarMetric(TaskbarCodexValue, TaskbarCodexBar, codexLimit)}");
         }
 
         // The provider cells carry no status line and the no-provider cell shows only the
         // fixed "dejavu" placeholder, so the tooltip and the accessible name give the full
-        // reading (or state.Message) in one short sentence.
-        var description = summary.Count > 0 ? string.Join(" · ", summary) : state.Message;
+        // reading (or the last settled message) in one short sentence.
+        var description = summary.Count > 0 ? string.Join(" · ", summary) : message;
         WidgetCard.ToolTip = description;
         System.Windows.Automation.AutomationProperties.SetName(WidgetCard, description);
     }

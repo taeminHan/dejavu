@@ -45,6 +45,7 @@ internal static class AppDiagnostics
                 codexStatus = state.CodexStatus.ToString(),
                 claudeMessage = state.ClaudeMessage,
                 codexMessage = state.CodexMessage,
+                claudeIssue = state.ClaudeIssue.ToString(),
                 fiveHour = state.Snapshot?.FiveHour?.Percent,
                 weekly = state.Snapshot?.Weekly?.Percent,
                 fable = state.Snapshot?.Fable?.Percent,

@@ -5,7 +5,7 @@ import DejavuDomain
 extension ClaudeStatusSnapshotProvider: UsageProviding {
     public func fetchUsage() async throws -> ClaudeUsageSnapshot {
         do {
-            return try await fetchUsage(now: Date())
+            return try await fetchUsage(now: now())
         } catch let error as ClaudeStatusSnapshotProviderError {
             switch error {
             case .snapshotUnavailable:

@@ -10,11 +10,12 @@ final class ClaudeCombinedUsageProviderTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let snapshotURL = directory.appendingPathComponent("claude-status.json")
         try FixtureSupport.data(named: "claude-bridge-complete.json").write(to: snapshotURL)
+        let now = try FixtureSupport.date("2026-08-12T01:05:00Z")
         let extended = ExtendedUsageStub(result: .failure(UnexpectedCall.called))
         let provider = ClaudeCombinedUsageProvider(
             statusLineProvider: ClaudeStatusSnapshotProvider(
                 snapshotURL: snapshotURL,
-                freshnessPolicy: UsageFreshnessPolicy(maximumAgeWithoutReset: 60 * 60 * 24 * 365)
+                now: { now }
             ),
             extendedProvider: extended,
             accessPolicy: ClaudeExtendedAccessPolicy(enabled: false)
@@ -57,10 +58,11 @@ final class ClaudeCombinedUsageProviderTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: directory) }
         let snapshotURL = directory.appendingPathComponent("claude-status.json")
         try FixtureSupport.data(named: "claude-bridge-complete.json").write(to: snapshotURL)
+        let now = try FixtureSupport.date("2026-08-12T01:05:00Z")
         let provider = ClaudeCombinedUsageProvider(
             statusLineProvider: ClaudeStatusSnapshotProvider(
                 snapshotURL: snapshotURL,
-                freshnessPolicy: UsageFreshnessPolicy(maximumAgeWithoutReset: 60 * 60 * 24 * 365)
+                now: { now }
             ),
             extendedProvider: ExtendedUsageStub(
                 result: .failure(ClaudeExtendedUsageError.accessDenied)

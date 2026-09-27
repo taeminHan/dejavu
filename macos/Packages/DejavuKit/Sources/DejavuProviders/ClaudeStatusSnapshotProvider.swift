@@ -16,13 +16,16 @@ public struct ClaudeStatusSnapshotProvider: Sendable {
 
     public let snapshotURL: URL
     public let freshnessPolicy: UsageFreshnessPolicy
+    let now: @Sendable () -> Date
 
     public init(
         snapshotURL: URL,
-        freshnessPolicy: UsageFreshnessPolicy = UsageFreshnessPolicy()
+        freshnessPolicy: UsageFreshnessPolicy = UsageFreshnessPolicy(),
+        now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.snapshotURL = snapshotURL
         self.freshnessPolicy = freshnessPolicy
+        self.now = now
     }
 
     public func fetchUsage(now: Date = Date()) async throws -> ClaudeUsageSnapshot {

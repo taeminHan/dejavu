@@ -7,6 +7,8 @@ public partial class OnboardingWindow : Window
 {
     private readonly TraySettings _settings;
     private bool _loginRequiresClaudeCode = true;
+    // A browser login is in progress; state updates must keep the button's pending label.
+    private bool _codexLoginPending;
     private ApplicationState? _applicationState;
 
     internal OnboardingWindow(TraySettings settings)
@@ -137,12 +139,19 @@ public partial class OnboardingWindow : Window
 
     internal void RefreshDetection() => UpdateCredentialState();
 
+    // The button stays enabled while a browser login is pending: a click reopens the login page
+    // instead of doing nothing until the login times out.
     internal void SetCodexLoginPending(bool pending)
     {
-        CodexLoginButton.IsEnabled = !pending;
-        if (pending) CodexLoginButton.Content = "브라우저에서 로그인";
+        _codexLoginPending = pending;
+        if (pending) CodexLoginButton.Content = "브라우저 다시 열기";
         else UpdateCredentialState();
     }
+
+    // Most Claude card states render fixed text, so a failed login launch is shown here; the next
+    // state update redraws the card.
+    internal void ShowClaudeLoginLaunchFailed() =>
+        ClaudeCredentialDescription.Text = "Claude 로그인 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.";
 
     internal void UpdateState(ApplicationState state)
     {
@@ -153,60 +162,107 @@ public partial class OnboardingWindow : Window
     private void UpdateCredentialState()
     {
         var environment = ClaudeEnvironmentDetector.Detect();
-        var fullUsageAvailable = _applicationState?.ClaudeStatus == UsageStatus.Ready &&
-                                 _applicationState.Snapshot?.Source == ClaudeUsageSource.ClaudeCode;
-        var desktopUsageAvailable = _applicationState?.ClaudeStatus == UsageStatus.Ready &&
-                                    _applicationState.Snapshot?.Source == ClaudeUsageSource.ClaudeDesktop ||
+        var claudeStatus = _applicationState?.ClaudeStatus ?? UsageStatus.Loading;
+        var claudeSnapshot = _applicationState?.Snapshot;
+        var claudeIssue = _applicationState?.ClaudeIssue ?? ClaudeIssue.None;
+        // Provider Loading means "never checked"; a refresh in flight keeps the last settled status.
+        var claudeChecking = claudeStatus == UsageStatus.Loading;
+        var claudeTransient = claudeStatus is UsageStatus.RateLimited or UsageStatus.Offline or UsageStatus.Error;
+        // A transient failure after a successful read keeps the connection (the same rule as Codex).
+        var claudeUsable = claudeSnapshot is not null && (claudeStatus == UsageStatus.Ready || claudeTransient);
+        var claudeDelayed = claudeUsable && claudeStatus != UsageStatus.Ready;
+        var fullUsageAvailable = claudeUsable && claudeSnapshot!.Source == ClaudeUsageSource.ClaudeCode;
+        var desktopUsageAvailable = claudeUsable && claudeSnapshot!.Source == ClaudeUsageSource.ClaudeDesktop ||
                                     ClaudeDesktopUsageReader.HasRecentUsage();
-        var claudeAvailable = fullUsageAvailable || desktopUsageAvailable ||
-                              _applicationState is null && environment.IsLoggedIn;
+        // Running Claude Code renews an expired token; Desktop without a recent sample is closed or idle.
+        var tokenRefreshPending = claudeIssue == ClaudeIssue.TokenRefreshPending;
+        var desktopStale = claudeIssue == ClaudeIssue.DesktopHistoryStale;
+        // No successful read yet and the last check failed transiently: not a login problem.
+        var claudeFailed = claudeTransient && !claudeUsable && !tokenRefreshPending && !desktopStale &&
+                           environment.IsLoggedIn;
+        // Until the first Claude result arrives, trust a local Claude Code login.
+        var claudeAvailable = fullUsageAvailable || desktopUsageAvailable || tokenRefreshPending || desktopStale ||
+                              claudeFailed || claudeChecking && environment.IsLoggedIn;
+        var claudeHealthy = claudeAvailable && !tokenRefreshPending && !desktopStale && !claudeFailed;
         var codexExecutable = CodexUsageClient.FindExecutable();
         var codexRuntimeAvailable = codexExecutable is not null;
-        var codexReady = _applicationState?.CodexStatus == UsageStatus.Ready &&
-                         _applicationState.CodexSnapshot is not null;
-        TitleText.Text = claudeAvailable || codexReady || codexRuntimeAvailable
+        // Provider Loading means "never checked"; a refresh in flight keeps the last settled status.
+        var codexChecking = (_applicationState?.CodexStatus ?? UsageStatus.Loading) == UsageStatus.Loading &&
+                            _applicationState?.CodexSnapshot is null;
+        // A transient failure or timeout after a successful read keeps the connection.
+        var codexConnected = _applicationState?.CodexSnapshot is not null &&
+                             _applicationState.CodexStatus is not UsageStatus.LoginRequired && codexRuntimeAvailable;
+        var codexDelayed = codexConnected && _applicationState?.CodexStatus != UsageStatus.Ready;
+        // No successful read yet and the last check failed transiently: not a login problem.
+        var codexFailed = !codexChecking && !codexConnected && codexRuntimeAvailable &&
+                          _applicationState?.CodexStatus is UsageStatus.Error or UsageStatus.Offline or UsageStatus.RateLimited;
+        TitleText.Text = claudeAvailable || codexConnected || codexRuntimeAvailable
             ? "사용 가능한 서비스를 확인했어요" : "연결된 서비스를 찾지 못했어요";
-        ClaudeCredentialTitle.Text = fullUsageAvailable ? "Claude Code 연결됨"
+        ClaudeCredentialTitle.Text = tokenRefreshPending ? "Claude Code 토큰 갱신 대기"
+            : fullUsageAvailable ? claudeDelayed ? "Claude Code 연결됨 · 확인 지연" : "Claude Code 연결됨"
+            : desktopStale ? "Claude Desktop 기록 대기 중"
             : desktopUsageAvailable ? "Claude Desktop 사용량 감지됨"
-            : environment.IsLoggedIn ? "Claude Code 로그인 확인 중"
+            : claudeFailed ? "Claude 확인 실패 · 자동 재시도"
+            : environment.IsLoggedIn && claudeChecking ? "Claude Code 로그인 확인 중"
+            // A settled LoginRequired with a credential file: expired or rejected.
+            : environment.IsLoggedIn ? "Claude Code 로그인 필요"
             : environment.IsInstalled ? "Claude Code 설치됨 · 로그인 필요"
             : ClaudeDesktopUsageReader.IsInstalled ? "Claude Desktop 설치됨 · 최근 사용 기록 없음"
             : "Claude를 찾지 못했습니다";
-        ClaudeCredentialDescription.Text = fullUsageAvailable
-            ? "5시간·주간과 계정에 제공되는 Fable 한도를 확인합니다"
+        ClaudeCredentialDescription.Text = tokenRefreshPending
+            ? "Claude Code를 한 번 실행하면 토큰이 자동으로 갱신됩니다. 계속되면 다시 로그인해 주세요."
+            : fullUsageAvailable && claudeDelayed
+                ? "최근 확인이 지연되어 마지막 값을 표시합니다 · 자동 재시도"
+            : fullUsageAvailable
+                ? "5시간·주간과 계정에 제공되는 Fable 한도를 확인합니다"
+            : desktopStale
+                ? "Claude Desktop을 사용하면 5시간·주간 사용량을 자동으로 다시 확인합니다"
             : desktopUsageAvailable
                 ? environment.IsInstalled
                     ? "Fable 사용량을 확인하기 위해서는 Claude Code 로그인이 필요해요."
                     : "Fable 사용량을 확인하려면 Claude Code 설치와 로그인이 필요해요."
+            : claudeFailed
+                ? $"{_applicationState!.ClaudeMessage}. 계속 실패하면 Claude Code 로그인을 다시 시도해 보세요."
             : environment.IsInstalled
                 ? "로그인 창을 열면 완료 상태를 자동으로 감지합니다"
                 : ClaudeDesktopUsageReader.IsInstalled
                     ? "Claude Desktop을 열어 사용하면 자동으로 다시 확인합니다"
                     : "설치 안내를 연 뒤 dejavu가 자동으로 다시 확인합니다";
         ClaudeCredentialDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty,
-            claudeAvailable ? "AccentBrush" : "WarningBrush");
-        CodexCredentialTitle.Text = codexReady ? "Codex 사용량 연결됨"
+            claudeHealthy ? "AccentBrush" : "WarningBrush");
+        CodexCredentialTitle.Text = codexChecking ? "Codex 확인 중"
+            : codexConnected ? "Codex 사용량 연결됨"
+            : codexFailed ? "Codex 확인 실패 · 자동 재시도"
             : codexRuntimeAvailable && CodexUsageClient.IsDesktopBundledExecutable(codexExecutable)
                 ? "Codex Desktop 감지됨 · 로그인 필요"
             : codexRuntimeAvailable ? "Codex 감지됨 · 로그인 필요"
             : CodexUsageClient.IsDesktopInstalled ? "Codex Desktop 업데이트 필요"
             : "Codex를 찾지 못했습니다";
-        CodexCredentialDescription.Text = codexReady
-            ? "사용량과 초기화권을 공식 로컬 app-server에서 확인합니다"
+        CodexCredentialDescription.Text = codexChecking
+            ? "로컬 Codex app-server에서 로그인과 사용량을 확인합니다"
+            : codexDelayed
+                ? "최근 확인이 지연되어 마지막 값을 표시합니다 · 자동 재시도"
+            : codexConnected
+                ? "사용량과 초기화권을 공식 로컬 app-server에서 확인합니다"
+            : codexFailed
+                ? $"{_applicationState!.CodexMessage}. 계속 실패하면 Codex 로그인을 다시 시도해 보세요."
             : codexRuntimeAvailable
                 ? "CLI를 따로 사용하지 않아도 ChatGPT 로그인으로 Codex 사용량을 연결할 수 있어요."
                 : CodexUsageClient.IsDesktopInstalled
                     ? "호환되는 Codex 런타임을 찾지 못했습니다. Desktop 앱을 업데이트해 주세요."
                     : "Codex Desktop 또는 CLI를 설치하면 자동으로 감지합니다.";
         CodexCredentialDot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty,
-            codexReady ? "AccentBrush" : "WarningBrush");
-        CodexLoginButton.Content = codexRuntimeAvailable ? "Codex 로그인" : "Codex 설치";
-        CodexLoginButton.Visibility = codexReady ? Visibility.Collapsed : Visibility.Visible;
+            codexChecking ? "MutedTextBrush" : codexConnected ? "AccentBrush" : "WarningBrush");
+        if (!_codexLoginPending) CodexLoginButton.Content = codexRuntimeAvailable ? "Codex 로그인" : "Codex 설치";
+        CodexLoginButton.Visibility = codexChecking || codexConnected ? Visibility.Collapsed : Visibility.Visible;
         _loginRequiresClaudeCode = environment.IsInstalled || desktopUsageAvailable || !ClaudeDesktopUsageReader.IsInstalled;
         LoginButton.Content = desktopUsageAvailable ? environment.IsInstalled ? "Claude Code 로그인" : "Claude Code 설치"
             : environment.IsInstalled ? "Claude Code 로그인"
             : ClaudeDesktopUsageReader.IsInstalled ? "Claude Desktop 열기" : "설치 안내 열기";
-        LoginButton.Visibility = fullUsageAvailable ? Visibility.Collapsed : Visibility.Visible;
+        // Connected through Claude Code (a delayed read included) or still checking a local login:
+        // no login to offer. The failed, token and Desktop states keep it as a fallback or upgrade.
+        LoginButton.Visibility = fullUsageAvailable && !tokenRefreshPending || claudeChecking && environment.IsLoggedIn
+            ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void OnPlacementChanged(object sender, SelectionChangedEventArgs e)

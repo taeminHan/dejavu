@@ -8,11 +8,27 @@ internal sealed record CodexUsageSnapshot(
     UsageLimit? Weekly,
     int? ResetCredits,
     DateTimeOffset? ResetCreditsExpireAt,
-    string? PlanType);
+    string? PlanType)
+{
+    // Not positional: the WidgetLayoutProbe reflects the 5-parameter constructor. Set only on a
+    // carried snapshot whose weekly window has reset, so the weekly value is unknown, not absent.
+    public bool WeeklyExpired { get; init; }
 
-internal sealed class CodexLoginRequiredException : Exception;
+    // The always-visible Codex value: weekly, or the 5-hour window only for accounts with no weekly window.
+    public UsageLimit? DisplayLimit => Weekly ?? (WeeklyExpired ? null : FiveHour);
+}
+
+internal sealed class CodexLoginRequiredException(bool accountMissing = false) : Exception
+{
+    // -32600: no ChatGPT account at all, as opposed to a backend 401 for an account that exists.
+    public bool AccountMissing { get; } = accountMissing;
+}
+// -32603 from account/rateLimits/read: upstream found ChatGPT auth, then the backend call failed.
+internal sealed class CodexBackendFailedException : Exception;
 internal sealed class CodexCliUnavailableException : Exception;
 internal sealed class CodexLoginFailedException : Exception;
+internal sealed class CodexTimeoutException : Exception;
+internal sealed class CodexReadFailedException : Exception;
 
 internal sealed class CodexUsageClient
 {
@@ -77,67 +93,82 @@ internal sealed class CodexUsageClient
     public async Task<CodexUsageSnapshot> GetUsageAsync(CancellationToken cancellationToken = default)
     {
         var executable = FindExecutable() ?? throw new CodexCliUnavailableException();
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromSeconds(15));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
 
-        var startInfo = new ProcessStartInfo(executable)
-        {
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-        startInfo.ArgumentList.Add("app-server");
-
-        using var process = Process.Start(startInfo) ?? throw new CodexCliUnavailableException();
+        using var process = StartAppServer(executable);
+        // A pending read on a redirected pipe may not observe the token on Windows. Only the 15 s
+        // timeout kills Dejavu's own child to end the read. A forced refresh or shutdown lets the
+        // pending read finish or time out first, so a child in the middle of an in-band OAuth
+        // refresh can persist the rotated token before the kill in `finally`; at exit the child
+        // drains in-flight requests on stdin EOF.
+        using var killOnTimeout = timeout.Token.Register(() => KillChild(process));
         try
         {
-            await WriteAsync(process, new
-            {
-                method = "initialize",
-                id = 0,
-                @params = new
-                {
-                    clientInfo = new
-                    {
-                        name = "dejavu", title = "dejavu", version = VelopackUpdateService.CurrentVersion
-                    }
-                }
-            }, timeout.Token);
-            await WriteAsync(process, new { method = "initialized", @params = new { } }, timeout.Token);
-            await WriteAsync(process, new { method = "account/rateLimits/read", id = 1 }, timeout.Token);
+            await InitializeAsync(process, linked.Token);
+            await WriteAsync(process, new { method = "account/rateLimits/read", id = 1 }, linked.Token);
 
             while (true)
             {
-                var line = await process.StandardOutput.ReadLineAsync(timeout.Token);
-                if (line is null) throw new CodexCliUnavailableException();
-                using var document = JsonDocument.Parse(line);
-                var root = document.RootElement;
-                if (!root.TryGetProperty("id", out var id) || !id.TryGetInt32(out var requestId) || requestId != 1)
-                    continue;
-                if (root.TryGetProperty("error", out _)) throw new CodexLoginRequiredException();
-                if (!root.TryGetProperty("result", out var result)) throw new CodexLoginRequiredException();
-                return Parse(result);
+                var line = await process.StandardOutput.ReadLineAsync(linked.Token);
+                if (line is null)
+                {
+                    // The timeout kill closes stdout too; only an unprompted exit is a read failure.
+                    if (linked.IsCancellationRequested) throw new OperationCanceledException(linked.Token);
+                    throw new CodexReadFailedException();
+                }
+
+                JsonDocument document;
+                try { document = JsonDocument.Parse(line); }
+                catch (JsonException) { continue; }
+                using (document)
+                {
+                    var root = document.RootElement;
+                    // Skip notifications, server requests and other responses.
+                    if (root.ValueKind != JsonValueKind.Object || root.TryGetProperty("method", out _) ||
+                        !root.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.Number ||
+                        !id.TryGetInt32(out var requestId) || requestId != 1) continue;
+                    // Never log or display the error message: it can carry backend or account details.
+                    if (root.TryGetProperty("error", out var error)) throw ClassifyRateLimitError(error);
+                    if (!root.TryGetProperty("result", out var result) || result.ValueKind != JsonValueKind.Object)
+                        throw new CodexReadFailedException();
+                    return Parse(result);
+                }
             }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException &&
+                                          cancellationToken.IsCancellationRequested)
+        {
+            // A forced refresh or shutdown cancelled the read; whatever the pipe reported, the
+            // caller asked for cancellation and must see it.
+            throw new OperationCanceledException(cancellationToken);
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new CodexCliUnavailableException();
+            throw new CodexTimeoutException();
+        }
+        catch (IOException) when (timeout.IsCancellationRequested)
+        {
+            throw new CodexTimeoutException();
         }
         finally
         {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
+            KillChild(process);
         }
     }
 
-    public async Task LoginAsync(CancellationToken cancellationToken = default)
+    // `onBrowserOpened` receives the official login page once it has been opened, so a repeated login
+    // request can reopen the same pending flow. The URL is never logged or displayed.
+    public async Task LoginAsync(CancellationToken cancellationToken = default, Action<string>? onBrowserOpened = null)
     {
         var executable = FindExecutable() ?? throw new CodexCliUnavailableException();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(5));
         using var process = StartAppServer(executable);
-        var browserOpened = false;
+        // A pending read on a redirected pipe does not observe the token on Windows; killing
+        // Dejavu's own child closes the pipe so the 5-minute timeout and shutdown end the read.
+        using var killOnCancel = timeout.Token.Register(() => KillChild(process));
+        var pageOpened = false;
 
         try
         {
@@ -152,7 +183,12 @@ internal sealed class CodexUsageClient
             while (true)
             {
                 var line = await process.StandardOutput.ReadLineAsync(timeout.Token);
-                if (line is null) throw new CodexLoginFailedException();
+                if (line is null)
+                {
+                    // The kill above closes stdout too; only an unprompted exit is a login failure.
+                    if (timeout.IsCancellationRequested) throw new OperationCanceledException(timeout.Token);
+                    throw new CodexLoginFailedException();
+                }
                 using var document = JsonDocument.Parse(line);
                 var root = document.RootElement;
                 if (root.TryGetProperty("id", out var id) && id.TryGetInt32(out var requestId) && requestId == 2)
@@ -161,12 +197,14 @@ internal sealed class CodexUsageClient
                     if (!root.TryGetProperty("result", out var result) ||
                         !result.TryGetProperty("authUrl", out var authUrlNode) ||
                         string.IsNullOrWhiteSpace(authUrlNode.GetString())) throw new CodexLoginFailedException();
-                    Process.Start(new ProcessStartInfo(authUrlNode.GetString()!) { UseShellExecute = true });
-                    browserOpened = true;
+                    var authUrl = authUrlNode.GetString()!;
+                    Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
+                    pageOpened = true;
+                    onBrowserOpened?.Invoke(authUrl);
                     continue;
                 }
 
-                if (!browserOpened || !root.TryGetProperty("method", out var method) ||
+                if (!pageOpened || !root.TryGetProperty("method", out var method) ||
                     method.GetString() != "account/login/completed" ||
                     !root.TryGetProperty("params", out var parameters)) continue;
                 if (parameters.TryGetProperty("success", out var success) && success.ValueKind == JsonValueKind.True)
@@ -174,13 +212,24 @@ internal sealed class CodexUsageClient
                 throw new CodexLoginFailedException();
             }
         }
+        catch (Exception exception) when (exception is not OperationCanceledException &&
+                                          cancellationToken.IsCancellationRequested)
+        {
+            // Shutdown killed the child; whatever the pipe reported, the caller must see cancellation.
+            throw new OperationCanceledException(cancellationToken);
+        }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new CodexLoginFailedException();
         }
+        catch (Exception exception) when (exception is IOException or JsonException && timeout.IsCancellationRequested)
+        {
+            // A broken pipe or a line cut off by the timeout kill.
+            throw new CodexLoginFailedException();
+        }
         finally
         {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
+            KillChild(process);
         }
     }
 
@@ -201,7 +250,18 @@ internal sealed class CodexUsageClient
             CreateNoWindow = true
         };
         startInfo.ArgumentList.Add("app-server");
-        return Process.Start(startInfo) ?? throw new CodexCliUnavailableException();
+        var process = Process.Start(startInfo) ?? throw new CodexCliUnavailableException();
+        // Drain stderr so verbose app-server logging (for example RUST_LOG) cannot fill the pipe
+        // and stall the child. Its content may include account details and is discarded, never logged.
+        process.ErrorDataReceived += static (_, _) => { };
+        process.BeginErrorReadLine();
+        return process;
+    }
+
+    // Only ever called with the app-server child that Dejavu started itself.
+    private static void KillChild(Process process)
+    {
+        try { if (!process.HasExited) process.Kill(entireProcessTree: true); } catch { }
     }
 
     private static async Task InitializeAsync(Process process, CancellationToken cancellationToken)
@@ -235,14 +295,47 @@ internal sealed class CodexUsageClient
         yield return Path.Combine(root, "codex.exe");
     }
 
+    // For this method the upstream handler returns -32600 only for missing or non-ChatGPT auth;
+    // network/backend failures are -32603, which it returns only after it found ChatGPT auth, and
+    // overload is -32001. The dispatcher also uses -32600 for requests it rejects before the
+    // handler runs (unknown method or bad params from an older or newer CLI, not initialized,
+    // draining, experimental-gated); logging in cannot fix those.
+    // The message is matched only for these cases and is never logged or displayed.
+    private static Exception ClassifyRateLimitError(JsonElement error)
+    {
+        if (error.ValueKind != JsonValueKind.Object) return new CodexReadFailedException();
+        var code = error.TryGetProperty("code", out var codeNode) && codeNode.ValueKind == JsonValueKind.Number &&
+                   codeNode.TryGetInt64(out var value) ? value : 0;
+        var message = error.TryGetProperty("message", out var messageNode) && messageNode.ValueKind == JsonValueKind.String
+            ? messageNode.GetString() ?? "" : "";
+        if (code == -32600)
+            return IsProtocolRejection(message)
+                ? new CodexReadFailedException() : new CodexLoginRequiredException(accountMissing: true);
+        if (code == -32603)
+            return message.Contains("401 Unauthorized", StringComparison.OrdinalIgnoreCase)
+                ? new CodexLoginRequiredException() : new CodexBackendFailedException();
+        return new CodexReadFailedException();
+    }
+
+    private static bool IsProtocolRejection(string message) =>
+        message.StartsWith("Invalid request", StringComparison.Ordinal) ||
+        message.StartsWith("Not initialized", StringComparison.Ordinal) ||
+        message.StartsWith("Already initialized", StringComparison.Ordinal) ||
+        message.StartsWith("Server is draining", StringComparison.Ordinal) ||
+        message.Contains("requires experimentalApi capability", StringComparison.Ordinal);
+
     private static CodexUsageSnapshot Parse(JsonElement result)
     {
         var windows = new List<(UsageLimit Limit, int Minutes)>();
         string? planType = null;
 
-        if (result.TryGetProperty("rateLimitsByLimitId", out var byId) && byId.ValueKind == JsonValueKind.Object)
+        // Read only the "codex" bucket. The multi-bucket map is a Rust HashMap upstream, so its
+        // order changes per app-server process; `rateLimits` is upstream's single view of the same
+        // bucket (or of the first bucket when none is named "codex").
+        if (result.TryGetProperty("rateLimitsByLimitId", out var byId) && byId.ValueKind == JsonValueKind.Object &&
+            byId.TryGetProperty("codex", out var codex) && codex.ValueKind == JsonValueKind.Object)
         {
-            foreach (var property in byId.EnumerateObject()) ReadBucket(property.Value, windows, ref planType);
+            ReadBucket(codex, windows, ref planType);
         }
         else if (result.TryGetProperty("rateLimits", out var single) && single.ValueKind == JsonValueKind.Object)
         {
@@ -258,13 +351,16 @@ internal sealed class CodexUsageClient
         DateTimeOffset? resetExpiry = null;
         if (result.TryGetProperty("rateLimitResetCredits", out var resets) && resets.ValueKind == JsonValueKind.Object)
         {
-            if (resets.TryGetProperty("availableCount", out var count) && count.TryGetInt32(out var parsedCount))
+            if (resets.TryGetProperty("availableCount", out var count) && IsNumber(count) &&
+                count.TryGetInt32(out var parsedCount))
                 resetCredits = parsedCount;
             if (resets.TryGetProperty("credits", out var credits) && credits.ValueKind == JsonValueKind.Array)
             {
                 foreach (var credit in credits.EnumerateArray())
                 {
-                    if (!credit.TryGetProperty("expiresAt", out var expiry) || !expiry.TryGetInt64(out var seconds)) continue;
+                    // Upstream serializes a credit that never expires as "expiresAt": null.
+                    if (credit.ValueKind != JsonValueKind.Object || !credit.TryGetProperty("expiresAt", out var expiry) ||
+                        !IsNumber(expiry) || !expiry.TryGetInt64(out var seconds)) continue;
                     var value = DateTimeOffset.FromUnixTimeSeconds(seconds);
                     if (resetExpiry is null || value < resetExpiry) resetExpiry = value;
                 }
@@ -280,15 +376,20 @@ internal sealed class CodexUsageClient
             planType ??= plan.GetString();
         foreach (var propertyName in new[] { "primary", "secondary" })
         {
+            // Optional window fields arrive as JSON null; TryGet* throws on a non-number element.
             if (!bucket.TryGetProperty(propertyName, out var window) || window.ValueKind != JsonValueKind.Object ||
-                !window.TryGetProperty("usedPercent", out var used) || !used.TryGetDouble(out var percent) ||
-                !window.TryGetProperty("windowDurationMins", out var duration) || !duration.TryGetInt32(out var minutes)) continue;
+                !window.TryGetProperty("usedPercent", out var used) || !IsNumber(used) ||
+                !used.TryGetDouble(out var percent) ||
+                !window.TryGetProperty("windowDurationMins", out var duration) || !IsNumber(duration) ||
+                !duration.TryGetInt32(out var minutes)) continue;
             DateTimeOffset? resetsAt = null;
-            if (window.TryGetProperty("resetsAt", out var reset) && reset.TryGetInt64(out var seconds))
+            if (window.TryGetProperty("resetsAt", out var reset) && IsNumber(reset) && reset.TryGetInt64(out var seconds))
                 resetsAt = DateTimeOffset.FromUnixTimeSeconds(seconds);
             windows.Add((new UsageLimit(percent, resetsAt), minutes));
         }
     }
+
+    private static bool IsNumber(JsonElement element) => element.ValueKind == JsonValueKind.Number;
 
     private static bool IsRunnable(string? path) => !string.IsNullOrWhiteSpace(path) && File.Exists(path) && !IsProtectedWindowsAppsPath(path);
     private static bool IsProtectedWindowsAppsPath(string path) =>

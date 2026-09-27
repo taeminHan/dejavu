@@ -40,6 +40,12 @@ internal static class AppDiagnostics
                 state.Message,
                 state.UpdatedAt,
                 state.RetryAt,
+                // Fixed Dejavu status strings only; never provider error text or account data.
+                claudeStatus = state.ClaudeStatus.ToString(),
+                codexStatus = state.CodexStatus.ToString(),
+                claudeMessage = state.ClaudeMessage,
+                codexMessage = state.CodexMessage,
+                claudeIssue = state.ClaudeIssue.ToString(),
                 fiveHour = state.Snapshot?.FiveHour?.Percent,
                 weekly = state.Snapshot?.Weekly?.Percent,
                 fable = state.Snapshot?.Fable?.Percent,

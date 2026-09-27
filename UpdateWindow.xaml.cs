@@ -12,6 +12,8 @@ public partial class UpdateWindow : Window
     internal UpdateWindow() => InitializeComponent();
 
     internal event EventHandler? InstallRequested;
+    // Raised by 취소, the close button or Alt+F4 while a download runs.
+    internal event EventHandler? CancelRequested;
 
     internal void ApplyTheme(WidgetVisualTheme theme)
     {
@@ -84,6 +86,12 @@ public partial class UpdateWindow : Window
 
     internal void ShowAvailable(string latestVersion, string? releaseNotes)
     {
+        // A running download keeps its progress and controls; a check only brings the window forward.
+        if (_busy)
+        {
+            ShowAndActivate();
+            return;
+        }
         ResetControls();
         TitleText.Text = "새 버전을 사용할 수 있어요";
         VersionText.Text = $"현재 {VelopackUpdateService.CurrentVersion}  →  최신 {latestVersion}";
@@ -100,6 +108,11 @@ public partial class UpdateWindow : Window
 
     internal void ShowStatus(string title, string message)
     {
+        if (_busy)
+        {
+            ShowAndActivate();
+            return;
+        }
         ResetControls();
         TitleText.Text = title;
         VersionText.Text = $"dejavu {VelopackUpdateService.CurrentVersion}";
@@ -118,8 +131,11 @@ public partial class UpdateWindow : Window
         ProgressText.Text = $"{percent}%";
         StatusText.Text = percent >= 100 ? "업데이트 준비 중" : "업데이트 다운로드 중";
         InstallButton.IsEnabled = false;
-        LaterButton.IsEnabled = false;
-        CloseButton.IsEnabled = false;
+        // Cancelling is the way out of a download; hiding the window instead would let the app
+        // restart unannounced. The hand-off to the updater runs synchronously after the last call.
+        LaterButton.Content = "취소";
+        LaterButton.IsEnabled = true;
+        CloseButton.IsEnabled = true;
     }
 
     internal void SetError(string message)
@@ -132,6 +148,7 @@ public partial class UpdateWindow : Window
         InstallButton.Content = "다시 시도";
         InstallButton.Tag = null;
         InstallButton.IsEnabled = true;
+        LaterButton.Content = "나중에";
         LaterButton.Visibility = Visibility.Visible;
         LaterButton.IsEnabled = true;
         CloseButton.IsEnabled = true;
@@ -144,6 +161,7 @@ public partial class UpdateWindow : Window
         InstallButton.Content = "지금 업데이트";
         InstallButton.Tag = null;
         InstallButton.IsEnabled = true;
+        LaterButton.Content = "나중에";
         LaterButton.Visibility = Visibility.Visible;
         LaterButton.IsEnabled = true;
         CloseButton.IsEnabled = true;
@@ -167,7 +185,8 @@ public partial class UpdateWindow : Window
 
     private void OnLaterClick(object sender, RoutedEventArgs e)
     {
-        if (!_busy) Hide();
+        if (_busy) CancelRequested?.Invoke(this, EventArgs.Empty);
+        else Hide();
     }
 
     private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
@@ -180,6 +199,7 @@ public partial class UpdateWindow : Window
     {
         if (AllowClose) return;
         e.Cancel = true;
-        if (!_busy) Hide();
+        if (_busy) CancelRequested?.Invoke(this, EventArgs.Empty);
+        else Hide();
     }
 }

@@ -178,7 +178,7 @@ For an actual release, update the project version, `CHANGELOG.md`, public-versio
 | Process exits immediately | Another instance may own the mutex; the existing instance should open Settings. Check `%LocalAppData%\dejavu\crash.log`. |
 | Duplicate generated WPF types/assembly attributes | Remove disposable build outputs and use the default `obj` path; do not redirect `BaseIntermediateOutputPath` into a second generated tree. |
 | Settings or update window appears to close the app | Confirm `ShutdownMode.OnExplicitShutdown`, `Closing` cancellation and `AllowClose` handling. |
-| Claude shows login required | Check credential discovery, token expiry and then recent Desktop history; do not inspect or print token contents. |
+| Claude shows login required | Check credential discovery, token expiry and then recent Desktop history; do not inspect or print token contents. An expired token with a refresh token shows `Claude 토큰 갱신 대기` instead (run Claude Code once), and Desktop without a recent sample shows `Claude Desktop 기록 대기`; `claudeIssue` in `status.json` names both. |
 | Fable is unavailable | Desktop history does not contain Fable; a valid Claude Code account response must expose that scoped limit. |
 | Codex is unavailable | Verify a runnable native executable and `app-server`; WindowsApps aliases are intentionally excluded. |
 | Update check says installed version required | Expected for `dotnet run`, publish and portable builds. Install through Velopack for update testing. |

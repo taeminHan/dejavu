@@ -17,6 +17,10 @@ public partial class SettingsWindow : Window
     private readonly string _defaultLayoutDescription;
     private readonly string _defaultOpacityDescription;
     private bool _loading;
+    // A browser login is in progress; state updates must keep the button's pending label.
+    private bool _codexLoginPending;
+    // A manual update check is running; reopening the window keeps its progress row.
+    private bool _updateCheckInFlight;
     private ApplicationState? _applicationState;
     private TaskbarTrackerState? _taskbarState;
     internal bool AllowClose { get; set; }
@@ -97,7 +101,12 @@ public partial class SettingsWindow : Window
 
     internal void ShowAndActivate()
     {
+        var wasVisible = IsVisible;
         LoadValues();
+        // A fresh open starts from the prompt. Re-activating an open window keeps a check's progress
+        // or result, and so does reopening while a manual check is still running.
+        if (!wasVisible && !_updateCheckInFlight)
+            SetUpdateCheckResult("업데이트 확인 버튼을 눌러 현재 상태를 확인하세요.");
         if (!IsVisible) Show();
         WindowState = WindowState.Normal;
         Activate();
@@ -130,7 +139,6 @@ public partial class SettingsWindow : Window
         CurrentVersionText.Text = currentVersion;
         UpdateChannelText.Text = currentVersion.Contains('-', StringComparison.Ordinal) ? "릴리스 후보 채널" : "안정 채널";
         AboutVersionText.Text = $"버전 {currentVersion}";
-        SetUpdateCheckResult("업데이트 확인 버튼을 눌러 현재 상태를 확인하세요.");
         UpdateStatusLabels();
         UpdateClaudeConnectionUi();
         UpdateCodexConnectionUi();
@@ -144,11 +152,31 @@ public partial class SettingsWindow : Window
         if (CodexConnectionTitle is not null) UpdateCodexConnectionUi();
     }
 
+    // The button stays enabled while a browser login is pending: a click reopens the login page
+    // instead of doing nothing until the login times out.
     internal void SetCodexLoginPending(bool pending)
     {
-        CodexConnectionButton.IsEnabled = !pending;
-        if (pending) CodexConnectionButton.Content = "브라우저에서 로그인";
+        _codexLoginPending = pending;
+        if (pending) CodexConnectionButton.Content = "브라우저 다시 열기";
         else UpdateCodexConnectionUi();
+    }
+
+    // The token, Desktop history and Ready cards render fixed text, so a failed login launch is shown
+    // here; the next state update redraws the card.
+    internal void ShowClaudeLoginLaunchFailed()
+    {
+        if (ClaudeConnectionDescription is null) return;
+        ClaudeConnectionDescription.Text = "Claude 로그인 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    }
+
+    // Re-reads the Run key after the tray menu or a Settings toggle changed it.
+    internal void RefreshStartupState()
+    {
+        var wasLoading = _loading;
+        _loading = true;
+        StartupToggle.IsChecked = StartupStateProvider?.Invoke() ?? false;
+        UpdateStatusLabels();
+        _loading = wasLoading;
     }
 
     private void UpdateCodexConnectionUi()
@@ -156,37 +184,75 @@ public partial class SettingsWindow : Window
         if (CodexConnectionTitle is null) return;
         var executable = CodexUsageClient.FindExecutable();
         var state = _applicationState;
-        if (state?.CodexStatus == UsageStatus.Ready && state.CodexSnapshot is not null)
+        // Provider Loading means "never checked"; a refresh in flight keeps the last settled status.
+        if (state is null || (state.CodexStatus == UsageStatus.Loading && state.CodexSnapshot is null))
+        {
+            CodexConnectionTitle.Text = "Codex 연결 확인 중";
+            CodexConnectionDescription.Text = "로컬 Codex app-server에서 로그인과 사용량을 확인합니다.";
+            CodexConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else if (state.CodexStatus is (UsageStatus.Ready or UsageStatus.Loading) && state.CodexSnapshot is not null)
         {
             CodexConnectionTitle.Text = "Codex 사용량 연결됨";
             CodexConnectionDescription.Text = "사용률, 초기화 시각과 초기화권을 공식 로컬 app-server에서 확인합니다.";
             CodexConnectionButton.Visibility = Visibility.Collapsed;
         }
-        else if (executable is not null)
-        {
-            CodexConnectionTitle.Text = CodexUsageClient.IsDesktopBundledExecutable(executable)
-                ? "Codex Desktop 감지됨 · 로그인 필요" : "Codex 로그인 필요";
-            CodexConnectionDescription.Text = "CLI를 직접 사용하지 않아도 ChatGPT 로그인으로 Codex 사용량을 연결할 수 있어요.";
-            CodexConnectionButton.Content = "Codex 로그인";
-            CodexConnectionButton.Visibility = Visibility.Visible;
-        }
-        else
+        else if (executable is null)
         {
             CodexConnectionTitle.Text = CodexUsageClient.IsDesktopInstalled
                 ? "Codex Desktop 업데이트 필요" : "Codex 설치 필요";
             CodexConnectionDescription.Text = CodexUsageClient.IsDesktopInstalled
                 ? "호환되는 로컬 런타임을 찾지 못했습니다. Codex Desktop을 업데이트해 주세요."
                 : "Codex Desktop 또는 CLI를 설치하면 dejavu가 자동으로 감지합니다.";
-            CodexConnectionButton.Content = "Codex 설치";
-            CodexConnectionButton.Visibility = Visibility.Visible;
+            ShowCodexConnectionButton("Codex 설치");
+        }
+        else if (state.CodexStatus == UsageStatus.LoginRequired)
+        {
+            CodexConnectionTitle.Text = CodexUsageClient.IsDesktopBundledExecutable(executable)
+                ? "Codex Desktop 감지됨 · 로그인 필요" : "Codex 로그인 필요";
+            CodexConnectionDescription.Text = "CLI를 직접 사용하지 않아도 ChatGPT 로그인으로 Codex 사용량을 연결할 수 있어요.";
+            ShowCodexConnectionButton("Codex 로그인");
+        }
+        else if (state.CodexSnapshot is not null)
+        {
+            // A transient failure or timeout after a successful read is not a lost connection.
+            CodexConnectionTitle.Text = "Codex 사용량 연결됨 · 확인 지연";
+            CodexConnectionDescription.Text =
+                $"{state.CodexMessage}. 마지막으로 확인한 사용량을 표시하고 다음 새로고침에서 다시 확인합니다.";
+            CodexConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            // No successful read yet: retry automatically, keeping login as a fallback.
+            CodexConnectionTitle.Text = "Codex 확인 실패 · 자동 재시도";
+            CodexConnectionDescription.Text = $"{state.CodexMessage}. 계속 실패하면 Codex 로그인을 다시 시도해 보세요.";
+            ShowCodexConnectionButton("Codex 로그인");
         }
     }
 
+    private void ShowCodexConnectionButton(string content)
+    {
+        if (!_codexLoginPending) CodexConnectionButton.Content = content;
+        CodexConnectionButton.Visibility = Visibility.Visible;
+    }
+
+    // Only LoginRequired is a login problem. A transient failure after a successful read keeps the
+    // connection with a delay hint; before any successful read it retries with login as a fallback.
     private void UpdateClaudeConnectionUi()
     {
         if (ClaudeConnectionTitle is null) return;
         var state = _applicationState;
-        if (state?.ClaudeStatus == UsageStatus.Ready && state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode)
+        if (state?.ClaudeIssue == ClaudeIssue.TokenRefreshPending)
+        {
+            // Claude Code renews an expired access token itself the next time it runs; logging in
+            // again is only a fallback for a revoked session.
+            ClaudeConnectionTitle.Text = "Claude Code 토큰 갱신 대기";
+            ClaudeConnectionDescription.Text = state.Snapshot is null
+                ? "Claude Code를 한 번 실행하면 토큰이 자동으로 갱신되고 dejavu가 다시 확인합니다. 계속되면 다시 로그인해 주세요."
+                : "Claude Code를 한 번 실행하면 토큰이 자동으로 갱신됩니다. 그때까지 마지막으로 확인한 사용량을 표시합니다.";
+            ShowClaudeConnectionButton();
+        }
+        else if (state?.ClaudeStatus == UsageStatus.Ready && state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode)
         {
             ClaudeConnectionTitle.Text = "Claude Code 연결됨";
             ClaudeConnectionDescription.Text = state.Snapshot.Fable is null
@@ -204,11 +270,42 @@ public partial class SettingsWindow : Window
             ClaudeConnectionButton.Content = claudeCodeInstalled ? "Claude Code 로그인" : "Claude Code 설치";
             ClaudeConnectionButton.Visibility = Visibility.Visible;
         }
-        else if (state?.ClaudeStatus == UsageStatus.Loading)
+        else if (state is null || state.ClaudeStatus == UsageStatus.Loading)
         {
+            // Provider Loading means "never checked"; a refresh in flight keeps the last settled status.
             ClaudeConnectionTitle.Text = "Claude 연결 확인 중";
             ClaudeConnectionDescription.Text = "로컬 Claude Code 로그인과 Desktop 사용 기록을 확인합니다.";
             ClaudeConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else if (state.ClaudeIssue == ClaudeIssue.DesktopHistoryStale)
+        {
+            // No Claude Code login and Desktop has not written a recent sample: closed or idle.
+            ClaudeConnectionTitle.Text = "Claude Desktop 기록 대기 중";
+            ClaudeConnectionDescription.Text = ClaudeEnvironmentDetector.FindExecutable() is not null
+                ? "Claude Desktop을 사용하면 5시간·주간 사용량을 자동으로 다시 표시합니다. Fable까지 확인하려면 Claude Code 로그인이 필요해요."
+                : "Claude Desktop을 사용하면 5시간·주간 사용량을 자동으로 다시 표시합니다. Fable까지 확인하려면 Claude Code 설치와 로그인이 필요해요.";
+            ShowClaudeConnectionButton();
+        }
+        else if (state.ClaudeStatus is (UsageStatus.RateLimited or UsageStatus.Offline or UsageStatus.Error) &&
+                 state.Snapshot is not null)
+        {
+            // A transient failure after a successful read is not a lost connection.
+            var desktopSource = state.Snapshot.Source == ClaudeUsageSource.ClaudeDesktop;
+            ClaudeConnectionTitle.Text = desktopSource
+                ? "Claude Desktop 연결됨 · 확인 지연" : "Claude Code 연결됨 · 확인 지연";
+            ClaudeConnectionDescription.Text =
+                $"{state.ClaudeMessage}. 마지막으로 확인한 사용량을 표시하고 다음 새로고침에서 다시 확인합니다.";
+            // A Desktop source already means Claude Code is not connected: keep that upgrade path.
+            if (desktopSource) ShowClaudeConnectionButton();
+            else ClaudeConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else if (state.ClaudeStatus is UsageStatus.RateLimited or UsageStatus.Offline or UsageStatus.Error)
+        {
+            // No successful read yet: retry automatically, keeping login as a fallback.
+            ClaudeConnectionTitle.Text = "Claude 확인 실패 · 자동 재시도";
+            ClaudeConnectionDescription.Text =
+                $"{state.ClaudeMessage}. 계속 실패하면 Claude Code 로그인을 다시 시도해 보세요.";
+            ShowClaudeConnectionButton();
         }
         else
         {
@@ -220,6 +317,13 @@ public partial class SettingsWindow : Window
             ClaudeConnectionButton.Content = claudeCodeInstalled ? "Claude Code 로그인" : "Claude Code 설치";
             ClaudeConnectionButton.Visibility = Visibility.Visible;
         }
+    }
+
+    private void ShowClaudeConnectionButton()
+    {
+        ClaudeConnectionButton.Content = ClaudeEnvironmentDetector.FindExecutable() is not null
+            ? "Claude Code 로그인" : "Claude Code 설치";
+        ClaudeConnectionButton.Visibility = Visibility.Visible;
     }
 
     private static Choice<T>? Find<T>(ItemsControl control, T value) where T : notnull =>
@@ -644,6 +748,7 @@ public partial class SettingsWindow : Window
 
     internal void SetUpdateCheckLoading()
     {
+        _updateCheckInFlight = true;
         UpdateCheckProgress.Visibility = Visibility.Visible;
         UpdateCheckStatus.Text = "새 버전을 확인하는 중입니다…";
         CheckUpdatesButton.Content = "확인 중";
@@ -653,6 +758,7 @@ public partial class SettingsWindow : Window
 
     internal void SetUpdateCheckResult(string message, bool updateAvailable = false)
     {
+        _updateCheckInFlight = false;
         UpdateCheckProgress.Visibility = Visibility.Collapsed;
         UpdateCheckStatus.Text = message;
         CheckUpdatesButton.Content = updateAvailable ? "업데이트 보기" : "업데이트 확인";

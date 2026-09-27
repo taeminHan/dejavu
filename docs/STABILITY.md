@@ -5,6 +5,9 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 ## Async ownership
 
 - `_refreshGate` serializes provider refreshes. Periodic and login-watch refreshes coalesce; a user-forced refresh cancels the current request and waits for its gate.
+- The 3 s Claude login watch starts only after a user login action (Details, Settings or Onboarding), never from a passive `LoginRequired` result, and stops once Claude is connected or 5 minutes have passed. Its ticks refresh Claude only and never start a Codex `app-server`, except while Codex has never been checked. Only a full refresh resets the periodic timer interval (assigning `DispatcherTimer.Interval` restarts a running timer), so the watch never pushes the periodic Codex refresh back. A periodic tick that lands while a Claude-only watch refresh holds `_refreshGate` is still coalesced away, so while a watch runs, Codex can be stale for up to the 5-minute watch plus one refresh interval. While Codex is visible, watch ticks do not advance `UpdatedAt` (the details "마지막 확인" time and `status.json` `updatedAt`). A login made outside Dejavu is picked up by the periodic refresh.
+- A refresh in flight must not look like a lost connection: `ApplicationState.Loading` keeps each provider's last settled status and message, and connection cards show "확인 중" only before a provider's first result.
+- Only a Codex read settles `LoginRequired`. Transient failures keep it until a successful read, but a `-32603` backend failure clears a `LoginRequired` that came from a missing account (`-32600`), because upstream returns `-32603` only after it found ChatGPT auth; a login made outside Dejavu is then not hidden behind a stale login prompt. A completed Dejavu Codex login clears `LoginRequired` before its forced refresh, and a failed, abandoned or timed-out login never downgrades `Ready` or seeds `LoginRequired`. A Codex read kills its own `app-server` child only on the 15 s timeout; a forced refresh or shutdown lets the pending read finish or time out, so an in-band OAuth token refresh in that child is never cut off between rotating and saving the token.
 - The method that creates a `CancellationTokenSource` owns and disposes it. `Dispose()` only cancels active sources; it must not dispose a source while its task is still unwinding.
 - Provider readers must rethrow cancellation before translating other exceptions into a provider status.
 - Do not use `Dispatcher.InvokeAsync(async () => ...)` without unwrapping the nested task. Tray-originated async actions go through `InvokeOnDispatcherAsync`.
@@ -40,6 +43,7 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 - Invalid settings are preserved as `settings.corrupt-YYYYMMDD-HHMMSS.json`; startup continues with defaults.
 - Never clear `crash.log` at startup. It is append-only and rotates to `crash.previous.log` after 256 KiB.
 - Diagnostics must never contain credentials, tokens, authorization headers, browser content, or Claude/Codex conversations.
+- `status.json` records per-provider status and Dejavu's own fixed status messages. Never record Codex `app-server` standard error (it is drained and discarded) or JSON-RPC error messages.
 
 ## Update scheduling
 

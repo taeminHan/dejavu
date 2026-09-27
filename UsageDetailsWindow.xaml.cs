@@ -31,7 +31,9 @@ public partial class UsageDetailsWindow : Window
         ServiceDivider.Visibility = showClaude && showCodex &&
                                     settings.WidgetTheme is not (WidgetVisualTheme.FluentGlass or WidgetVisualTheme.Orbit)
             ? Visibility.Visible : Visibility.Collapsed;
-        StatusText.Text = showClaude && showCodex ? state.Message
+        // While a refresh is in flight the provider lines keep their last settled message,
+        // so the header carries the refreshing hint in every service mode.
+        StatusText.Text = state.Status == UsageStatus.Loading || showClaude && showCodex ? state.Message
             : showClaude ? state.ClaudeMessage
             : showCodex ? state.CodexMessage
             : "사용 가능한 서비스를 찾지 못했습니다";

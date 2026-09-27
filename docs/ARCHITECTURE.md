@@ -45,9 +45,10 @@ Do not change this into close-on-last-window behavior. The widget and tray appli
 
 1. `_refreshGate` allows one refresh at a time.
 2. Periodic refreshes coalesce. A forced user refresh cancels the active request and waits for the gate.
-3. Claude and Codex reads run concurrently with a shared refresh cancellation token.
-4. Provider exceptions are translated into independent `UsageStatus` values while the previous valid snapshot may remain available.
-5. One `ApplicationState` updates the widget, details, settings connection state, onboarding, tray and credential-free diagnostics.
+3. Claude and Codex reads run concurrently with a shared refresh cancellation token. The Claude login watch runs Claude-only refreshes (`includeCodex: false`) that carry the last settled Codex values unchanged, unless Codex has never been checked. While Codex is visible, such a refresh keeps the previous `UpdatedAt`, so the "마지막 확인" time never advances past the last Codex read.
+4. Before the reads, `ApplicationState.Loading(previous)` is applied. It keeps each provider's last settled status, message, snapshot and `UpdatedAt`; only the overall `Status == Loading` marks the refresh in flight. A provider status of `Loading` therefore means that provider has never been checked, and views must not treat a refresh as a lost connection.
+5. Provider exceptions are translated into independent `UsageStatus` values while the previous valid snapshot may remain available. A cancelled refresh applies no state.
+6. One `ApplicationState` updates the widget, details, settings connection state, onboarding, tray and credential-free diagnostics.
 
 Views must not call provider clients directly or infer provider availability from current element visibility.
 
@@ -71,9 +72,20 @@ Codex does not read ChatGPT credentials directly.
 1. Use `CODEX_CLI_PATH` when it points to a runnable native executable.
 2. Unless `DEJAVU_CODEX_SOURCE=desktop`, inspect npm/nvm and `PATH` locations for the native Codex executable. Protected WindowsApps aliases are excluded.
 3. Fall back to `%LocalAppData%\OpenAI\Codex\bin` candidates bundled with Codex Desktop.
-4. Start `<codex executable> app-server` without a window and exchange newline-delimited JSON messages over standard input/output.
-5. Initialize the client and call `account/rateLimits/read`; parse 5-hour, weekly, plan and reset-credit information.
-6. For login, call `account/login/start` with `type=chatgpt`, open the returned official browser URL and wait for `account/login/completed`.
+4. Start `<codex executable> app-server` without a window and exchange newline-delimited JSON messages over standard input/output. Standard error is drained and discarded so verbose `RUST_LOG` output cannot fill the pipe and stall the child; it is never logged.
+5. Initialize the client and call `account/rateLimits/read`; parse 5-hour, weekly, plan and reset-credit information from the `codex` bucket of `rateLimitsByLimitId`, falling back to `rateLimits`. Optional fields that arrive as JSON `null` are skipped instead of failing the read. Outcomes are classified as follows; JSON-RPC error messages are never logged or displayed:
+
+   | Outcome | Exception | Provider status and message |
+   |---|---|---|
+   | `-32600` for missing or non-ChatGPT auth (not a protocol rejection such as `Invalid request…`, `Not initialized`, `Already initialized`, `Server is draining…` or `…requires experimentalApi capability`), or `-32603` whose message names a backend `401 Unauthorized` | `CodexLoginRequiredException` | `LoginRequired`, `Codex 로그인 필요` |
+   | Other `-32603` (network or backend failure; upstream returns it only after it found ChatGPT auth) | `CodexBackendFailedException` | `Error`, `Codex 확인 실패 · 자동 재시도` |
+   | Other JSON-RPC error (`-32001` overload, a `-32600` protocol rejection from an older or newer CLI), early exit, missing `result`, start or pipe failure | `CodexReadFailedException` or the generic catch | `Error`, `Codex 확인 실패 · 자동 재시도` |
+   | No response within 15 s | `CodexTimeoutException` | `Offline`, `Codex 응답 지연 · 자동 재시도` |
+   | No runnable executable, or `Process.Start` returns nothing | `CodexCliUnavailableException` | `Error`, `Codex CLI 필요` |
+   | Refresh cancelled by a forced refresh or shutdown | `OperationCanceledException` is rethrown | No state is applied |
+
+   Only a read settles `LoginRequired`. After it, the transient outcomes (read failure, timeout) keep `LoginRequired` until a successful read, and a failed login keeps it too; a transient failure is not evidence of a login. The exception is a `-32603` backend failure after a `LoginRequired` that came from a missing account (`-32600`): it proves ChatGPT auth is present, for example after a login made outside Dejavu, so it reports `Error` instead. A `LoginRequired` that came from a backend `401 Unauthorized` stays sticky through backend failures. A completed Dejavu login clears it (provider `Loading`, `Codex 확인 중`) before the follow-up forced refresh, so that read decides again. A failed, abandoned or timed-out login never downgrades a `Ready` status that a read reported while the login was pending, and turns any status other than `LoginRequired` into `Error` rather than `LoginRequired`. Only the 15 s timeout kills the child through a token registration, because a pending read on a redirected pipe may not observe the token on Windows. A forced refresh or shutdown lets the pending read finish or time out first, so a child in the middle of an in-band OAuth token refresh can persist the rotated token before it is killed.
+6. For login, call `account/login/start` with `type=chatgpt`, open the returned official browser URL and wait for `account/login/completed`. The 5-minute login timeout and shutdown kill the login child through a token registration, so a pending browser login always ends.
 7. Kill only the child `app-server` process that Dejavu started. Never terminate the Codex Desktop application.
 
 If no runnable executable exists, the UI links to the official Codex Windows installation page.
@@ -84,7 +96,7 @@ If no runnable executable exists, the UI links to the official Codex Windows ins
 |---|---|
 | `%LocalAppData%\dejavu\settings.json` | User settings, including the last automatically notified update version. Enums such as `WidgetPlacement` are stored as integers and are append-only. Written through `settings.json.tmp` and atomically replaced. Never stores provider credentials. |
 | `%LocalAppData%\dejavu\settings.corrupt-*.json` | Preserved invalid settings. Startup continues with normalized defaults. |
-| `%LocalAppData%\dejavu\status.json` | Support status, percentages, timestamps, geometry, source availability, placement, taskbar tracker state and raise counters. Must never contain tokens, conversations, or titles/classes of other processes' windows. |
+| `%LocalAppData%\dejavu\status.json` | Support status, per-provider status and fixed Dejavu status messages (`claudeStatus`, `codexStatus`, `claudeMessage`, `codexMessage`), percentages, timestamps, geometry, source availability, placement, taskbar tracker state and raise counters. Must never contain tokens, provider error text, conversations, or titles/classes of other processes' windows. |
 | `%LocalAppData%\dejavu\crash.log` | Append-only crash details. Rotates to `crash.previous.log` above 256 KiB. |
 | `%LocalAppData%\ClaudeUsageTray\settings.json` | Legacy settings source migrated on load. |
 | `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\dejavu` | Optional current-user startup entry. Legacy `UsageBarForClaude` and `ClaudeUsageTray` entries are removed during migration. |

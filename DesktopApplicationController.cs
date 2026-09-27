@@ -14,6 +14,7 @@ internal sealed class DesktopApplicationController : IDisposable
 {
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValueName = "dejavu";
+    private static readonly TimeSpan LoginWatchDuration = TimeSpan.FromMinutes(5);
     private readonly System.Windows.Application _application;
     private readonly TraySettings _settings = TraySettings.Load();
     private readonly ClaudeUsageClient _claudeClient = new();
@@ -36,10 +37,13 @@ internal sealed class DesktopApplicationController : IDisposable
     private UpdateInfo? _pendingUpdate;
     private Task<UpdateCheckResult>? _updateCheckTask;
     private DateTimeOffset? _nextAutomaticUpdateAt;
+    private DateTimeOffset _loginWatchUntil;
     private ApplicationState _state = ApplicationState.Loading();
     private Drawing.Icon? _generatedIcon;
     private bool _loginWatchRequiresClaudeCode;
     private bool _codexLoginInProgress;
+    // The settled Codex LoginRequired came from a missing account (-32600), not a backend 401.
+    private bool _codexLoginRequiredAccountMissing;
     // The widget has been asked to appear (first run completed or onboarding closed).
     private bool _widgetRequested;
     // The tracker reports Suppressed: a fullscreen app or a settling taskbar hides the widget.
@@ -85,13 +89,15 @@ internal sealed class DesktopApplicationController : IDisposable
             if (_disposed) return;
             _onboarding.RefreshDetection();
             // The login watcher must not repeatedly cancel a slow provider request.
-            // A non-forced refresh coalesces with one already in progress.
-            await RefreshAsync();
+            // A non-forced refresh coalesces with one already in progress. It reads only
+            // Claude, so it never starts a Codex app-server every tick; Codex is included
+            // only while it has never been checked.
+            await RefreshAsync(includeCodex: _state.CodexStatus == UsageStatus.Loading);
             if (_disposed) return;
             var connected = _state.ClaudeStatus == UsageStatus.Ready &&
                             (!_loginWatchRequiresClaudeCode ||
                              _state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode);
-            if (connected) _loginWatchTimer.Stop();
+            if (connected || DateTimeOffset.Now >= _loginWatchUntil) _loginWatchTimer.Stop();
         };
         _automaticUpdateTimer.Tick += OnAutomaticUpdateTimerTick;
         ConfigureAutomaticUpdateChecks();
@@ -222,7 +228,7 @@ internal sealed class DesktopApplicationController : IDisposable
         UpdateTrayIcon();
     }
 
-    private async Task RefreshAsync(bool force = false)
+    private async Task RefreshAsync(bool force = false, bool includeCodex = true)
     {
         if (_disposed) return;
         if (force)
@@ -243,14 +249,22 @@ internal sealed class DesktopApplicationController : IDisposable
             if (_disposed) return;
             refreshCancellation = new CancellationTokenSource();
             _refreshCancellation = refreshCancellation;
-            ApplyState(ApplicationState.Loading(_state.Snapshot, _state.CodexSnapshot));
+            // Loading keeps each provider's last settled status, so views do not flip to
+            // "not connected" while the refresh is in flight.
+            ApplyState(ApplicationState.Loading(_state));
             var claudeTask = ReadClaudeAsync(refreshCancellation.Token);
-            var codexTask = ReadCodexAsync(refreshCancellation.Token);
+            // A Claude-only refresh carries the last settled Codex values unchanged.
+            var codexTask = includeCodex
+                ? ReadCodexAsync(refreshCancellation.Token)
+                : Task.FromResult(new ProviderResult<CodexUsageSnapshot>(_state.CodexStatus, _state.CodexSnapshot,
+                    _state.CodexMessage));
             await Task.WhenAll(claudeTask, codexTask);
             if (_disposed || refreshCancellation.IsCancellationRequested) return;
             var claude = await claudeTask;
             var codex = await codexTask;
-            _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
+            // Setting Interval restarts the running timer. Only a full refresh may push the
+            // periodic refresh back, or repeated Claude-only refreshes would starve Codex.
+            if (includeCodex) _timer.Interval = TimeSpan.FromSeconds(_settings.RefreshSeconds);
             var overall = claude.Status == UsageStatus.Ready || codex.Status == UsageStatus.Ready
                 ? UsageStatus.Ready
                 : claude.Status == UsageStatus.RateLimited || codex.Status == UsageStatus.RateLimited
@@ -259,10 +273,20 @@ internal sealed class DesktopApplicationController : IDisposable
                         ? UsageStatus.Offline
                     : claude.Status == UsageStatus.LoginRequired && codex.Status == UsageStatus.LoginRequired
                         ? UsageStatus.LoginRequired : UsageStatus.Error;
+            // The combined details header has no room for the per-provider retry hint in narrow
+            // themes; the Codex provider line and CodexMessage keep the full message.
+            const string retryHint = " · 자동 재시도";
+            var codexHeader = codex.Message.EndsWith(retryHint, StringComparison.Ordinal)
+                ? codex.Message[..^retryHint.Length] : codex.Message;
             var message = claude.Status == UsageStatus.Ready && codex.Status == UsageStatus.Ready
                 ? "Claude · Codex 사용량이 최신 상태입니다"
-                : $"{claude.Message} · {codex.Message}";
-            ApplyState(new ApplicationState(overall, claude.Snapshot, message, DateTimeOffset.Now,
+                : $"{claude.Message} · {codexHeader}";
+            // A Claude-only refresh did not re-read Codex, so it must not advance the check time
+            // shown under visible Codex values. `_state` is the Loading state carrying UpdatedAt.
+            var updatedAt = includeCodex || !_settings.ResolveServices(_state).Codex || _state.UpdatedAt is null
+                ? DateTimeOffset.Now
+                : _state.UpdatedAt;
+            ApplyState(new ApplicationState(overall, claude.Snapshot, message, updatedAt,
                 CodexSnapshot: codex.Snapshot, ClaudeStatus: claude.Status, CodexStatus: codex.Status,
                 ClaudeMessage: claude.Message, CodexMessage: codex.Message));
         }
@@ -548,28 +572,52 @@ internal sealed class DesktopApplicationController : IDisposable
         {
             throw;
         }
-        catch (CodexLoginRequiredException)
+        catch (CodexLoginRequiredException exception)
         {
+            _codexLoginRequiredAccountMissing = exception.AccountMissing;
             return new ProviderResult<CodexUsageSnapshot>(UsageStatus.LoginRequired, _state.CodexSnapshot, "Codex 로그인 필요");
+        }
+        catch (CodexBackendFailedException)
+        {
+            // Upstream returns -32603 only after it found ChatGPT auth, so a LoginRequired that came
+            // from a missing account is stale. A 401-based LoginRequired stays sticky.
+            return _state.CodexStatus == UsageStatus.LoginRequired && _codexLoginRequiredAccountMissing
+                ? new(UsageStatus.Error, _state.CodexSnapshot, "Codex 확인 실패 · 자동 재시도")
+                : TransientCodexResult(UsageStatus.Error, "Codex 확인 실패 · 자동 재시도");
         }
         catch (CodexCliUnavailableException)
         {
             return new ProviderResult<CodexUsageSnapshot>(UsageStatus.Error, _state.CodexSnapshot, "Codex CLI 필요");
         }
+        catch (CodexTimeoutException)
+        {
+            return TransientCodexResult(UsageStatus.Offline, "Codex 응답 지연 · 자동 재시도");
+        }
         catch
         {
-            return new ProviderResult<CodexUsageSnapshot>(UsageStatus.Error, _state.CodexSnapshot, "Codex 확인 실패");
+            // CodexReadFailedException (a transient JSON-RPC error, early exit or malformed reply),
+            // a start or pipe failure: not a login problem, so the next refresh simply retries.
+            return TransientCodexResult(UsageStatus.Error, "Codex 확인 실패 · 자동 재시도");
         }
     }
+
+    // A transient failure proves nothing about login: keep a settled LoginRequired until a Ready
+    // read, or a backend failure that contradicts a missing account (see ReadCodexAsync).
+    // `_state` is the Loading state, which carries the last settled Codex status.
+    private ProviderResult<CodexUsageSnapshot> TransientCodexResult(UsageStatus status, string message) =>
+        _state.CodexStatus == UsageStatus.LoginRequired
+            ? new(UsageStatus.LoginRequired, _state.CodexSnapshot, "Codex 로그인 필요")
+            : new(status, _state.CodexSnapshot, message);
 
     private void ApplyState(ApplicationState state)
     {
         if (_disposed) return;
         _state = state;
-        if (state.ClaudeStatus == UsageStatus.LoginRequired) _loginWatchTimer.Start();
-        else if (state.ClaudeStatus == UsageStatus.Ready &&
-                 (!_loginWatchTimer.IsEnabled || !_loginWatchRequiresClaudeCode ||
-                  state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode))
+        // The login watch starts only from a user login action (StartClaudeLogin); the periodic
+        // timer still picks up a login made outside Dejavu.
+        if (state.ClaudeStatus == UsageStatus.Ready &&
+            (!_loginWatchTimer.IsEnabled || !_loginWatchRequiresClaudeCode ||
+             state.Snapshot?.Source == ClaudeUsageSource.ClaudeCode))
             _loginWatchTimer.Stop();
         _widget.UpdateState(state);
         _details.UpdateState(state, _settings);
@@ -710,6 +758,7 @@ internal sealed class DesktopApplicationController : IDisposable
             if (environment.IsInstalled) ClaudeEnvironmentDetector.OpenLogin();
             else if (!requireClaudeCode && ClaudeDesktopUsageReader.IsInstalled) ClaudeDesktopUsageReader.OpenDesktop();
             else ClaudeEnvironmentDetector.OpenSetupPage();
+            _loginWatchUntil = DateTimeOffset.Now + LoginWatchDuration;
             _loginWatchTimer.Start();
             _onboarding.RefreshDetection();
         }
@@ -749,6 +798,10 @@ internal sealed class DesktopApplicationController : IDisposable
         {
             await _codexClient.LoginAsync(codexLoginCancellation.Token);
             if (_disposed || codexLoginCancellation.IsCancellationRequested) return;
+            // A completed login makes a settled LoginRequired stale: let the follow-up read decide,
+            // so a transient failure there does not bring the login prompt back.
+            if (_state.CodexStatus == UsageStatus.LoginRequired)
+                ApplyState(_state with { CodexStatus = UsageStatus.Loading, CodexMessage = "Codex 확인 중" });
             await RefreshAsync(force: true);
         }
         catch (CodexCliUnavailableException)
@@ -772,19 +825,11 @@ internal sealed class DesktopApplicationController : IDisposable
         }
         catch (CodexLoginFailedException)
         {
-            ApplyState(_state with
-            {
-                CodexStatus = UsageStatus.LoginRequired,
-                CodexMessage = "Codex 로그인을 완료하지 못했습니다"
-            });
+            ApplyCodexLoginFailure("Codex 로그인을 완료하지 못했습니다");
         }
         catch
         {
-            ApplyState(_state with
-            {
-                CodexStatus = UsageStatus.Error,
-                CodexMessage = "Codex 로그인 창을 열지 못했습니다"
-            });
+            ApplyCodexLoginFailure("Codex 로그인 창을 열지 못했습니다");
         }
         finally
         {
@@ -797,6 +842,20 @@ internal sealed class DesktopApplicationController : IDisposable
                 _settingsWindow.SetCodexLoginPending(false);
             }
         }
+    }
+
+    // A failed, abandoned or timed-out login says nothing new about the stored account. The login
+    // button is never offered while Codex is Ready, so Ready here means a read succeeded while the
+    // login was pending and is kept. Otherwise a logged-out account keeps the login prompt, and any
+    // other status becomes a transient Error instead of seeding the sticky LoginRequired rule.
+    private void ApplyCodexLoginFailure(string message)
+    {
+        if (_disposed || _state.CodexStatus == UsageStatus.Ready) return;
+        ApplyState(_state with
+        {
+            CodexStatus = _state.CodexStatus == UsageStatus.LoginRequired ? UsageStatus.LoginRequired : UsageStatus.Error,
+            CodexMessage = message
+        });
     }
 
     private void UpdateTrayIcon()

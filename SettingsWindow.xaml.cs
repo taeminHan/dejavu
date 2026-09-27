@@ -17,6 +17,8 @@ public partial class SettingsWindow : Window
     private readonly string _defaultLayoutDescription;
     private readonly string _defaultOpacityDescription;
     private bool _loading;
+    // A browser login is in progress; state updates must keep the button's pending label.
+    private bool _codexLoginPending;
     private ApplicationState? _applicationState;
     private TaskbarTrackerState? _taskbarState;
     internal bool AllowClose { get; set; }
@@ -146,6 +148,7 @@ public partial class SettingsWindow : Window
 
     internal void SetCodexLoginPending(bool pending)
     {
+        _codexLoginPending = pending;
         CodexConnectionButton.IsEnabled = !pending;
         if (pending) CodexConnectionButton.Content = "브라우저에서 로그인";
         else UpdateCodexConnectionUi();
@@ -156,30 +159,56 @@ public partial class SettingsWindow : Window
         if (CodexConnectionTitle is null) return;
         var executable = CodexUsageClient.FindExecutable();
         var state = _applicationState;
-        if (state?.CodexStatus == UsageStatus.Ready && state.CodexSnapshot is not null)
+        // Provider Loading means "never checked"; a refresh in flight keeps the last settled status.
+        if (state is null || (state.CodexStatus == UsageStatus.Loading && state.CodexSnapshot is null))
+        {
+            CodexConnectionTitle.Text = "Codex 연결 확인 중";
+            CodexConnectionDescription.Text = "로컬 Codex app-server에서 로그인과 사용량을 확인합니다.";
+            CodexConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else if (state.CodexStatus is (UsageStatus.Ready or UsageStatus.Loading) && state.CodexSnapshot is not null)
         {
             CodexConnectionTitle.Text = "Codex 사용량 연결됨";
             CodexConnectionDescription.Text = "사용률, 초기화 시각과 초기화권을 공식 로컬 app-server에서 확인합니다.";
             CodexConnectionButton.Visibility = Visibility.Collapsed;
         }
-        else if (executable is not null)
-        {
-            CodexConnectionTitle.Text = CodexUsageClient.IsDesktopBundledExecutable(executable)
-                ? "Codex Desktop 감지됨 · 로그인 필요" : "Codex 로그인 필요";
-            CodexConnectionDescription.Text = "CLI를 직접 사용하지 않아도 ChatGPT 로그인으로 Codex 사용량을 연결할 수 있어요.";
-            CodexConnectionButton.Content = "Codex 로그인";
-            CodexConnectionButton.Visibility = Visibility.Visible;
-        }
-        else
+        else if (executable is null)
         {
             CodexConnectionTitle.Text = CodexUsageClient.IsDesktopInstalled
                 ? "Codex Desktop 업데이트 필요" : "Codex 설치 필요";
             CodexConnectionDescription.Text = CodexUsageClient.IsDesktopInstalled
                 ? "호환되는 로컬 런타임을 찾지 못했습니다. Codex Desktop을 업데이트해 주세요."
                 : "Codex Desktop 또는 CLI를 설치하면 dejavu가 자동으로 감지합니다.";
-            CodexConnectionButton.Content = "Codex 설치";
-            CodexConnectionButton.Visibility = Visibility.Visible;
+            ShowCodexConnectionButton("Codex 설치");
         }
+        else if (state.CodexStatus == UsageStatus.LoginRequired)
+        {
+            CodexConnectionTitle.Text = CodexUsageClient.IsDesktopBundledExecutable(executable)
+                ? "Codex Desktop 감지됨 · 로그인 필요" : "Codex 로그인 필요";
+            CodexConnectionDescription.Text = "CLI를 직접 사용하지 않아도 ChatGPT 로그인으로 Codex 사용량을 연결할 수 있어요.";
+            ShowCodexConnectionButton("Codex 로그인");
+        }
+        else if (state.CodexSnapshot is not null)
+        {
+            // A transient failure or timeout after a successful read is not a lost connection.
+            CodexConnectionTitle.Text = "Codex 사용량 연결됨 · 확인 지연";
+            CodexConnectionDescription.Text =
+                $"{state.CodexMessage}. 마지막으로 확인한 사용량을 표시하고 다음 새로고침에서 다시 확인합니다.";
+            CodexConnectionButton.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            // No successful read yet: retry automatically, keeping login as a fallback.
+            CodexConnectionTitle.Text = "Codex 확인 실패 · 자동 재시도";
+            CodexConnectionDescription.Text = $"{state.CodexMessage}. 계속 실패하면 Codex 로그인을 다시 시도해 보세요.";
+            ShowCodexConnectionButton("Codex 로그인");
+        }
+    }
+
+    private void ShowCodexConnectionButton(string content)
+    {
+        if (!_codexLoginPending) CodexConnectionButton.Content = content;
+        CodexConnectionButton.Visibility = Visibility.Visible;
     }
 
     private void UpdateClaudeConnectionUi()

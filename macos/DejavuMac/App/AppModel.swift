@@ -21,6 +21,84 @@ extension UsageStatus {
     }
 }
 
+extension ClaudeUsageSnapshot {
+    /// Localized name of the source behind the displayed Claude values.
+    /// Desktop history names its sample time so an older sample never reads
+    /// as a new one.
+    var sourceDescription: String {
+        switch source {
+        case .statusLine:
+            NSLocalizedString("Claude Code status line", comment: "Claude usage source")
+        case .oauthUsage:
+            NSLocalizedString("Claude Code extended usage", comment: "Claude usage source")
+        case .desktopHistory:
+            String(
+                format: NSLocalizedString(
+                    "Claude Desktop history %@",
+                    comment: "Claude usage source; argument is the Desktop sample time"
+                ),
+                capturedAt.formatted(date: .omitted, time: .shortened)
+            )
+        }
+    }
+}
+
+extension ClaudeExtendedAccessOutcome {
+    var displayName: String {
+        switch self {
+        case .connected:
+            "Connected"
+        case let .failed(error):
+            switch error {
+            case .accessDenied: "Keychain approval required"
+            case .credentialExpired: "Token expired"
+            case .credentialUnavailable, .unauthorized: "Login required"
+            case .rateLimited: "Rate limited"
+            case .offline: "Offline"
+            case .invalidResponse, .responseTooLarge: "Unavailable"
+            }
+        }
+    }
+
+    /// Guidance for a failed opt-in Fable read. Never includes Keychain or
+    /// response contents.
+    var guidance: String? {
+        guard case let .failed(error) = self else { return nil }
+        return switch error {
+        case .accessDenied:
+            NSLocalizedString(
+                "Keychain access must be allowed again after an update. Choose Always Allow in the window that appears at the next check. Ad-hoc signed builds can ask again after every update.",
+                comment: "Fable Keychain access denied or cancelled"
+            )
+        case .credentialExpired:
+            NSLocalizedString(
+                "The Claude Code token has expired. Run claude once in Terminal to renew it.",
+                comment: "Fable Claude Code token expired"
+            )
+        case .credentialUnavailable, .unauthorized:
+            NSLocalizedString(
+                "Claude Code sign-in was not found. Choose Sign In in Terminal… and sign in to Claude Code.",
+                comment: "Fable Claude Code credential missing or rejected"
+            )
+        case .rateLimited:
+            NSLocalizedString(
+                "Claude is temporarily limiting Fable checks. Dejavu tries again at the next refresh.",
+                comment: "Fable usage rate limited"
+            )
+        case .offline:
+            NSLocalizedString(
+                "Fable usage could not be checked because Claude could not be reached.",
+                comment: "Fable usage offline"
+            )
+        case .invalidResponse, .responseTooLarge:
+            NSLocalizedString(
+                "The Fable usage response could not be read. Claude may have changed this interface.",
+                comment: "Fable usage response changed"
+            )
+        }
+    }
+}
+
 struct UsageLimitViewState: Identifiable {
     let id: String
     let label: String
@@ -69,6 +147,7 @@ struct UsageProviderViewState: Identifiable {
     let planName: String?
     let resetCredits: Int?
     let resetCreditsExpireAt: Date?
+    var sourceDescription: String? = nil
 }
 
 struct UsageApplicationViewState {
@@ -85,10 +164,16 @@ struct UsageApplicationViewState {
     private static func claudeProvider(from state: ApplicationState) -> UsageProviderViewState? {
         guard state.claudeStatus == .loading || state.claudeSnapshot != nil else { return nil }
         let snapshot = state.claudeSnapshot
+        // A Desktop sample can be up to 40 minutes old (older ones keep only
+        // the slot, with `--%`), so it is never described as current; its
+        // source row names the sample time instead.
+        let isDesktopHistory = snapshot?.source == .desktopHistory
         return UsageProviderViewState(
             kind: .claude,
             status: state.claudeStatus,
-            message: state.claudeMessage.isEmpty ? nil : state.claudeMessage,
+            message: state.claudeMessage.isEmpty || (isDesktopHistory && state.claudeStatus == .ready)
+                ? nil
+                : state.claudeMessage,
             limits: [
                 UsageLimitViewState(
                     id: "claude-five-hour",
@@ -108,7 +193,8 @@ struct UsageApplicationViewState {
             ],
             planName: nil,
             resetCredits: nil,
-            resetCreditsExpireAt: nil
+            resetCreditsExpireAt: nil,
+            sourceDescription: snapshot?.sourceDescription
         )
     }
 
@@ -224,6 +310,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var isRefreshing = false
     @Published private(set) var settingsAreLoaded = false
     @Published private(set) var claudeConnectionState = ClaudeConnectionState.notChecked
+    /// The latest opt-in Fable read result, published after each refresh.
+    @Published private(set) var claudeExtendedAccessOutcome: ClaudeExtendedAccessOutcome?
     @Published var claudeMenuBarMetrics: [MenuBarMetric] {
         didSet {
             let normalized = Self.normalizedClaudeMetrics(claudeMenuBarMetrics)
@@ -335,6 +423,7 @@ final class AppModel: ObservableObject {
         }
         self.refreshCoordinator = refreshCoordinator ?? Self.makeRefreshCoordinator(
             claudeSnapshotURL: paths.claudeSnapshot,
+            claudeDesktopHistoryURL: paths.claudeDesktopHistory,
             extendedAccessPolicy: policy
         )
         persistedSettings = defaults
@@ -377,6 +466,30 @@ final class AppModel: ObservableObject {
     }
     var claudeStatus: UsageStatus { domainState.claudeStatus }
     var codexStatus: UsageStatus { domainState.codexStatus }
+    var claudeSourceDescription: String? { domainState.claudeSnapshot?.sourceDescription }
+
+    /// Status of the opt-in Fable connection; `nil` while it is off.
+    var claudeExtendedAccessStatusName: String? {
+        guard extendedFableAccessEnabled else { return nil }
+        return claudeExtendedAccessOutcome?.displayName ?? ClaudeConnectionState.notChecked.displayName
+    }
+
+    /// Keychain, token, or sign-in guidance for the opt-in Fable connection.
+    var claudeExtendedAccessGuidance: String? {
+        guard extendedFableAccessEnabled else { return nil }
+        return claudeExtendedAccessOutcome?.guidance
+    }
+
+    /// Explains a Fable value shown as `--%` for the current Claude values.
+    var claudeFableNote: String? {
+        guard let snapshot = domainState.claudeSnapshot, snapshot.fable == nil else { return nil }
+        if let guidance = claudeExtendedAccessGuidance { return guidance }
+        guard snapshot.source == .desktopHistory else { return nil }
+        return NSLocalizedString(
+            "Claude Desktop history does not include Fable usage.",
+            comment: "Fable is unavailable while Claude values come from Claude Desktop history"
+        )
+    }
 
     private var visibleClaudeProvider: UsageProviderViewState {
         state.claude ?? UsageProviderViewState(
@@ -480,13 +593,16 @@ final class AppModel: ObservableObject {
         let revision = refreshRevision
         isRefreshing = true
         let coordinator = refreshCoordinator
+        let accessPolicy = extendedAccessPolicy
         refreshTask = Task { @MainActor [weak self] in
             let nextState = await coordinator.refresh(force: force)
+            let extendedOutcome = await accessPolicy.latestOutcome()
             guard let self else { return }
             guard refreshRevision == revision else { return }
             isRefreshing = false
             refreshTask = nil
             guard !Task.isCancelled, !isShuttingDown else { return }
+            claudeExtendedAccessOutcome = extendedOutcome
             apply(nextState)
         }
     }
@@ -598,6 +714,7 @@ final class AppModel: ObservableObject {
             try await settingsStore.save(defaults)
             hasUnsavedSettings = false
             claudeConnectionState = .disconnected
+            claudeExtendedAccessOutcome = nil
             domainState = .initial
             state = UsageApplicationViewState(.initial)
             recordDiagnosticsEvent(.localDataReset, status: .unavailable)
@@ -938,6 +1055,9 @@ final class AppModel: ObservableObject {
     }
 
     private func updateExtendedAccessAndRefresh() {
+        // The previous read's status and guidance no longer apply while the
+        // next read (and any Keychain prompt) is pending.
+        claudeExtendedAccessOutcome = nil
         let policy = extendedAccessPolicy
         let enabled = extendedFableAccessEnabled
         Task { @MainActor [weak self] in
@@ -1000,10 +1120,12 @@ final class AppModel: ObservableObject {
 
     private static func makeRefreshCoordinator(
         claudeSnapshotURL: URL,
+        claudeDesktopHistoryURL: URL,
         extendedAccessPolicy: ClaudeExtendedAccessPolicy
     ) -> UsageRefreshCoordinator {
         let claude = ClaudeCombinedUsageProvider(
             statusLineProvider: ClaudeStatusSnapshotProvider(snapshotURL: claudeSnapshotURL),
+            desktopHistoryProvider: ClaudeDesktopHistoryProvider(historyURL: claudeDesktopHistoryURL),
             accessPolicy: extendedAccessPolicy
         )
         let codex = CodexUsageProvider()
@@ -1020,6 +1142,7 @@ final class AppModel: ObservableObject {
         applicationSupport: URL,
         claudeSnapshot: URL,
         claudeSettings: URL,
+        claudeDesktopHistory: URL,
         bundledBridge: URL
     )
 
@@ -1035,6 +1158,10 @@ final class AppModel: ObservableObject {
             applicationSupport: directory,
             claudeSnapshot: directory.appendingPathComponent("claude-status.json", isDirectory: false),
             claudeSettings: claudeDirectory.appendingPathComponent("settings.json", isDirectory: false),
+            // Read-only. Claude Desktop owns this file; Dejavu never writes it.
+            claudeDesktopHistory: ClaudeDesktopHistoryProvider.defaultHistoryURL(
+                applicationSupportDirectory: base
+            ),
             bundledBridge: Bundle.main.bundleURL.appendingPathComponent(
                 "Contents/Helpers/dejavu-claude-bridge",
                 isDirectory: false

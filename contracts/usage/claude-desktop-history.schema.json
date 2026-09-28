@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dejavu.local/contracts/usage/claude-desktop-history.schema.json",
+  "title": "Claude Desktop plan-usage history (read-only subset)",
+  "description": "The subset of Claude Desktop's local plan-usage-history.json that Dejavu reads. Claude Desktop owns this file and its format is not a documented integration contract; consumers must ignore every property not listed here and must never write the file.",
+  "type": "object",
+  "required": ["samples"],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Observed as 2. Not used for selection."
+    },
+    "samples": {
+      "type": "array",
+      "description": "Consumers skip malformed entries and use the entry with the greatest t, regardless of array order.",
+      "items": { "$ref": "#/$defs/sample" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "sample": {
+      "type": "object",
+      "properties": {
+        "t": {
+          "type": "integer",
+          "description": "Capture time in Unix epoch milliseconds."
+        },
+        "org": {
+          "type": "string",
+          "description": "Claude organization identifier. Never decoded, stored, or logged by Dejavu."
+        },
+        "u": { "$ref": "#/$defs/usage" }
+      },
+      "additionalProperties": true
+    },
+    "usage": {
+      "type": "object",
+      "description": "Other keys (for example so, sn, oa, cw, om, op, xu) may appear and are ignored. There is no Fable key and no reset time.",
+      "properties": {
+        "fh": {
+          "type": "number",
+          "description": "Five-hour window used percentage."
+        },
+        "sd": {
+          "type": "number",
+          "description": "Seven-day window used percentage."
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

@@ -35,4 +35,23 @@ final class UsageFreshnessPolicyTests: XCTestCase {
 
         XCTAssertNil(UsageFreshnessPolicy().freshClaudeSnapshot(from: snapshot, now: now))
     }
+
+    func testClaudeDesktopHistoryExpiresWholeSampleAfterFortyMinutes() {
+        let capturedAt = Date(timeIntervalSince1970: 10_000)
+        let policy = UsageFreshnessPolicy.claudeDesktopHistory
+        let snapshot = ClaudeUsageSnapshot(
+            fiveHour: UsageLimit(percent: 25),
+            weekly: UsageLimit(percent: 50),
+            source: .desktopHistory,
+            capturedAt: capturedAt
+        )
+
+        XCTAssertEqual(
+            policy.freshClaudeSnapshot(from: snapshot, now: capturedAt.addingTimeInterval(40 * 60)),
+            snapshot
+        )
+        XCTAssertNil(policy.freshClaudeSnapshot(from: snapshot, now: capturedAt.addingTimeInterval(40 * 60 + 1)))
+        XCTAssertNotNil(policy.freshClaudeSnapshot(from: snapshot, now: capturedAt.addingTimeInterval(-120)))
+        XCTAssertNil(policy.freshClaudeSnapshot(from: snapshot, now: capturedAt.addingTimeInterval(-121)))
+    }
 }

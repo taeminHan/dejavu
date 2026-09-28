@@ -41,6 +41,35 @@ must never contain credentials, and may only be used after an explicit user
 choice. The official status-line bridge remains the default Claude source and
 does not claim to provide Fable.
 
+`claude-desktop-history.schema.json` describes the read-only subset of Claude
+Desktop's local `plan-usage-history.json` (`~/Library/Application Support/Claude`
+on macOS, `%AppData%\Claude` on Windows). Claude Desktop owns and rewrites this
+file about every 15 minutes while it runs; clients copy it into memory, close it
+before parsing, and never write, lock, or delete it. Its format is not a
+documented integration contract.
+
+- Only `samples[].t` (epoch milliseconds) and `samples[].u.fh` / `u.sd`
+  (five-hour and seven-day used percentages) are read. `org` and every other
+  key are ignored and never decoded, stored, or logged.
+- Malformed samples are skipped. The sample with the greatest `t` wins even
+  when the array is unordered; if that sample has neither `fh` nor `sd`, the
+  history is unusable rather than falling back to an older sample.
+- The history has no reset times and no Fable value. A sample's values are
+  accepted for 40 minutes after `t` and up to 2 minutes ahead of the system
+  clock. Desktop can skip samples for longer than that while it runs, so on
+  macOS an older sample keeps the Claude slot with every value `--%` and the
+  sample time until it is 7 days old.
+- macOS uses the history when the opt-in extended connection (when enabled)
+  and the status-line bridge snapshot have no current data, or when its sample
+  is newer than a status-line snapshot captured more than 15 minutes ago.
+
+Fixtures: `claude-desktop-history-recent.json` (unordered samples with an
+unknown `xu` key), `claude-desktop-history-lossy.json` (malformed samples mixed
+with valid ones), and `claude-desktop-history-no-usage.json` (latest sample has
+only unknown keys). They use the placeholder `synthetic-org` instead of a real
+organization identifier. Stale and future-skewed cases use injected clocks
+against the recent fixture.
+
 ## Codex
 
 `codex-rate-limits.schema.json` describes the response envelope for

@@ -165,7 +165,8 @@ struct SettingsView: View {
             ProviderSettingsSection(
                 provider: .claude,
                 status: model.claudeStatus.displayName,
-                description: "The default connection reads only 5h and weekly rate-limit fields supplied by the Claude Code status line.",
+                description: "Reads 5h and weekly usage from the Claude Code status line. Without recent status-line data, Dejavu reads Claude Desktop's local usage history, which has no Fable or reset times.",
+                source: model.claudeSourceDescription,
                 metricOptions: [
                     MenuBarMetricOption(metric: .fiveHour, title: "5h"),
                     MenuBarMetricOption(metric: .weekly, title: "Weekly"),
@@ -216,6 +217,26 @@ struct SettingsView: View {
                     }
                 }
                 .toggleStyle(.switch)
+
+                if let extendedStatus = model.claudeExtendedAccessStatusName {
+                    LabeledContent("Status") {
+                        Text(LocalizedStringKey(extendedStatus))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                if let guidance = model.claudeExtendedAccessGuidance {
+                    Label {
+                        Text(guidance)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundStyle(.orange)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
             } header: {
                 Text("Extended Claude access")
             } footer: {
@@ -408,6 +429,11 @@ struct SettingsView: View {
                     symbol: "text.bubble",
                     title: "No conversations",
                     detail: "Prompts, transcripts, browser content, and working directories are not saved."
+                )
+                PrivacyRow(
+                    symbol: "doc.text.magnifyingglass",
+                    title: "Claude Desktop history is read-only",
+                    detail: "Only the latest 5h and weekly percentages and their time are read from Claude Desktop's local usage history. Dejavu never changes that file or reads Desktop sign-in data or conversations."
                 )
                 PrivacyRow(
                     symbol: "internaldrive",
@@ -665,6 +691,7 @@ private struct ProviderSettingsSection: View {
     let provider: ProviderBrand
     let status: String
     let description: String
+    var source: String? = nil
     let metricOptions: [MenuBarMetricOption]
     @Binding var selectedMetrics: [MenuBarMetric]
 
@@ -679,6 +706,13 @@ private struct ProviderSettingsSection: View {
                 .foregroundStyle(.secondary)
             } label: {
                 Text("Status")
+            }
+
+            if let source {
+                LabeledContent("Source") {
+                    Text(source)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             VStack(alignment: .leading, spacing: 8) {

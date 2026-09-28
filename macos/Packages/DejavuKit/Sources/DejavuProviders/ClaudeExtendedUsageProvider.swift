@@ -14,18 +14,41 @@ public enum ClaudeExtendedUsageError: Error, Sendable, Equatable {
     case responseTooLarge
 }
 
+/// The latest opt-in Fable read, kept only as a classification so the UI can
+/// explain a Keychain approval or an expired Claude Code sign-in. It never
+/// carries credential bytes, response bodies, or account identifiers.
+public enum ClaudeExtendedAccessOutcome: Sendable, Equatable {
+    case connected
+    case failed(ClaudeExtendedUsageError)
+}
+
 public actor ClaudeExtendedAccessPolicy {
     private var enabled: Bool
+    private var outcome: ClaudeExtendedAccessOutcome?
 
     public init(enabled: Bool = false) {
         self.enabled = enabled
     }
 
     public func setEnabled(_ enabled: Bool) {
+        if self.enabled != enabled {
+            outcome = nil
+        }
         self.enabled = enabled
     }
 
     public func isEnabled() -> Bool { enabled }
+
+    /// `nil` while the extended connection is off or before its first read
+    /// after being turned on has finished.
+    public func latestOutcome() -> ClaudeExtendedAccessOutcome? {
+        enabled ? outcome : nil
+    }
+
+    func record(_ outcome: ClaudeExtendedAccessOutcome) {
+        guard enabled else { return }
+        self.outcome = outcome
+    }
 }
 
 public protocol ClaudeCredentialReading: Sendable {
@@ -118,7 +141,14 @@ public actor ClaudeOAuthUsageClient: ClaudeOAuthUsageRequesting {
         } catch let error as URLError where error.code == .notConnectedToInternet
             || error.code == .networkConnectionLost
             || error.code == .cannotConnectToHost
-            || error.code == .dnsLookupFailed {
+            || error.code == .dnsLookupFailed
+            || error.code == .cannotFindHost
+            || error.code == .timedOut
+            || error.code == .secureConnectionFailed
+            || error.code == .internationalRoamingOff
+            || error.code == .dataNotAllowed {
+            // Transient network conditions (sleep, captive Wi-Fi, a slow
+            // link) are not a changed interface.
             throw ClaudeExtendedUsageError.offline
         } catch {
             throw ClaudeExtendedUsageError.invalidResponse
@@ -139,6 +169,10 @@ public actor ClaudeOAuthUsageClient: ClaudeOAuthUsageRequesting {
             throw ClaudeExtendedUsageError.rateLimited(
                 retryAt: Self.retryDate(from: http, now: now())
             )
+        case 500..<600:
+            // A server-side failure means Claude could not be reached for
+            // this check, not that the interface changed.
+            throw ClaudeExtendedUsageError.offline
         default:
             throw ClaudeExtendedUsageError.invalidResponse
         }
@@ -192,46 +226,116 @@ public actor ClaudeOAuthUsageClient: ClaudeOAuthUsageRequesting {
     }
 }
 
+/// Reads Claude usage from the first source that has current data:
+///
+/// 1. the opt-in extended connection (only while the user has enabled it),
+/// 2. the user-connected Claude Code status-line bridge snapshot,
+/// 3. Claude Desktop's local usage history (read-only; no Fable, no resets).
+///
+/// A status-line snapshot captured within its no-reset window is returned
+/// directly. An older one keeps each limit until its reset, which can be days
+/// away, so Desktop history is also read and its sample wins when it is newer
+/// than the status-line capture; the status line wins a tie. Desktop history
+/// is otherwise used when the preceding sources failed. When every source
+/// fails, the extended failure is reported first, then the status-line
+/// failure. A Desktop history failure never replaces either, except that a
+/// history file without a usable sample turns a missing status line's
+/// "login required" into "unavailable": Desktop is closed or idle, which is
+/// not a lost sign-in.
 public struct ClaudeCombinedUsageProvider: UsageProviding, Sendable {
     private let statusLineProvider: ClaudeStatusSnapshotProvider
+    private let desktopHistoryProvider: ClaudeDesktopHistoryProvider?
     private let extendedProvider: any ClaudeOAuthUsageRequesting
     private let accessPolicy: ClaudeExtendedAccessPolicy
 
     public init(
         statusLineProvider: ClaudeStatusSnapshotProvider,
+        desktopHistoryProvider: ClaudeDesktopHistoryProvider? = nil,
         extendedProvider: any ClaudeOAuthUsageRequesting = ClaudeOAuthUsageClient(),
         accessPolicy: ClaudeExtendedAccessPolicy
     ) {
         self.statusLineProvider = statusLineProvider
+        self.desktopHistoryProvider = desktopHistoryProvider
         self.extendedProvider = extendedProvider
         self.accessPolicy = accessPolicy
     }
 
     public func fetchUsage() async throws -> ClaudeUsageSnapshot {
-        guard await accessPolicy.isEnabled() else {
-            return try await statusLineProvider.fetchUsage()
-        }
+        var extendedFailure: UsageProviderFailure?
 
-        do {
-            return try await extendedProvider.fetchUsage()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
+        if await accessPolicy.isEnabled() {
             do {
-                return try await statusLineProvider.fetchUsage()
+                let snapshot = try await extendedProvider.fetchUsage()
+                await accessPolicy.record(.connected)
+                return snapshot
             } catch is CancellationError {
                 throw CancellationError()
             } catch {
-                throw Self.providerFailure(for: error)
+                // URLSession reports task cancellation as a URL error, which
+                // must not be recorded as a Fable failure or fall through.
+                try Task.checkCancellation()
+                let failure = (error as? ClaudeExtendedUsageError) ?? .invalidResponse
+                await accessPolicy.record(.failed(failure))
+                extendedFailure = Self.providerFailure(for: failure)
             }
         }
+
+        var statusLineSnapshot: ClaudeUsageSnapshot?
+        var statusLineFailure = UsageProviderFailure.failed
+        do {
+            statusLineSnapshot = try await statusLineProvider.fetchUsage()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            try Task.checkCancellation()
+            statusLineFailure = (error as? UsageProviderFailure) ?? .failed
+        }
+
+        // A status line captured within its no-reset window is current, even
+        // while Claude Desktop also writes samples.
+        if let statusLineSnapshot,
+           statusLineProvider.now().timeIntervalSince(statusLineSnapshot.capturedAt)
+               <= statusLineProvider.freshnessPolicy.maximumAgeWithoutReset {
+            return statusLineSnapshot
+        }
+
+        if let desktopHistoryProvider {
+            do {
+                let desktopSnapshot = try await desktopHistoryProvider.fetchUsage(
+                    now: desktopHistoryProvider.now()
+                )
+                // An older status-line snapshot keeps each limit until its
+                // reset even when Claude Code has not run for days; a newer
+                // Desktop sample is more current.
+                if let statusLineSnapshot, statusLineSnapshot.capturedAt >= desktopSnapshot.capturedAt {
+                    return statusLineSnapshot
+                }
+                return desktopSnapshot
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch ClaudeDesktopHistoryProviderError.historyUnavailable {
+                // No Desktop history: the preceding reason stands.
+            } catch {
+                // Desktop history exists without a usable sample: Desktop is
+                // closed or idle, which is not a lost sign-in.
+                if statusLineFailure == .loginRequired {
+                    statusLineFailure = .unavailable
+                }
+            }
+        }
+
+        if let statusLineSnapshot { return statusLineSnapshot }
+        throw extendedFailure ?? statusLineFailure
     }
 
-    private static func providerFailure(for error: Error) -> UsageProviderFailure {
-        guard let failure = error as? ClaudeExtendedUsageError else { return .failed }
+    private static func providerFailure(for failure: ClaudeExtendedUsageError) -> UsageProviderFailure {
         switch failure {
-        case .credentialUnavailable, .credentialExpired, .unauthorized:
+        case .credentialUnavailable, .unauthorized:
             return .loginRequired
+        case .credentialExpired:
+            // Claude Code renews an expired access token the next time it
+            // runs; this is not a lost sign-in (Windows `TokenRefreshPending`).
+            return .failed
         case .accessDenied:
             return .unavailable
         case let .rateLimited(retryAt):

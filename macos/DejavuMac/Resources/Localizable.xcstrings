@@ -526,9 +526,9 @@
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결을 선택한 뒤에만 Dejavu가 ~/.claude/settings.json을 읽거나 변경합니다. 기존 명령은 보존하고 이어서 실행합니다." } }
       }
     },
-    "The default connection reads only 5h and weekly rate-limit fields supplied by the Claude Code status line." : {
+    "Reads 5h and weekly usage from the Claude Code status line. Without recent status-line data, Dejavu reads Claude Desktop's local usage history, which has no Fable or reset times." : {
       "localizations" : {
-        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 연결은 Claude Code 상태 줄이 제공하는 5h와 주간 사용량 제한 필드만 읽습니다." } }
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 상태 줄에서 5h와 주간 사용량을 읽습니다. 최근 상태 줄 값이 없으면 Claude Desktop의 로컬 사용 기록을 읽으며, 이 기록에는 Fable과 초기화 시각이 없습니다." } }
       }
     },
     "Codex credentials are never read. Fable access reads the Claude Code Keychain item only after you enable it and keeps the token in memory." : {
@@ -909,6 +909,76 @@
     "Widget" : {
       "localizations" : {
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "위젯" } }
+      }
+    },
+    "Source" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "원본" } }
+      }
+    },
+    "Claude Code extended usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 확장 사용량" } }
+      }
+    },
+    "Claude Desktop history %@" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Desktop 기록 %@" } }
+      }
+    },
+    "Claude Desktop history does not include Fable usage." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Desktop 기록에는 Fable 사용량이 없습니다." } }
+      }
+    },
+    "Keychain approval required" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "키체인 허용 필요" } }
+      }
+    },
+    "Token expired" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "토큰 만료" } }
+      }
+    },
+    "Keychain access must be allowed again after an update. Choose Always Allow in the window that appears at the next check. Ad-hoc signed builds can ask again after every update." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "업데이트 후 키체인 접근 허용이 필요합니다. 다음 확인 때 나타나는 창에서 '항상 허용'을 선택하세요. ad-hoc 서명 빌드는 업데이트할 때마다 다시 물어볼 수 있습니다." } }
+      }
+    },
+    "The Claude Code token has expired. Run claude once in Terminal to renew it." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 토큰이 만료되었습니다. 터미널에서 claude를 한 번 실행하면 갱신됩니다." } }
+      }
+    },
+    "Claude Code sign-in was not found. Choose Sign In in Terminal… and sign in to Claude Code." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 로그인 정보를 찾을 수 없습니다. '터미널에서 로그인…'을 선택해 Claude Code에 로그인하세요." } }
+      }
+    },
+    "Claude is temporarily limiting Fable checks. Dejavu tries again at the next refresh." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude가 Fable 확인을 일시적으로 제한하고 있습니다. 다음 새로고침 때 다시 확인합니다." } }
+      }
+    },
+    "Fable usage could not be checked because Claude could not be reached." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude에 연결할 수 없어 Fable 사용량을 확인하지 못했습니다." } }
+      }
+    },
+    "The Fable usage response could not be read. Claude may have changed this interface." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Fable 사용량 응답을 읽을 수 없습니다. Claude가 이 인터페이스를 변경했을 수 있습니다." } }
+      }
+    },
+    "Claude Desktop history is read-only" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Desktop 기록은 읽기만 합니다" } }
+      }
+    },
+    "Only the latest 5h and weekly percentages and their time are read from Claude Desktop's local usage history. Dejavu never changes that file or reads Desktop sign-in data or conversations." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Desktop의 로컬 사용 기록에서는 최신 5h·주간 사용률과 기록 시각만 읽습니다. Dejavu는 이 파일을 변경하지 않으며 Desktop 로그인 정보나 대화 내용을 읽지 않습니다." } }
       }
     }
   },

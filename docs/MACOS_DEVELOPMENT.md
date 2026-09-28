@@ -117,6 +117,8 @@ App Group entitlement가 필요한 시스템 Widget 데이터 공유는 Develope
 - Claude bridge 테스트는 임시 directory와 명시적인 snapshot path만 사용한다.
 - `~/.claude/settings.json`은 사용자가 UI에서 연결을 승인하기 전에는 읽거나 수정하지 않는다.
 - Fable provider 테스트는 합성 credential/response만 사용한다. 실제 Keychain 읽기는 사용자가 설정에서 확장 접근을 켠 뒤에만 수행하고 token은 저장하거나 출력하지 않는다.
+- Claude Desktop history 테스트는 `contracts/usage/fixtures/claude-desktop-history-*.json`과 임시 파일, 주입한 시계만 사용한다. 앱은 `~/Library/Application Support/Claude/plan-usage-history.json`을 읽기 전용으로 복사한 뒤 즉시 닫고, 쓰기·잠금·삭제하지 않으며 `org`, 퍼센트와 원문을 로그에 남기지 않는다. 실기기 확인이 필요하면 key 이름과 값의 type, sample 개수와 최신 sample 경과 시간만 출력한다.
+- 무료 ad-hoc 서명 build는 designated requirement가 cdhash라서 업데이트마다 Claude Code Keychain item의 "항상 허용"이 무효화될 수 있다. Fable 확인 시 macOS 창이 다시 뜨는 것은 정상이며 설정에 키체인 허용 필요로 표시된다.
 - Codex probe는 usage 숫자나 원문을 출력하지 않고 response shape만 확인한다.
 - 종료 시 Dejavu가 시작한 child PID만 종료한다.
 - fixture에 token, authorization header, account id, prompt, 대화, transcript와 cwd를 넣지 않는다.

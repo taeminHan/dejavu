@@ -48,6 +48,12 @@ final class UsageModelsTests: XCTestCase {
         XCTAssertNil(snapshot.fable)
     }
 
+    func testClaudeUsageSourcesUseStableStringEncoding() throws {
+        let data = try JSONEncoder().encode(ClaudeUsageSource.desktopHistory)
+        XCTAssertEqual(String(decoding: data, as: UTF8.self), "\"desktopHistory\"")
+        XCTAssertEqual(try JSONDecoder().decode(ClaudeUsageSource.self, from: data), .desktopHistory)
+    }
+
     func testUsageStatusesUseStableStringEncoding() throws {
         let data = try JSONEncoder().encode(UsageStatus.loginRequired)
         XCTAssertEqual(String(decoding: data, as: UTF8.self), "\"loginRequired\"")

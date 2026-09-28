@@ -50,6 +50,9 @@ public struct UsageLimit: Codable, Hashable, Sendable {
 public enum ClaudeUsageSource: String, Codable, CaseIterable, Sendable {
     case statusLine
     case oauthUsage
+    /// Claude Desktop's local plan-usage history. It supplies 5-hour and
+    /// weekly percentages only: no reset times and never Fable.
+    case desktopHistory
 }
 
 public struct ClaudeUsageSnapshot: Codable, Hashable, Sendable {

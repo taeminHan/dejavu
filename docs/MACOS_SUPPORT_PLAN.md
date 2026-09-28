@@ -2,7 +2,7 @@
 
 - 상태: 승인된 기술 방향으로 구현 진행 중
 - 최초 작성: 2026-08-10
-- 최종 갱신: 2026-08-13
+- 최종 갱신: 2026-09-28
 - 대상 저장소: `taeminHan/dejavu`
 - 기준 앱: 현재 Windows 11 WPF 버전 0.9.0
 - 목표: 기존 Windows 앱을 보존하면서 SwiftUI와 AppKit으로 독립적인 macOS 공개 베타를 만든다.
@@ -61,6 +61,7 @@ Phase 0과 Phase 1 착수 및 Apple-native UI, 메뉴 막대 기본 동작, 선�
 - Claude만, Codex만, 둘 다, 둘 다 없음과 자동 감지 상태
 - Claude의 5시간·주간 사용량과 Codex의 단일 주간 기반 사용량
 - 사용자가 명시적으로 확장 접근을 켠 경우 Claude Fable 주간 사용량
+- status line에 최근 값이 없거나 Desktop 기록이 더 최신일 때 Claude Desktop 로컬 기록의 5시간·주간 사용량(읽기 전용, Fable·초기화 시각 없음)
 - 제공되는 경우 각 사용량의 초기화 시각
 - Codex 플랜과 초기화권 개수·만료 시각을 상세 화면에서만 표시
 - 상세 보기, 설정, 첫 실행 온보딩
@@ -86,7 +87,7 @@ Phase 0과 Phase 1 착수 및 Apple-native UI, 메뉴 막대 기본 동작, 선�
 - Fable 이외의 임의 모델별 주간 한도
 - Claude Keychain 또는 비공개 endpoint의 자동·무동의 접근
 - Claude 앱 UI, 웹 DOM, 접근성 트리, Chrome 저장소와 대화 데이터 scraping
-- 검증되지 않은 Claude Desktop history 자동 감지
+- Claude Desktop history 파일 존재만으로 설치·연결 상태를 추론하는 자동 감지
 - Codex 초기화권 소비 기능
 - Windows와 macOS의 픽셀 단위 동일 디자인
 - Windows 설정 파일의 자동 가져오기
@@ -212,6 +213,7 @@ Xcode 프로젝트 파일과 Swift Package lock은 재현 가능한 빌드를 �
 | `AppModel` (`@MainActor`, Observation) | 모든 SwiftUI 화면이 관찰하는 단일 `ApplicationState`와 설정 상태 |
 | `UsageRefreshCoordinator` (`actor`) | refresh 직렬화, coalescing, 강제 취소와 공급자 병렬 실행 |
 | `ClaudeStatusSnapshotProvider` (`actor`) | Dejavu bridge snapshot 읽기, 필드별 최신성 판단 |
+| `ClaudeDesktopHistoryProvider` (`actor`) | Claude Desktop `plan-usage-history.json` 읽기 전용 복사, 최신 sample 선택, 40분 값 최신성(이후 7일까지 `--%` slot 유지)과 수정 시각·크기 cache |
 | `ClaudeStatusBridgeManager` (`actor`) | 사용자 동의형 연결·검증·복구와 helper 갱신 |
 | `ClaudeOAuthUsageClient` (`actor`) | 사용자가 켠 경우에만 Keychain credential을 메모리에서 사용해 Fable을 읽고 즉시 폐기 |
 | `CodexExecutableLocator` | 제한된 후보에서 실행 가능한 Codex 경로 탐색 |
@@ -370,11 +372,19 @@ bridge capture timestamp
 - macOS Keychain의 Claude Code credential item을 시스템 승인 아래 읽기 전용으로 요청한다.
 - access token은 요청 메모리에서만 사용하고 설정, snapshot, Widget App Group, diagnostics와 로그에 저장하지 않는다.
 - 문서화되지 않은 Claude usage endpoint 응답에서 Fable로 명시된 model-scoped weekly limit만 allow-list 파싱한다.
-- 권한 거부, 로그인 만료, endpoint/schema 변경은 Fable을 unavailable로 처리하고 가능한 경우 공식 status-line 5시간/주간 값으로 fallback한다.
+- 권한 거부, 로그인 만료, endpoint/schema 변경은 Fable을 unavailable(`--%`)로 처리하고 가능한 경우 공식 status-line 또는 Claude Desktop 기록의 5시간/주간 값으로 fallback한다. 이때 이전 Fable 값을 남기지 않는다.
+- 설정과 상세 화면은 마지막 확장 경로 결과를 분류로만 받아 키체인 허용 필요(접근 거부·취소), Claude Code 토큰 만료(터미널에서 `claude` 한 번 실행), 로그인 필요를 구분해 안내한다. 무료 ad-hoc 서명 build는 designated requirement가 build마다 cdhash로 바뀌므로 업데이트 뒤 이전 "항상 허용"이 유지되지 않고 다시 물을 수 있다.
 - 이 기능은 변경 가능성이 있음을 설정과 릴리스 노트에 표시하며 기본값은 꺼짐이다.
 - Claude 앱 UI, DOM, 접근성 트리, Chrome storage, browser session과 대화는 대체 원본으로 사용하지 않는다.
 
-Claude Desktop의 `~/Library/Application Support/Claude/plan-usage-history.json` fallback은 Phase 0 실측에서 파일, schema와 최신성 의미가 Windows와 같다고 확인될 때만 별도 승인 후 추가한다. 확인 전에는 파일 존재만으로 설치나 사용 가능 상태를 추론하지 않는다.
+Claude Desktop의 `~/Library/Application Support/Claude/plan-usage-history.json` fallback은 2026-09-28 실측에서 파일 구조와 약 15분 기록 주기가 Windows와 같다고 확인한 뒤 승인되어 추가했다(`MACOS_PHASE0_FINDINGS.md`). Claude Code를 Claude Desktop 안에서 사용하면 status line이 실행되지 않으므로 이 기록이 유일한 최근 원본일 수 있다. 이후 실측에서 Desktop 실행 중에도 sample 간격이 40분을 넘는 경우(2시간 이상 포함)가 자주 관찰되어 15분 주기를 전제로 하지 않는다.
+
+- 순서는 Fable 확장 경로(켠 경우만) → status-line bridge snapshot → Desktop history다. 15분(no-reset TTL) 안에 기록된 status-line snapshot은 그대로 사용한다. 그보다 오래된 snapshot은 reset 전까지 limit을 유지하므로 Desktop history도 읽어 capture 시각이 더 최신인 snapshot을 사용하고, 같으면 status line을 우선한다. 두 원본은 계정이 다를 수 있으므로 limit을 섞지 않는다.
+- 파일은 `O_RDONLY | O_NOFOLLOW`로 열어 16 MiB 이내로 메모리에 복사한 즉시 닫은 뒤 파싱한다. 쓰기, 잠금, 삭제와 symlink 추적을 하지 않는다.
+- 가장 큰 `t`(epoch ms)의 유효 sample에서 `u.fh`(5시간)와 `u.sd`(주간)만 읽는다. `org`와 그 밖의 key는 decode하지 않는다. reset 시각과 Fable은 없다.
+- sample 값은 40분 동안, 시스템 시각보다 2분 앞선 것까지만 인정한다(`UsageFreshnessPolicy.claudeDesktopHistory`). 40분이 지난 sample은 모든 limit이 `nil`인 Desktop snapshot으로 돌려 Claude slot과 `Claude Desktop 기록 <시각>`을 유지하고 `--%`로 표시하며, 7일(`ClaudeDesktopHistoryProvider.maximumPlaceholderAge`)이 지나면 stale로 처리한다. 수정 시각·크기가 같으면 다시 열지 않고, 최근 cache는 Desktop의 부분 쓰기·교체 순간을 덮는다.
+- 모든 원본이 실패하면 확장 경로, status line 순서의 실패 원인을 보고하고 Desktop history 실패로 덮어쓰지 않는다. 다만 Desktop history 파일이 있는데 쓸 수 있는 sample이 없으면(7일 경과, 시스템 시각보다 앞섬, 손상, 크기 초과) status line 누락의 `loginRequired`를 `unavailable`로 바꾼다. Desktop이 꺼져 있거나 쉬는 상태이지 로그아웃이 아니기 때문이다. 확장 경로의 `credentialExpired`는 Claude Code가 다음 실행 때 갱신하므로 `loginRequired`가 아닌 `failed`로 보고한다(Windows `TokenRefreshPending`). 일시 실패로 유지한 Desktop 값도 40분이 지나면 `--%`로 바꾼다.
+- 파일 존재만으로 설치나 연결 상태를 추론하지 않는다. 최근 유효 sample이 있을 때만 사용량 값을 표시하고, 상세·설정에는 `Claude Desktop 기록 <시각>` 원본을 표시한다.
 
 ### 8.2 status line bridge
 
@@ -480,6 +490,7 @@ stdout JSONL reader는 최대 line 크기, request id, EOF, malformed JSON과 ti
 | bridge metadata | 원래 statusLine 복구에 필요한 값과 managed 값 hash만 저장 |
 | Widget snapshot | provider 상태, Claude 5시간/주간/Fable optional 퍼센트, Codex 단일 퍼센트와 갱신 시각만 App Group에 저장 |
 | provider credential | 기본 provider는 읽지 않음. Fable opt-in 요청은 Keychain에서 메모리로만 읽고 저장·로그하지 않음 |
+| Claude Desktop history | 읽기 전용으로 복사 후 즉시 닫음. 최신 5시간·주간 퍼센트와 sample 시각만 메모리에 두며 `org`와 원문은 저장·로그하지 않음 |
 | prompt/대화/transcript/cwd | 읽은 입력에서 추출하거나 저장하지 않음 |
 
 Application Support directory는 현재 사용자만 접근하도록 만들고 민감할 수 있는 metadata와 snapshot은 `0600`을 유지한다. 로그 API를 사용할 때 동적 값은 기본적으로 private로 표시한다. fixture 작성 도구와 테스트는 token, authorization header, account id, URL query와 대화 형태 문자열이 포함되면 실패해야 한다.
@@ -665,6 +676,7 @@ Claude, Codex, Keychain, 브라우저, 셸 설정과 provider 대화는 삭제�
 도메인과 공급자:
 
 - Claude status JSON: 전체, 각 window 누락, null, 범위 밖, reset 경과, future clock, malformed
+- Claude Desktop history: 최신 `t` 선택, 알 수 없는 key, 손상 sample 건너뛰기, 40분 경계와 7일까지의 `--%` slot, 2분 future skew, malformed, 크기 상한, symlink, cache 재사용, 원본 순서, 오래된 status line보다 최신인 Desktop sample 우선, 실패 원인 우선순위와 Desktop 기록이 있을 때 로그인 필요로 보고하지 않음
 - Codex: exact `codex` bucket, legacy single bucket, unrelated bucket, primary/secondary 누락, reset credit null/empty/details
 - handshake: initialize 실패, initialized 순서, request id 섞임, notification 섞임, EOF, oversized line와 timeout
 - login: 성공, 사용자 취소, browser 실패, completion error와 timeout
@@ -774,7 +786,7 @@ xcrun stapler validate Dejavu.app
 - signed App Group build의 시스템 위젯 gallery/공유 결과
 - NSPanel의 Spaces/full-screen 동작
 - Codex device-code fallback 포함 여부
-- Claude Desktop fallback 포함 여부
+- Claude Desktop fallback 포함 여부 (2026-09-28 읽기 전용 fallback으로 승인·반영)
 - beta 일정과 알려진 제한
 
 ### 배포 전 별도 승인

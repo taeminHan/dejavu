@@ -145,6 +145,65 @@ final class UsageRefreshCoordinatorTests: XCTestCase {
         XCTAssertEqual(state.updatedAt, completionDate)
     }
 
+    func testCarriedDesktopHistoryExpiresOnItsOwnWindowInsteadOfRepeatingStaleValues() async {
+        let capturedAt = Date(timeIntervalSince1970: 10_000)
+        let previousClaude = ClaudeUsageSnapshot(
+            fiveHour: UsageLimit(percent: 23),
+            weekly: UsageLimit(percent: 41),
+            source: .desktopHistory,
+            capturedAt: capturedAt
+        )
+        let initial = ApplicationState(
+            claudeStatus: .ready,
+            claudeSnapshot: previousClaude,
+            codexStatus: .ready,
+            codexSnapshot: Self.codexSnapshot(percent: 70)
+        )
+
+        let withinWindow = UsageRefreshCoordinator(
+            claudeProvider: FailingProvider<ClaudeUsageSnapshot>(failure: .offline),
+            codexProvider: ImmediateProvider(snapshot: Self.codexSnapshot(percent: 20)),
+            initialState: initial,
+            now: { capturedAt.addingTimeInterval(39 * 60) }
+        )
+        let expired = UsageRefreshCoordinator(
+            claudeProvider: FailingProvider<ClaudeUsageSnapshot>(failure: .offline),
+            codexProvider: ImmediateProvider(snapshot: Self.codexSnapshot(percent: 20)),
+            initialState: initial,
+            now: { capturedAt.addingTimeInterval(41 * 60) }
+        )
+
+        let carried = await withinWindow.refresh()
+        let expiredState = await expired.refresh()
+
+        XCTAssertEqual(carried.claudeSnapshot, previousClaude)
+        XCTAssertEqual(expiredState.claudeStatus, .offline)
+        XCTAssertEqual(expiredState.claudeSnapshot?.source, .desktopHistory)
+        XCTAssertNil(expiredState.claudeSnapshot?.fiveHour)
+        XCTAssertNil(expiredState.claudeSnapshot?.weekly)
+        XCTAssertNil(expiredState.claudeSnapshot?.fable)
+    }
+
+    func testCarriedStatusLineSnapshotIsUnchangedByDesktopHistoryExpiry() async {
+        let previousClaude = Self.claudeSnapshot(percent: 60)
+        let initial = ApplicationState(
+            claudeStatus: .ready,
+            claudeSnapshot: previousClaude,
+            codexStatus: .ready,
+            codexSnapshot: Self.codexSnapshot(percent: 70)
+        )
+        let coordinator = UsageRefreshCoordinator(
+            claudeProvider: FailingProvider<ClaudeUsageSnapshot>(failure: .rateLimited(retryAt: nil)),
+            codexProvider: ImmediateProvider(snapshot: Self.codexSnapshot(percent: 20)),
+            initialState: initial,
+            now: { Date(timeIntervalSince1970: 1_000_000) }
+        )
+
+        let state = await coordinator.refresh()
+
+        XCTAssertEqual(state.claudeSnapshot, previousClaude)
+    }
+
     func testLoginRequiredClearsAnObsoletePreviousSnapshot() async {
         let initial = ApplicationState(
             claudeStatus: .ready,

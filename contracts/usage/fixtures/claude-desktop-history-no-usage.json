@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "samples": [
+    { "t": 1790555400000, "org": "synthetic-org", "u": { "fh": 12, "sd": 40 } },
+    { "t": 1790557200000, "org": "synthetic-org", "u": { "so": 3, "oa": 1 } }
+  ]
+}

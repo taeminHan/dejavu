@@ -1,7 +1,7 @@
 # macOS Phase 0 검증 기록
 
 - 최초 검증일: 2026-08-12
-- 구현 검증 갱신: 2026-08-13
+- 구현 검증 갱신: 2026-09-28
 - 상태: 진행 중
 - 범위: `docs/MACOS_SUPPORT_PLAN.md`의 Phase 0
 
@@ -66,6 +66,23 @@ Claude Code CLI `2.1.228`이 nvm 관리 경로에서 발견됐고 `--version` sm
 공식 status-line에는 Fable 사용량이 없다. Fable은 설정에서 사용자가 별도로 켠 경우에만 Claude Code Keychain item을 읽기 전용으로 요청하는 확장 경로로 구현했다. 이 환경에서는 해당 토글을 켜거나 Keychain 내용을 읽지 않았다. Chrome 앱 UI, DOM, browser storage와 대화 기록은 지원 원본으로 사용하지 않는다.
 
 Claude 실기기 검증이 완료되기 전에는 Claude 연동을 공개 베타 완료로 표시하지 않는다.
+
+### Claude Desktop 기록 (2026-09-28)
+
+0.9.3에서 Claude 사용량이 표시되지 않는 문제를 구조만 확인해 진단했다. 값, 조직 식별자와 token은 출력하거나 기록하지 않았다.
+
+| 검사 | 결과 |
+|---|---|
+| status-line bridge snapshot | 마지막 기록이 2026-09-01이며 `rate_limits` 없음. Claude Code를 Claude Desktop 안에서 사용하면 status line이 실행되지 않음 |
+| Fable 확장 경로 | Keychain `Claude Code-credentials`의 token 마지막 갱신이 2026-09-01로 만료 상태 |
+| 앱 서명 | ad-hoc 서명, designated requirement가 cdhash라 업데이트마다 이전 Keychain "항상 허용"이 무효화됨 |
+| `~/Library/Application Support/Claude/plan-usage-history.json` | 존재, 약 6 KB |
+| 최상위 구조 | `version`(integer, 2), `samples`(array) |
+| sample 구조 | `t`(integer, epoch ms), `org`(string), `u`(object) |
+| `u` key | 이 계정에서는 `fh`, `sd`(integer)만 관찰. Windows와 같이 다른 key가 추가될 수 있음 |
+| 순서와 주기 | `t` 오름차순, 확인 시점의 최신 sample이 15분 이내 |
+
+형식과 기록 주기가 Windows `ClaudeDesktopUsageReader`와 같으므로 macOS에도 같은 40분 최신성, 2분 future skew, 16 MiB 상한과 읽기 전용 복사 규칙으로 fallback을 추가했다. 같은 날 검토에서 Claude Desktop 실행 중에도 최신 sample이 49분 전이었고, 67개 sample 간격 중 11개가 40분을 넘었다(2시간 이상 포함). 그래서 40분이 지난 sample도 7일까지는 값 없이(`--%`) Claude slot과 기록 시각을 유지한다. 이 파일도 Anthropic의 공개 연동 계약이 아니므로 fixture는 합성 값만 사용한다.
 
 ## 네이티브 창과 배포
 

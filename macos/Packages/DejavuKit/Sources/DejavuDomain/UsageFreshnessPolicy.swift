@@ -12,6 +12,19 @@ public struct UsageFreshnessPolicy: Hashable, Sendable {
         self.maximumFutureClockSkew = max(0, maximumFutureClockSkew)
     }
 
+    /// Claude Desktop writes history samples only intermittently while it
+    /// runs: often about every 15 minutes, but gaps of an hour or more occur
+    /// on macOS. Its samples have no reset times, so the values of a sample
+    /// expire after 40 minutes and then read `--%`; the Desktop provider keeps
+    /// the Claude slot with that sample time instead of dropping it, so a
+    /// running Desktop never disappears between samples. A sample more than
+    /// 2 minutes ahead of the system clock is rejected. Both values match the
+    /// Windows `ClaudeDesktopUsageReader`.
+    public static let claudeDesktopHistory = UsageFreshnessPolicy(
+        maximumAgeWithoutReset: 40 * 60,
+        maximumFutureClockSkew: 2 * 60
+    )
+
     /// Rejects a snapshot captured implausibly in the future and removes each
     /// limit independently after its reset or conservative no-reset TTL.
     public func freshClaudeSnapshot(

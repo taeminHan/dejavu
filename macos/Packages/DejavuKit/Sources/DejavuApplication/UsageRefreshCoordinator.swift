@@ -182,10 +182,14 @@ public actor UsageRefreshCoordinator {
             return state
         }
 
-        let claudeSnapshot = snapshotAfterRefresh(
+        let refreshedAt = now()
+        var claudeSnapshot = snapshotAfterRefresh(
             result: payload.claude,
             previous: current.previousState.claudeSnapshot
         )
+        if payload.claude.snapshot == nil, let carried = claudeSnapshot {
+            claudeSnapshot = Self.expiringCarriedDesktopHistory(carried, now: refreshedAt)
+        }
         let codexSnapshot = snapshotAfterRefresh(
             result: payload.codex,
             previous: current.previousState.codexSnapshot
@@ -201,10 +205,34 @@ public actor UsageRefreshCoordinator {
             codexStatus: payload.codex.status,
             codexMessage: payload.codex.message,
             codexSnapshot: codexSnapshot,
-            updatedAt: now(),
+            updatedAt: refreshedAt,
             retryAt: retryAt
         )
         return state
+    }
+
+    /// Desktop history has no reset times, so a sample carried through a
+    /// transient failure expires on the same window as a fresh read. The
+    /// snapshot object stays so the Claude slot keeps its place and shows
+    /// `--%` instead of a stale percentage.
+    private static func expiringCarriedDesktopHistory(
+        _ snapshot: ClaudeUsageSnapshot,
+        now: Date
+    ) -> ClaudeUsageSnapshot {
+        guard snapshot.source == .desktopHistory else { return snapshot }
+        if let fresh = UsageFreshnessPolicy.claudeDesktopHistory.freshClaudeSnapshot(
+            from: snapshot,
+            now: now
+        ) {
+            return fresh
+        }
+        return ClaudeUsageSnapshot(
+            fiveHour: nil,
+            weekly: nil,
+            fable: nil,
+            source: snapshot.source,
+            capturedAt: snapshot.capturedAt
+        )
     }
 
     private func snapshotAfterRefresh<Snapshot: Sendable>(

@@ -67,11 +67,18 @@ struct UsageDetailsView: View {
     private func providerSection(_ provider: UsageProviderViewState) -> some View {
         Section {
             ForEach(provider.limits) { limit in
-                limitRow(limit)
+                limitRow(limit, note: limit.id == "claude-fable" ? model.claudeFableNote : nil)
             }
 
             if provider.kind == .codex {
                 resetCreditRow(provider)
+            }
+
+            if let sourceDescription = provider.sourceDescription {
+                LabeledContent("Source") {
+                    Text(sourceDescription)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if let message = provider.message {
@@ -100,7 +107,7 @@ struct UsageDetailsView: View {
         }
     }
 
-    private func limitRow(_ limit: UsageLimitViewState) -> some View {
+    private func limitRow(_ limit: UsageLimitViewState, note: String?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             LabeledContent {
                 Text(limit.displayText)
@@ -118,6 +125,12 @@ struct UsageDetailsView: View {
                         Text("Resets \(resetsAt.formatted(date: .abbreviated, time: .shortened))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                    if limit.displayPercent == nil, let note {
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }

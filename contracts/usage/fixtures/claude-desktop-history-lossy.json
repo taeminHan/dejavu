@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "samples": [
+    { "t": 1790555400000, "org": "synthetic-org", "u": { "fh": 9, "sd": 30 } },
+    { "t": "1790558100000", "org": "synthetic-org", "u": { "fh": 99, "sd": 99 } },
+    { "t": 1790558100000, "org": "synthetic-org", "u": [99, 99] },
+    { "t": 1790558100000, "org": "synthetic-org", "u": null },
+    { "org": "synthetic-org", "u": { "fh": 99, "sd": 99 } },
+    42,
+    { "t": 1790557200000, "org": "synthetic-org", "u": { "fh": "high", "sd": 44, "so": 2 } }
+  ]
+}

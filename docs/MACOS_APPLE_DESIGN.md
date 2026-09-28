@@ -73,6 +73,8 @@
 - Codex: 제한 후보에서 찾은 로컬 executable의 공식 `codex app-server` stdio JSONL만 사용한다. Dejavu가 만든 child만 종료한다.
 - Claude 기본 경로: 공식 status-line JSON의 `rate_limits`만 bridge가 추출한다. token, transcript, cwd와 session id는 모델링하거나 저장하지 않는다.
 - Claude Fable 확장 경로: 기본값은 꺼짐이다. 사용자가 명시적으로 켜고 macOS가 허용한 경우에만 Claude Code Keychain item을 읽기 전용으로 요청하고 token을 메모리에서만 사용한다. 문서화되지 않은 usage endpoint의 Fable allow-list만 파싱하며 UI/DOM/Chrome storage를 scrape하지 않는다.
+- Claude Desktop 기록 fallback: 앞의 두 경로에 최근 값이 없거나 Desktop sample이 오래된 status-line 값보다 최신일 때 `~/Library/Application Support/Claude/plan-usage-history.json`을 읽기 전용으로 복사해 최신 sample의 5시간·주간 퍼센트만 사용한다. 40분이 지난 sample은 7일까지 Claude slot을 유지하고 값은 `--%`로 표시한다. 상세와 Settings에는 `Claude Desktop 기록 <시각>` 원본을 표시하고 최신 상태라고 쓰지 않으며, Fable은 이전 값 대신 `--%`와 이유를 표시한다.
+- Fable 확장 경로의 마지막 결과는 Settings의 Claude 확장 접근 섹션에 상태(연결됨, 키체인 허용 필요, 토큰 만료, 로그인 필요 등)와 안내 문구로 표시한다. 설정을 바꾸면 이전 결과를 즉시 지우고 다음 확인이 끝날 때까지 `확인하지 않음`으로 표시한다. 문구에는 token, Keychain 내용이나 응답 원문을 넣지 않는다.
 - Claude 설정 변경은 Settings의 명시적 Connect/Disconnect로만 수행한다. 기존 status line을 보존하고 chaining하며 user edit 충돌 시 자동 덮어쓰지 않는다.
 - 메뉴 막대, 플로팅 오버레이와 WidgetKit 위젯은 하나의 `ApplicationState`에서 파생한 동일한 clamped 값을 사용한다.
 

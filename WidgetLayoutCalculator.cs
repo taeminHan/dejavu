@@ -7,6 +7,7 @@ internal readonly record struct WidgetLayoutRequest(
     bool ShowClaude,
     bool ShowCodex,
     bool ShowProgressBars,
+    bool ShowCodexFiveHour = false,
     bool InTaskbar = false,
     double TaskbarBandHeight = WidgetLayoutCalculator.DefaultTaskbarBandHeight);
 
@@ -114,7 +115,7 @@ internal static class WidgetLayoutCalculator
 
     /// <summary>
     /// Sizes the in-taskbar overlay: three Claude cells separated by the cell
-    /// gap, one Codex cell after the provider gap, and one message cell when no
+    /// gap, one or two Codex cells after the provider gap, and one message cell when no
     /// provider is visible. Hidden providers contribute neither a cell nor a gap.
     /// The progress row is dropped when the band cannot keep one DIP above and
     /// below it, so the height fits every band of at least MinimumTaskbarBandHeight.
@@ -123,11 +124,12 @@ internal static class WidgetLayoutCalculator
         WidgetLayoutRequest request)
     {
         var claudeCells = request.ShowClaude ? 3 : 0;
-        var codexCells = request.ShowCodex ? 1 : 0;
+        var codexCells = request.ShowCodex ? request.ShowCodexFiveHour ? 2 : 1 : 0;
         var cells = claudeCells + codexCells;
         var contentWidth = cells == 0
             ? TaskbarCellWidth
             : cells * TaskbarCellWidth + Math.Max(0, claudeCells - 1) * TaskbarCellGap +
+              Math.Max(0, codexCells - 1) * TaskbarCellGap +
               (request.ShowClaude && request.ShowCodex ? TaskbarProviderGap : 0);
         var width = 2 * TaskbarPaddingX + contentWidth;
 
@@ -162,6 +164,7 @@ internal static class WidgetLayoutCalculator
         {
             var width = request.ShowClaude ? 168 : 72;
             if (singleRow && request.ShowClaude && request.ShowCodex) width = 224;
+            if (request.ShowCodex && request.ShowCodexFiveHour && singleRow) width += 48;
             width -= 10;
 
             var height = singleRow ? 60 : providerCount == 2 ? 110 : 60;
@@ -195,11 +198,13 @@ internal static class WidgetLayoutCalculator
                 ? request.ShowClaude && request.ShowCodex ? 600 : request.ShowClaude ? 456 : 240
                 : request.ShowClaude && request.ShowCodex ? 520 : request.ShowClaude ? 378 : 190;
             if (request.ShowCodex) baseWidth -= comfortable ? 40 : 28;
+            if (request.ShowCodex && request.ShowCodexFiveHour) baseWidth += 80;
 
             // Compact and Comfortable previously spent too much horizontal space per metric.
             // Reduce the content baseline by 25%, while preserving theme-specific chrome room.
             var width = Math.Round(baseWidth * 0.75);
-            var visibleMetricCount = (request.ShowClaude ? 3 : 0) + (request.ShowCodex ? 1 : 0);
+            var visibleMetricCount = (request.ShowClaude ? 3 : 0) +
+                                     (request.ShowCodex ? request.ShowCodexFiveHour ? 2 : 1 : 0);
             width += visibleMetricCount * (request.Theme switch
             {
                 WidgetVisualTheme.RetroNight => 10,
@@ -209,6 +214,10 @@ internal static class WidgetLayoutCalculator
                 WidgetVisualTheme.PaperInk => 7,
                 _ => 0
             });
+            // PaperInk's "04 / Codex" label needs more room beside its value
+            // when the optional Codex 5-hour cell divides the provider area.
+            if (request.ShowCodexFiveHour && request.Theme == WidgetVisualTheme.PaperInk)
+                width += request.ShowClaude ? 40 : 16;
             var height = outerChromeHeight + rowHeight + clippingGuard;
             return (width, height);
         }
@@ -227,6 +236,8 @@ internal static class WidgetLayoutCalculator
             WidgetVisualTheme.PaperInk => 18,
             _ => 0
         };
+        if (request.ShowCodexFiveHour && request.Theme == WidgetVisualTheme.PaperInk)
+            widthTwoRows += 16;
         var heightTwoRows = outerChromeHeight + rowHeight * providerCount +
                             Math.Max(0, providerCount - 1) * providerGap + clippingGuard;
         return (widthTwoRows, heightTwoRows);

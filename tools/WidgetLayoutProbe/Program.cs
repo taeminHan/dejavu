@@ -11,10 +11,12 @@ internal static class Program
     private const double IdentityTolerance = 0.01;
     private static readonly string[] GeometryElementNames =
     [
-        "SmallPanel", "SmallProviderPanel", "SmallClaudePanel", "SmallCodexPanel",
-        "CompactPanel", "CompactFiveCard", "CompactWeeklyCard", "CompactFableCard", "CompactCodexCard",
-        "CompactFiveHourBar", "CompactWeeklyBar", "CompactFableBar", "CompactCodexBar",
-        "ComfortablePanel", "ComfortableCodexCard", "CodexPanel", "CodexBar", "MetricsPanel",
+        "SmallPanel", "SmallProviderPanel", "SmallClaudePanel", "SmallCodexPanel", "SmallCodexFivePanel",
+        "CompactPanel", "CompactFiveCard", "CompactWeeklyCard", "CompactFableCard",
+        "CompactCodexFiveCard", "CompactCodexCard",
+        "CompactFiveHourBar", "CompactWeeklyBar", "CompactFableBar", "CompactCodexFiveBar", "CompactCodexBar",
+        "ComfortablePanel", "ComfortableCodexCard", "CodexPanel", "ComfortableCodexFivePanel",
+        "CodexFiveBar", "CodexBar", "MetricsPanel",
         "ComfortableFiveCard", "ComfortableWeeklyCard", "ComfortableFableCard",
         "FiveHourBar", "WeeklyBar", "FableBar", "CompactMessagePanel"
     ];
@@ -35,16 +37,18 @@ internal static class Program
         new("TaskbarFiveCell", "TaskbarFiveHourLabel", "TaskbarFiveHourValue", "TaskbarFiveHourBar"),
         new("TaskbarWeeklyCell", "TaskbarWeeklyLabel", "TaskbarWeeklyValue", "TaskbarWeeklyBar"),
         new("TaskbarFableCell", "TaskbarFableLabel", "TaskbarFableValue", "TaskbarFableBar"),
-        new("TaskbarCodexPanel", "TaskbarCodexLabel", "TaskbarCodexValue", "TaskbarCodexBar"),
+        new("TaskbarCodexFiveCell", "TaskbarCodexFiveLabel", "TaskbarCodexFiveValue", "TaskbarCodexFiveBar"),
+        new("TaskbarCodexCell", "TaskbarCodexLabel", "TaskbarCodexValue", "TaskbarCodexBar"),
         new("TaskbarMessageCell", "TaskbarMessageLabel", "TaskbarMessageValue", null)
     ];
     private static readonly string[] TaskbarGeometryElementNames =
     [
         "TaskbarPanel", "TaskbarClaudePanel", "TaskbarFiveCell", "TaskbarWeeklyCell", "TaskbarFableCell",
-        "TaskbarCodexPanel", "TaskbarMessageCell",
+        "TaskbarCodexPanel", "TaskbarCodexFiveCell", "TaskbarCodexCell", "TaskbarMessageCell",
         "TaskbarFiveHourLabel", "TaskbarFiveHourValue", "TaskbarFiveHourBar",
         "TaskbarWeeklyLabel", "TaskbarWeeklyValue", "TaskbarWeeklyBar",
         "TaskbarFableLabel", "TaskbarFableValue", "TaskbarFableBar",
+        "TaskbarCodexFiveLabel", "TaskbarCodexFiveValue", "TaskbarCodexFiveBar",
         "TaskbarCodexLabel", "TaskbarCodexValue", "TaskbarCodexBar",
         "TaskbarMessageLabel", "TaskbarMessageValue"
     ];
@@ -140,6 +144,35 @@ internal static class Program
                 window.Height,
                 desired,
                 CaptureGeometry(window, card));
+            if (service.ShowCodex)
+            {
+                var prefix = $"theme={theme}, density={density}, layout={layout}, service={service.Name}";
+                ExpectText(window, "SmallCodexFiveLabel", "5시간", prefix, layoutFailures);
+                ExpectText(window, "SmallCodexLabel", "Codex", prefix, layoutFailures);
+                ExpectText(window, "CompactCodexFiveLabel", "5시간", prefix, layoutFailures);
+                ExpectText(window, "CodexFiveLabel", "5시간", prefix, layoutFailures);
+                ExpectText(window, "CodexLabel", density == "Comfortable" ? "Codex 주간" : "Codex",
+                    prefix, layoutFailures);
+                if (RequiredElement<UIElement>(window, "CompactPanel").Visibility == Visibility.Visible)
+                {
+                    var compactCodexLabel = theme switch
+                    {
+                        "TerminalMono" => "[CODEX]",
+                        "PaperInk" => "04 / Codex",
+                        _ => "Codex"
+                    };
+                    ExpectText(window, "CompactCodexLabel", compactCodexLabel, prefix, layoutFailures);
+                    VerifyMetricPair(window, "CompactCodexFiveLabel", "CompactCodexFiveValue",
+                        prefix, layoutFailures);
+                    VerifyMetricPair(window, "CompactCodexLabel", "CompactCodexValue",
+                        prefix, layoutFailures);
+                }
+                if (RequiredElement<UIElement>(window, "ComfortablePanel").Visibility == Visibility.Visible)
+                {
+                    VerifyMetricPair(window, "CodexFiveLabel", "CodexFiveValue", prefix, layoutFailures);
+                    VerifyMetricPair(window, "CodexLabel", "CodexValue", prefix, layoutFailures);
+                }
+            }
             count++;
             CloseWidget(window);
         }
@@ -313,6 +346,12 @@ internal static class Program
             ExpectVisibility(window, "TaskbarPanel", true, prefix, taskbarMismatches);
             ExpectVisibility(window, "TaskbarClaudePanel", service.ShowClaude, prefix, taskbarMismatches);
             ExpectVisibility(window, "TaskbarCodexPanel", service.ShowCodex, prefix, taskbarMismatches);
+            ExpectVisibility(window, "TaskbarCodexFiveCell", service.ShowCodex, prefix, taskbarMismatches);
+            if (service.ShowCodex)
+            {
+                ExpectText(window, "TaskbarCodexFiveLabel", "5시간", prefix, taskbarMismatches);
+                ExpectText(window, "TaskbarCodexLabel", "Codex", prefix, taskbarMismatches);
+            }
             ExpectVisibility(window, "TaskbarMessageCell", !service.ShowClaude && !service.ShowCodex, prefix,
                 taskbarMismatches);
 
@@ -338,6 +377,7 @@ internal static class Program
 
             var metrics = taskbarProbe.Calculate(Enum.Parse(densityType, density), Enum.Parse(layoutType, layout),
                 Enum.Parse(themeType, theme), service.ShowClaude, service.ShowCodex, progress,
+                service.ShowCodex,
                 bandPixels / dpi.DpiScaleY);
             if (Get(metrics, "Taskbar") is not { } taskbarMetrics)
             {
@@ -431,6 +471,75 @@ internal static class Program
             }
         }
 
+        // The Codex 5-hour window is optional. Verify that an absent window leaves no extra cell,
+        // an account with only a 5-hour window still has one primary cell, and an expired carried
+        // 5-hour window keeps its cell with --% and an empty bar until a successful read.
+        var codexVariantFailures = new List<string>();
+        var codexVariantCount = 0;
+        foreach (var variant in new[]
+                 {
+                     (Name: "weekly-only", FiveHour: false, Weekly: true, Expired: false),
+                     (Name: "five-only", FiveHour: true, Weekly: false, Expired: false),
+                     (Name: "neither", FiveHour: false, Weekly: false, Expired: false),
+                     (Name: "five-expired", FiveHour: false, Weekly: true, Expired: true)
+                 })
+        foreach (var docked in new[] { false, true })
+        foreach (var density in Enum.GetNames(densityType))
+        foreach (var layout in Enum.GetNames(layoutType))
+        {
+            var settings = Activator.CreateInstance(settingsType)
+                           ?? throw new InvalidOperationException("Cannot create TraySettings");
+            Set(settingsType, settings, "WidgetDensity", Enum.Parse(densityType, density));
+            Set(settingsType, settings, "WidgetLayout", Enum.Parse(layoutType, layout));
+            Set(settingsType, settings, "ServiceDisplayMode", Enum.Parse(serviceType, "CodexOnly"));
+            Set(settingsType, settings, "ShowProgressBars", true);
+            if (docked) Set(settingsType, settings, "WidgetPlacement", inTaskbar);
+            applyTheme.Invoke(null, [settings]);
+            var window = (Window)constructor.Invoke([settings]);
+            if (docked)
+            {
+                var dpi = VisualTreeHelper.GetDpi(window);
+                taskbarProbe.Dock(window, (int)Math.Round(40 * dpi.DpiScaleY));
+            }
+            updateState.Invoke(window, [stateFactory.Create(false, true, variant.FiveHour,
+                variant.Weekly, variant.Expired)]);
+            var card = RequiredElement<FrameworkElement>(window, "WidgetCard");
+            card.Measure(new Size(window.Width, double.PositiveInfinity));
+            var prefix = $"{variant.Name}, docked={docked}, density={density}, layout={layout}";
+            if (card.DesiredSize.Height > window.Height + HeightTolerance)
+                codexVariantFailures.Add($"{prefix}: card clipped ({card.DesiredSize.Height:0.##} > {window.Height:0.##})");
+            foreach (var name in new[] { "SmallCodexFivePanel", "CompactCodexFiveCard",
+                         "ComfortableCodexFivePanel", "TaskbarCodexFiveCell" })
+                ExpectVisibility(window, name,
+                    variant.Expired && (docked || name != "TaskbarCodexFiveCell"), prefix,
+                    codexVariantFailures);
+            var primaryValue = variant.Name == "neither" ? "--%" : "42%";
+            foreach (var name in new[] { "SmallCodexValue", "CompactCodexValue", "CodexValue", "TaskbarCodexValue" })
+            {
+                var actual = RequiredElement<TextBlock>(window, name).Text;
+                if ((docked == (name == "TaskbarCodexValue")) && actual != primaryValue)
+                    codexVariantFailures.Add($"{prefix}: {name} '{actual}' != '{primaryValue}'");
+            }
+            if (variant.Expired)
+            {
+                foreach (var name in new[] { "SmallCodexFiveValue", "CompactCodexFiveValue",
+                             "CodexFiveValue", "TaskbarCodexFiveValue" })
+                {
+                    var actual = RequiredElement<TextBlock>(window, name).Text;
+                    if (actual != "--%") codexVariantFailures.Add($"{prefix}: {name} '{actual}' is stale");
+                }
+                foreach (var name in new[] { "CompactCodexFiveBar", "CodexFiveBar", "TaskbarCodexFiveBar" })
+                {
+                    var value = RequiredElement<ProgressBar>(window, name).Value;
+                    if (value != 0) codexVariantFailures.Add($"{prefix}: {name} has stale progress {value}");
+                }
+            }
+            if (docked && Math.Abs(window.Width - (variant.Expired ? 92 : 50)) > HeightTolerance)
+                codexVariantFailures.Add($"{prefix}: taskbar width {window.Width:0.##} has an empty slot");
+            codexVariantCount++;
+            CloseWidget(window);
+        }
+
         var tracker = new TrackerProbe(assembly);
         tracker.Run();
         tracker.Dispose();
@@ -441,6 +550,7 @@ internal static class Program
         foreach (var failure in taskbarClipping) Console.Error.WriteLine($"TASKBAR CLIP {failure}");
         foreach (var failure in taskbarOverBand) Console.Error.WriteLine($"TASKBAR BAND {failure}");
         foreach (var failure in taskbarMismatches) Console.Error.WriteLine($"TASKBAR LAYOUT {failure}");
+        foreach (var failure in codexVariantFailures) Console.Error.WriteLine($"CODEX WINDOW {failure}");
         foreach (var failure in tracker.Failures) Console.Error.WriteLine($"TRACKER {failure}");
         Console.WriteLine($"Widget layout matrix: {count} checked, {clippingFailures.Count} clipped, " +
                           $"{invariantCount} zero/one-provider invariants, {splitCount} two-provider splits, " +
@@ -450,9 +560,10 @@ internal static class Program
         Console.WriteLine($"Taskbar layout matrix: {taskbarCount} checked, {taskbarClipping.Count} clipped, " +
                           $"{taskbarOverBand.Count} over band, {taskbarMismatches.Count} mismatched");
         Console.WriteLine($"Taskbar tracker transitions: {tracker.Count} checked, {tracker.Failures.Count} mismatched");
+        Console.WriteLine($"Codex window variants: {codexVariantCount} checked, {codexVariantFailures.Count} mismatched");
         return clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
                taskbarClipping.Count == 0 && taskbarOverBand.Count == 0 && taskbarMismatches.Count == 0 &&
-               tracker.Failures.Count == 0
+               tracker.Failures.Count == 0 && codexVariantFailures.Count == 0
             ? 0
             : 1;
     }
@@ -624,6 +735,26 @@ internal static class Program
         return width;
     }
 
+    private static void ExpectText(FrameworkElement window, string name, string expected, string prefix,
+        ICollection<string> failures)
+    {
+        var actual = RequiredElement<TextBlock>(window, name).Text;
+        if (actual != expected) failures.Add($"{prefix}: {name} is '{actual}', expected '{expected}'");
+    }
+
+    private static void VerifyMetricPair(Window window, string labelName, string valueName,
+        string prefix, ICollection<string> failures)
+    {
+        var label = RequiredElement<TextBlock>(window, labelName);
+        var value = RequiredElement<TextBlock>(window, valueName);
+        var row = VisualTreeHelper.GetParent(label) as FrameworkElement;
+        if (row is null) throw new InvalidOperationException($"{labelName} has no metric row");
+        var needed = NaturalWidth(label, null) + NaturalWidth(value, "100%") + 2;
+        if (needed > row.RenderSize.Width + HeightTolerance)
+            failures.Add($"{prefix}: {labelName} and {valueName} need {needed:0.##} DIP, " +
+                         $"cell has {row.RenderSize.Width:0.##} DIP");
+    }
+
     private static bool IsWholePixel(double pixels) => Math.Abs(pixels - Math.Round(pixels)) <= IdentityTolerance;
 
     private static string FirstDifference(LayoutSnapshot left, LayoutSnapshot right) =>
@@ -683,7 +814,7 @@ internal static class Program
         internal void PositionFromSettings(Window window) => _positionFromSettings.Invoke(window, [false]);
 
         internal object Calculate(object density, object layout, object theme, bool showClaude, bool showCodex,
-            bool showProgressBars, double taskbarBandHeight) =>
+            bool showProgressBars, bool showCodexFiveHour, double taskbarBandHeight) =>
             _calculate.Invoke(null, [CreateByName(_requestType, new Dictionary<string, object?>
             {
                 ["Density"] = density,
@@ -692,6 +823,7 @@ internal static class Program
                 ["ShowClaude"] = showClaude,
                 ["ShowCodex"] = showCodex,
                 ["ShowProgressBars"] = showProgressBars,
+                ["ShowCodexFiveHour"] = showCodexFiveHour,
                 ["InTaskbar"] = true,
                 ["TaskbarBandHeight"] = taskbarBandHeight
             })]) ?? throw new InvalidOperationException("WidgetLayoutCalculator.Calculate returned null");
@@ -942,7 +1074,8 @@ internal static class Program
             _stateConstructor = Constructor(stateType, 10);
         }
 
-        internal object Create(bool showClaude, bool showCodex)
+        internal object Create(bool showClaude, bool showCodex, bool fiveHour = true,
+            bool weekly = true, bool fiveHourExpired = false)
         {
             var ready = Enum.Parse(_statusType, "Ready");
             var loading = Enum.Parse(_statusType, "Loading");
@@ -951,8 +1084,11 @@ internal static class Program
                 ? _snapshotConstructor.Invoke([limit, limit, limit, Enum.Parse(_sourceType, "ClaudeCode"), null])
                 : null;
             var codex = showCodex
-                ? _codexSnapshotConstructor.Invoke([limit, limit, null, null, null])
+                ? _codexSnapshotConstructor.Invoke([fiveHour ? limit : null, weekly ? limit : null,
+                    null, null, null])
                 : null;
+            if (codex is not null && fiveHourExpired)
+                Set(codex.GetType(), codex, "FiveHourExpired", true);
             return _stateConstructor.Invoke([
                 showClaude || showCodex ? ready : loading,
                 claude,

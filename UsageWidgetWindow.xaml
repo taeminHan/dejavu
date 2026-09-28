@@ -78,18 +78,33 @@
                             </Grid>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel x:Name="SmallCodexPanel" Width="48" Margin="8,0,0,0">
-                        <TextBlock Text="Codex" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
-                            <Ellipse x:Name="SmallCodexTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
-                            <Path x:Name="SmallCodexArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                            <local:OrbitBodyMarker x:Name="SmallCodexPlanet" Width="10" Height="10" Body="Saturn"
-                                                   Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
-                                                   Visibility="Collapsed" />
-                            <TextBlock x:Name="SmallCodexValue" Text="--%" FontSize="9" FontWeight="Bold"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Grid>
+                    <StackPanel x:Name="SmallCodexPanel" Orientation="Horizontal" Margin="8,0,0,0">
+                        <StackPanel x:Name="SmallCodexFivePanel" Width="48" Visibility="Collapsed">
+                            <TextBlock x:Name="SmallCodexFiveLabel" Text="5시간" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <Ellipse x:Name="SmallCodexFiveTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
+                                <Path x:Name="SmallCodexFiveArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <local:OrbitBodyMarker x:Name="SmallCodexFivePlanet" Width="10" Height="10" Body="Saturn"
+                                                       Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
+                                                       Visibility="Collapsed" />
+                                <TextBlock x:Name="SmallCodexFiveValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel Width="48">
+                            <TextBlock x:Name="SmallCodexLabel" Text="Codex" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <Ellipse x:Name="SmallCodexTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
+                                <Path x:Name="SmallCodexArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                <local:OrbitBodyMarker x:Name="SmallCodexPlanet" Width="10" Height="10" Body="Saturn"
+                                                       Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
+                                                       Visibility="Collapsed" />
+                                <TextBlock x:Name="SmallCodexValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </Grid>
@@ -103,6 +118,8 @@
                     <ColumnDefinition x:Name="CompactClaudeGapTwo" Width="10" />
                     <ColumnDefinition x:Name="CompactClaudeFableColumn" Width="*" />
                     <ColumnDefinition x:Name="CompactProviderGap" Width="10" />
+                    <ColumnDefinition x:Name="CompactCodexFiveColumn" Width="0" />
+                    <ColumnDefinition x:Name="CompactCodexGap" Width="0" />
                     <ColumnDefinition x:Name="CompactCodexColumn" Width="*" />
                 </Grid.ColumnDefinitions>
                 <Border x:Name="CompactFiveCard" Grid.Column="0">
@@ -132,7 +149,17 @@
                     <local:UsageProgressBar x:Name="CompactFableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,5,0,0" />
                 </StackPanel>
                 </Border>
-                <Border x:Name="CompactCodexCard" Grid.Column="6">
+                <Border x:Name="CompactCodexFiveCard" Grid.Column="6" Visibility="Collapsed">
+                <StackPanel x:Name="CompactCodexFivePanel">
+                    <Grid>
+                        <TextBlock x:Name="CompactCodexFiveLabel" Text="5시간" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                        <TextBlock x:Name="CompactCodexFiveValue" Text="--%" HorizontalAlignment="Right"
+                                   FontSize="12" FontWeight="SemiBold" />
+                    </Grid>
+                    <local:UsageProgressBar x:Name="CompactCodexFiveBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,5,0,0" />
+                </StackPanel>
+                </Border>
+                <Border x:Name="CompactCodexCard" Grid.Column="8">
                 <StackPanel x:Name="CompactCodexPanel">
                     <Grid>
                         <TextBlock x:Name="CompactCodexLabel" Text="Codex" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
@@ -161,10 +188,26 @@
                 <Border x:Name="ComfortableCodexCard" Grid.Row="0">
                 <StackPanel x:Name="CodexPanel" Margin="0,7,0,0">
                     <Grid>
-                        <TextBlock x:Name="CodexLabel" Text="Codex 주간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <TextBlock x:Name="CodexValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition x:Name="ComfortableCodexFiveColumn" Width="0" />
+                            <ColumnDefinition x:Name="ComfortableCodexGap" Width="0" />
+                            <ColumnDefinition x:Name="ComfortableCodexColumn" Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel x:Name="ComfortableCodexFivePanel" Grid.Column="0" Visibility="Collapsed">
+                            <Grid>
+                                <TextBlock x:Name="CodexFiveLabel" Text="5시간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                                <TextBlock x:Name="CodexFiveValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
+                            </Grid>
+                            <local:UsageProgressBar x:Name="CodexFiveBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <Grid>
+                                <TextBlock x:Name="CodexLabel" Text="Codex 주간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                                <TextBlock x:Name="CodexValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
+                            </Grid>
+                            <local:UsageProgressBar x:Name="CodexBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0" />
+                        </StackPanel>
                     </Grid>
-                    <local:UsageProgressBar x:Name="CodexBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0" />
                 </StackPanel>
                 </Border>
                 <Grid x:Name="MetricsPanel" Grid.Row="1" Margin="0,10,0,0">
@@ -242,17 +285,31 @@
                                      Minimum="0" Maximum="100" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel x:Name="TaskbarCodexPanel">
-                    <TextBlock x:Name="TaskbarCodexLabel" Text="Codex" FontSize="10" FontWeight="Medium"
-                               TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
-                               Foreground="{DynamicResource TaskbarMutedTextBrush}"
-                               FontFamily="{DynamicResource TaskbarFontFamily}" />
-                    <TextBlock x:Name="TaskbarCodexValue" Text="--%" FontSize="12" FontWeight="SemiBold"
-                               TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
-                               Foreground="{DynamicResource TaskbarTextBrush}"
-                               FontFamily="{DynamicResource TaskbarFontFamily}" />
-                    <ProgressBar x:Name="TaskbarCodexBar" Style="{StaticResource TaskbarUsageProgress}"
-                                 Minimum="0" Maximum="100" />
+                <StackPanel x:Name="TaskbarCodexPanel" Orientation="Horizontal">
+                    <StackPanel x:Name="TaskbarCodexFiveCell" Visibility="Collapsed">
+                        <TextBlock x:Name="TaskbarCodexFiveLabel" Text="5시간" FontSize="10" FontWeight="Medium"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <TextBlock x:Name="TaskbarCodexFiveValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <ProgressBar x:Name="TaskbarCodexFiveBar" Style="{StaticResource TaskbarUsageProgress}"
+                                     Minimum="0" Maximum="100" />
+                    </StackPanel>
+                    <StackPanel x:Name="TaskbarCodexCell">
+                        <TextBlock x:Name="TaskbarCodexLabel" Text="Codex" FontSize="10" FontWeight="Medium"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarMutedTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <TextBlock x:Name="TaskbarCodexValue" Text="--%" FontSize="12" FontWeight="SemiBold"
+                                   TextAlignment="Center" LineStackingStrategy="BlockLineHeight"
+                                   Foreground="{DynamicResource TaskbarTextBrush}"
+                                   FontFamily="{DynamicResource TaskbarFontFamily}" />
+                        <ProgressBar x:Name="TaskbarCodexBar" Style="{StaticResource TaskbarUsageProgress}"
+                                     Minimum="0" Maximum="100" />
+                    </StackPanel>
                 </StackPanel>
                 <StackPanel x:Name="TaskbarMessageCell">
                     <TextBlock x:Name="TaskbarMessageLabel" Text="dejavu" FontSize="10" FontWeight="Medium"

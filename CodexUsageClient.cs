@@ -14,6 +14,13 @@ internal sealed record CodexUsageSnapshot(
     // carried snapshot whose weekly window has reset, so the weekly value is unknown, not absent.
     public bool WeeklyExpired { get; init; }
 
+    // Preserve an expired 5-hour slot until the next successful read, so a carried value becomes --%.
+    public bool FiveHourExpired { get; init; }
+
+    public bool HasWeeklyWindow => Weekly is not null || WeeklyExpired;
+    public bool HasFiveHourWindow => FiveHour is not null || FiveHourExpired;
+    public bool ShowSeparateFiveHour => HasWeeklyWindow && HasFiveHourWindow;
+
     // The always-visible Codex value: weekly, or the 5-hour window only for accounts with no weekly window.
     public UsageLimit? DisplayLimit => Weekly ?? (WeeklyExpired ? null : FiveHour);
 }

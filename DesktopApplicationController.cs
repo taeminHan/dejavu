@@ -889,6 +889,7 @@ internal sealed class DesktopApplicationController : IDisposable
             {
                 FiveHour = fiveHour,
                 Weekly = weekly,
+                FiveHourExpired = previous.FiveHourExpired || previous.FiveHour is not null && fiveHour is null,
                 WeeklyExpired = previous.WeeklyExpired || previous.Weekly is not null && weekly is null
             };
     }

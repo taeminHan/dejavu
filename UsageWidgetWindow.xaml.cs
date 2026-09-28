@@ -322,9 +322,11 @@ public partial class UsageWidgetWindow : Window
         var metricLabelSize = compact ? 10d : 11d;
         var metricValueSize = compact ? 12d : 13d;
         var linearBarMargin = compact ? 5d : 7d;
-        foreach (var label in new[] { CompactFiveHourLabel, CompactWeeklyLabel, CompactFableLabel, CompactCodexLabel })
+        foreach (var label in new[] { CompactFiveHourLabel, CompactWeeklyLabel, CompactFableLabel,
+                     CompactCodexFiveLabel, CompactCodexLabel })
             label.FontSize = metricLabelSize;
-        foreach (var value in new[] { CompactFiveHourValue, CompactWeeklyValue, CompactFableValue, CompactCodexValue })
+        foreach (var value in new[] { CompactFiveHourValue, CompactWeeklyValue, CompactFableValue,
+                     CompactCodexFiveValue, CompactCodexValue })
         {
             value.FontSize = metricValueSize;
             value.FontFamily = widgetFont;
@@ -333,11 +335,12 @@ public partial class UsageWidgetWindow : Window
         CompactWeeklyLabel.Text = compact ? "주간" : "주간 전체";
         CompactFableLabel.Text = compact ? "Fable" : "주간 Fable";
         CompactCodexLabel.Text = "Codex";
-        foreach (var bar in new[] { CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexBar })
+        foreach (var bar in new[] { CompactFiveHourBar, CompactWeeklyBar, CompactFableBar,
+                     CompactCodexFiveBar, CompactCodexBar })
             bar.Margin = new Thickness(0, linearBarMargin, 0, 0);
-        foreach (var label in new[] { FiveHourLabel, WeeklyLabel, FableLabel, CodexLabel })
+        foreach (var label in new[] { FiveHourLabel, WeeklyLabel, FableLabel, CodexFiveLabel, CodexLabel })
             label.FontSize = metricLabelSize;
-        foreach (var value in new[] { FiveHourValue, WeeklyValue, FableValue, CodexValue })
+        foreach (var value in new[] { FiveHourValue, WeeklyValue, FableValue, CodexFiveValue, CodexValue })
         {
             value.FontSize = metricValueSize;
             value.FontFamily = widgetFont;
@@ -346,22 +349,26 @@ public partial class UsageWidgetWindow : Window
         WeeklyLabel.Text = compact ? "주간" : "주간 전체";
         FableLabel.Text = compact ? "Fable" : "주간 Fable";
         CodexLabel.Text = compact ? "Codex" : "Codex 주간";
-        foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexBar })
+        foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexFiveBar, CodexBar })
             bar.Margin = new Thickness(0, linearBarMargin, 0, 0);
-        foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexBar, CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexBar })
+        foreach (var bar in new[] { FiveHourBar, WeeklyBar, FableBar, CodexFiveBar, CodexBar,
+                     CompactFiveHourBar, CompactWeeklyBar, CompactFableBar, CompactCodexFiveBar, CompactCodexBar })
         {
             bar.Style = FindResource(ThemeManager.WidgetProgressStyleKey(theme)) as Style;
             bar.Visibility = settings.ShowProgressBars ? Visibility.Visible : Visibility.Collapsed;
         }
-        foreach (var value in new[] { SmallFiveHourValue, SmallWeeklyValue, SmallFableValue, SmallCodexValue })
+        foreach (var value in new[] { SmallFiveHourValue, SmallWeeklyValue, SmallFableValue,
+                     SmallCodexFiveValue, SmallCodexValue })
             value.FontFamily = widgetFont;
-        foreach (var track in new[] { SmallFiveHourTrack, SmallWeeklyTrack, SmallFableTrack, SmallCodexTrack })
+        foreach (var track in new[] { SmallFiveHourTrack, SmallWeeklyTrack, SmallFableTrack,
+                     SmallCodexFiveTrack, SmallCodexTrack })
         {
             track.StrokeThickness = theme is WidgetVisualTheme.RetroNight or WidgetVisualTheme.TerminalMono or WidgetVisualTheme.Orbit ? 4 : 3;
             track.StrokeDashArray = theme == WidgetVisualTheme.PaperInk
                 ? new DoubleCollection([1.1, 0.65]) : null;
         }
-        foreach (var arc in new[] { SmallFiveHourArc, SmallWeeklyArc, SmallFableArc, SmallCodexArc })
+        foreach (var arc in new[] { SmallFiveHourArc, SmallWeeklyArc, SmallFableArc,
+                     SmallCodexFiveArc, SmallCodexArc })
         {
             arc.StrokeThickness = theme is WidgetVisualTheme.RetroNight or WidgetVisualTheme.TerminalMono or WidgetVisualTheme.Orbit ? 4 : 3;
             arc.StrokeStartLineCap = angular ? PenLineCap.Flat : PenLineCap.Round;
@@ -371,7 +378,9 @@ public partial class UsageWidgetWindow : Window
                 ? new DoubleCollection([1.15, 0.5]) : null;
         }
         ApplyThemeStructure(theme, compact);
-        foreach (var ring in new FrameworkElement[] { SmallFiveHourTrack, SmallFiveHourArc, SmallWeeklyTrack, SmallWeeklyArc, SmallFableTrack, SmallFableArc, SmallCodexTrack, SmallCodexArc })
+        foreach (var ring in new FrameworkElement[] { SmallFiveHourTrack, SmallFiveHourArc,
+                     SmallWeeklyTrack, SmallWeeklyArc, SmallFableTrack, SmallFableArc,
+                     SmallCodexFiveTrack, SmallCodexFiveArc, SmallCodexTrack, SmallCodexArc })
             ring.Visibility = settings.ShowProgressBars ? Visibility.Visible : Visibility.Collapsed;
         _taskbarLayoutActive = IsTaskbarDocked;
         if (_taskbarLayoutActive && _taskbarDock is TaskbarDock dock) ApplyTaskbarChrome(dock);
@@ -399,7 +408,8 @@ public partial class UsageWidgetWindow : Window
 
     private void ApplyThemeStructure(WidgetVisualTheme theme, bool compact)
     {
-        var compactCards = new[] { CompactFiveCard, CompactWeeklyCard, CompactFableCard, CompactCodexCard };
+        var compactCards = new[] { CompactFiveCard, CompactWeeklyCard, CompactFableCard,
+            CompactCodexFiveCard, CompactCodexCard };
         var comfortableCards = new[] { ComfortableFiveCard, ComfortableWeeklyCard, ComfortableFableCard, ComfortableCodexCard };
         var allCards = compactCards.Concat(comfortableCards).ToArray();
         foreach (var card in allCards)
@@ -453,8 +463,9 @@ public partial class UsageWidgetWindow : Window
                     card.CornerRadius = new CornerRadius(14);
                     card.Padding = new Thickness(compact ? 8 : 10, compact ? 7 : 9, compact ? 8 : 10, compact ? 8 : 10);
                 }
-                foreach (var value in new[] { CompactFiveHourValue, CompactWeeklyValue, CompactFableValue, CompactCodexValue,
-                             FiveHourValue, WeeklyValue, FableValue, CodexValue })
+                foreach (var value in new[] { CompactFiveHourValue, CompactWeeklyValue, CompactFableValue,
+                             CompactCodexFiveValue, CompactCodexValue, FiveHourValue, WeeklyValue, FableValue,
+                             CodexFiveValue, CodexValue })
                     value.FontSize = compact ? 13 : 14;
                 break;
             case WidgetVisualTheme.PaperInk:
@@ -491,7 +502,9 @@ public partial class UsageWidgetWindow : Window
         CompactMessageDot.Fill = statusBrush;
 
         var (showClaude, showCodex) = _settings.ResolveServices(state);
-        var layout = ApplyProviderLayout(showClaude, showCodex);
+        var showCodexFiveHour = showCodex && state.CodexSnapshot?.ShowSeparateFiveHour == true;
+        var layout = ApplyProviderLayout(showClaude, showCodex, showCodexFiveHour);
+        UpdateCodexLabels(state.CodexSnapshot);
 
         TaskbarPanel.Visibility = _taskbarLayoutActive ? Visibility.Visible : Visibility.Collapsed;
         if (_taskbarLayoutActive)
@@ -518,8 +531,12 @@ public partial class UsageWidgetWindow : Window
             SetCircularMetric(SmallWeeklyValue, SmallWeeklyArc, SmallWeeklyPlanet, state.Snapshot?.Weekly);
             SetCircularMetric(SmallFableValue, SmallFableArc, SmallFablePlanet, state.Snapshot?.Fable);
             var codexLimit = state.CodexSnapshot?.DisplayLimit;
+            SetMetric(CodexFiveValue, CodexFiveBar, state.CodexSnapshot?.FiveHour);
             SetMetric(CodexValue, CodexBar, codexLimit);
+            SetMetric(CompactCodexFiveValue, CompactCodexFiveBar, state.CodexSnapshot?.FiveHour);
             SetMetric(CompactCodexValue, CompactCodexBar, codexLimit);
+            SetCircularMetric(SmallCodexFiveValue, SmallCodexFiveArc, SmallCodexFivePlanet,
+                state.CodexSnapshot?.FiveHour);
             SetCircularMetric(SmallCodexValue, SmallCodexArc, SmallCodexPlanet, codexLimit);
         }
         else
@@ -537,6 +554,23 @@ public partial class UsageWidgetWindow : Window
         PreservePositionAfterResize(previousWidth, previousHeight);
     }
 
+    private void UpdateCodexLabels(CodexUsageSnapshot? snapshot)
+    {
+        var fiveHourOnly = snapshot?.HasFiveHourWindow == true && snapshot.HasWeeklyWindow == false;
+        SmallCodexLabel.Text = "Codex";
+        TaskbarCodexLabel.Text = "Codex";
+        CompactCodexFiveLabel.Text = "5시간";
+        CodexFiveLabel.Text = "5시간";
+        CompactCodexLabel.Text = _settings.WidgetTheme switch
+        {
+            WidgetVisualTheme.TerminalMono => "[CODEX]",
+            WidgetVisualTheme.PaperInk => "04 / Codex",
+            _ => "Codex"
+        };
+        CodexLabel.Text = fiveHourOnly ? "Codex 5시간"
+            : _settings.WidgetDensity == WidgetDensity.Comfortable ? "Codex 주간" : "Codex";
+    }
+
     /// <summary>
     /// In-taskbar values. Only TaskbarPanel is visible, hidden providers were
     /// collapsed by ApplyProviderLayout, and reset credits never appear here.
@@ -549,7 +583,7 @@ public partial class UsageWidgetWindow : Window
         MessagePanel.Visibility = Visibility.Collapsed;
         CompactMessagePanel.Visibility = Visibility.Collapsed;
 
-        var summary = new List<string>(4);
+        var summary = new List<string>(5);
         if (showClaude)
         {
             summary.Add($"Claude 5시간 {SetTaskbarMetric(TaskbarFiveHourValue, TaskbarFiveHourBar, state.Snapshot?.FiveHour)}");
@@ -558,8 +592,13 @@ public partial class UsageWidgetWindow : Window
         }
         if (showCodex)
         {
+            if (state.CodexSnapshot?.ShowSeparateFiveHour == true)
+                summary.Add($"Codex 5시간 {SetTaskbarMetric(TaskbarCodexFiveValue, TaskbarCodexFiveBar,
+                    state.CodexSnapshot.FiveHour)}");
             var codexLimit = state.CodexSnapshot?.DisplayLimit;
-            summary.Add($"Codex {SetTaskbarMetric(TaskbarCodexValue, TaskbarCodexBar, codexLimit)}");
+            var window = state.CodexSnapshot?.HasWeeklyWindow == true ? "주간"
+                : state.CodexSnapshot?.HasFiveHourWindow == true ? "5시간" : "사용량";
+            summary.Add($"Codex {window} {SetTaskbarMetric(TaskbarCodexValue, TaskbarCodexBar, codexLimit)}");
         }
 
         // The provider cells carry no status line and the no-provider cell shows only the
@@ -570,7 +609,7 @@ public partial class UsageWidgetWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(WidgetCard, description);
     }
 
-    private WidgetLayoutMetrics ApplyProviderLayout(bool showClaude, bool showCodex)
+    private WidgetLayoutMetrics ApplyProviderLayout(bool showClaude, bool showCodex, bool showCodexFiveHour)
     {
         var layout = WidgetLayoutCalculator.Calculate(new WidgetLayoutRequest(
             _settings.WidgetDensity,
@@ -579,18 +618,22 @@ public partial class UsageWidgetWindow : Window
             showClaude,
             showCodex,
             _settings.ShowProgressBars,
+            ShowCodexFiveHour: showCodexFiveHour,
             InTaskbar: _taskbarLayoutActive,
             TaskbarBandHeight: TaskbarBandHeightDip()));
         CompactClaudeFivePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         CompactClaudeWeeklyPanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         CompactClaudeFablePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
+        CompactCodexFivePanel.Visibility = showCodexFiveHour ? Visibility.Visible : Visibility.Collapsed;
         CompactCodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         CompactFiveCard.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         CompactWeeklyCard.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         CompactFableCard.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
+        CompactCodexFiveCard.Visibility = showCodexFiveHour ? Visibility.Visible : Visibility.Collapsed;
         CompactCodexCard.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         SmallClaudePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         SmallCodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        SmallCodexFivePanel.Visibility = showCodexFiveHour ? Visibility.Visible : Visibility.Collapsed;
         SmallProviderPanel.Orientation = layout.EffectiveLayout == WidgetLayout.SingleRow
             ? System.Windows.Controls.Orientation.Horizontal
             : System.Windows.Controls.Orientation.Vertical;
@@ -603,11 +646,16 @@ public partial class UsageWidgetWindow : Window
         CompactClaudeGapOne.Width = new GridLength(showClaude ? layout.CompactGap : 0);
         CompactClaudeGapTwo.Width = new GridLength(showClaude ? layout.CompactGap : 0);
         CompactProviderGap.Width = new GridLength(showClaude && showCodex ? layout.CompactGap : 0);
+        CompactCodexFiveColumn.Width = new GridLength(showCodexFiveHour ? 1 : 0, GridUnitType.Star);
+        CompactCodexGap.Width = new GridLength(showCodexFiveHour ? layout.CompactGap : 0);
         CompactCodexColumn.Width = new GridLength(showCodex ? 1 : 0, GridUnitType.Star);
         CodexRow.Height = showCodex ? GridLength.Auto : new GridLength(0);
         ClaudeRow.Height = showClaude ? GridLength.Auto : new GridLength(0);
         CodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
         ComfortableCodexCard.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        ComfortableCodexFivePanel.Visibility = showCodexFiveHour ? Visibility.Visible : Visibility.Collapsed;
+        ComfortableCodexFiveColumn.Width = new GridLength(showCodexFiveHour ? 1 : 0, GridUnitType.Star);
+        ComfortableCodexGap.Width = new GridLength(showCodexFiveHour ? layout.ComfortableGap : 0);
         MetricsPanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         ComfortableGapOne.Width = new GridLength(layout.ComfortableGap);
         ComfortableGapTwo.Width = new GridLength(layout.ComfortableGap);
@@ -615,7 +663,8 @@ public partial class UsageWidgetWindow : Window
         MetricsPanel.Margin = new Thickness(0,
             showClaude && showCodex ? layout.ProviderGap : showClaude ? layout.ProviderTop : 0, 0, 0);
         _taskbarLayout = layout.Taskbar;
-        if (layout.Taskbar is TaskbarLayoutMetrics taskbar) ApplyTaskbarLayout(taskbar, showClaude, showCodex);
+        if (layout.Taskbar is TaskbarLayoutMetrics taskbar)
+            ApplyTaskbarLayout(taskbar, showClaude, showCodex, showCodexFiveHour);
         Width = layout.Width;
         Height = layout.Height;
         return layout;
@@ -626,28 +675,36 @@ public partial class UsageWidgetWindow : Window
     /// visible cells remain: the first Claude cell has no leading margin, and the
     /// provider gap precedes Codex only while Claude is visible.
     /// </summary>
-    private void ApplyTaskbarLayout(TaskbarLayoutMetrics metrics, bool showClaude, bool showCodex)
+    private void ApplyTaskbarLayout(TaskbarLayoutMetrics metrics, bool showClaude, bool showCodex,
+        bool showCodexFiveHour)
     {
         WidgetCard.Padding = new Thickness(metrics.PaddingX, metrics.PaddingY, metrics.PaddingX, metrics.PaddingY);
         TaskbarClaudePanel.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
         TaskbarCodexPanel.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        TaskbarCodexFiveCell.Visibility = showCodexFiveHour ? Visibility.Visible : Visibility.Collapsed;
         TaskbarMessageCell.Visibility = showClaude || showCodex ? Visibility.Collapsed : Visibility.Visible;
         TaskbarClaudePanel.Margin = new Thickness(0);
         TaskbarFiveCell.Margin = new Thickness(0);
         TaskbarWeeklyCell.Margin = new Thickness(metrics.CellGap, 0, 0, 0);
         TaskbarFableCell.Margin = new Thickness(metrics.CellGap, 0, 0, 0);
         TaskbarCodexPanel.Margin = new Thickness(showClaude && showCodex ? metrics.ProviderGap : 0, 0, 0, 0);
+        TaskbarCodexFiveCell.Margin = new Thickness(0);
+        TaskbarCodexCell.Margin = new Thickness(showCodexFiveHour ? metrics.CellGap : 0, 0, 0, 0);
         TaskbarMessageCell.Margin = new Thickness(0);
-        foreach (var cell in new[] { TaskbarFiveCell, TaskbarWeeklyCell, TaskbarFableCell, TaskbarCodexPanel, TaskbarMessageCell })
+        foreach (var cell in new[] { TaskbarFiveCell, TaskbarWeeklyCell, TaskbarFableCell,
+                     TaskbarCodexFiveCell, TaskbarCodexCell, TaskbarMessageCell })
             cell.Width = metrics.CellWidth;
-        foreach (var label in new[] { TaskbarFiveHourLabel, TaskbarWeeklyLabel, TaskbarFableLabel, TaskbarCodexLabel, TaskbarMessageLabel })
+        foreach (var label in new[] { TaskbarFiveHourLabel, TaskbarWeeklyLabel, TaskbarFableLabel,
+                     TaskbarCodexFiveLabel, TaskbarCodexLabel, TaskbarMessageLabel })
             label.LineHeight = metrics.LabelLineHeight;
-        foreach (var value in new[] { TaskbarFiveHourValue, TaskbarWeeklyValue, TaskbarFableValue, TaskbarCodexValue, TaskbarMessageValue })
+        foreach (var value in new[] { TaskbarFiveHourValue, TaskbarWeeklyValue, TaskbarFableValue,
+                     TaskbarCodexFiveValue, TaskbarCodexValue, TaskbarMessageValue })
             value.LineHeight = metrics.ValueLineHeight;
         foreach (var (bar, providerVisible) in new[]
                  {
                      (TaskbarFiveHourBar, showClaude), (TaskbarWeeklyBar, showClaude),
-                     (TaskbarFableBar, showClaude), (TaskbarCodexBar, showCodex)
+                     (TaskbarFableBar, showClaude), (TaskbarCodexFiveBar, showCodexFiveHour),
+                     (TaskbarCodexBar, showCodex)
                  })
         {
             bar.Height = metrics.ProgressHeight;

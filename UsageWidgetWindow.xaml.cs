@@ -389,6 +389,12 @@ public partial class UsageWidgetWindow : Window
             WidgetCard.ClearValue(FrameworkElement.ToolTipProperty);
             WidgetCard.ClearValue(System.Windows.Automation.AutomationProperties.NameProperty);
         }
+        if (!_taskbarLayoutActive && theme == WidgetVisualTheme.Orbit)
+        {
+            var orbitMetrics = OrbitSystemMetrics.For(settings.WidgetDensity);
+            WidgetBody.Margin = new Thickness(orbitMetrics.PaddingX, orbitMetrics.PaddingY,
+                orbitMetrics.PaddingX, orbitMetrics.PaddingY);
+        }
         UpdateState(_state);
     }
 
@@ -551,6 +557,25 @@ public partial class UsageWidgetWindow : Window
             CompactMessageText.Text = messageState.Message;
         }
 
+        var orbit = !_taskbarLayoutActive && _settings.WidgetTheme == WidgetVisualTheme.Orbit &&
+                    (showClaude || showCodex);
+        OrbitSystemsPanel.Visibility = orbit ? Visibility.Visible : Visibility.Collapsed;
+        if (orbit)
+        {
+            SmallPanel.Visibility = CompactPanel.Visibility = ComfortablePanel.Visibility = Visibility.Collapsed;
+            OrbitClaudeSystem.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
+            OrbitCodexSystem.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+            OrbitClaudeSystem.Update(OrbitMetric.Claude(state), "CLAUDE", _settings);
+            OrbitCodexSystem.Update(OrbitMetric.Codex(state, false), "CODEX", _settings);
+            var single = layout.EffectiveLayout == WidgetLayout.SingleRow;
+            OrbitSystemsPanel.Orientation = single ? System.Windows.Controls.Orientation.Horizontal
+                : System.Windows.Controls.Orientation.Vertical;
+            OrbitSystemsPanel.Children.Clear();
+            OrbitSystemsPanel.Children.Add(single ? OrbitClaudeSystem : OrbitCodexSystem);
+            OrbitSystemsPanel.Children.Add(single ? OrbitCodexSystem : OrbitClaudeSystem);
+            OrbitClaudeSystem.Margin = new Thickness(0, !single && showClaude && showCodex ? OrbitSystemMetrics.ProviderGap : 0, 0, 0);
+            OrbitCodexSystem.Margin = new Thickness(single && showClaude && showCodex ? OrbitSystemMetrics.ProviderGap : 0, 0, 0, 0);
+        }
         PreservePositionAfterResize(previousWidth, previousHeight);
     }
 

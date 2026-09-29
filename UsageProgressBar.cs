@@ -21,7 +21,10 @@ public enum OrbitBodyKind
     Sun,
     Earth,
     Moon,
-    Saturn
+    Saturn,
+    Mars,
+    Venus,
+    Jupiter
 }
 
 public sealed class UsageProgressBar : System.Windows.Controls.ProgressBar
@@ -257,6 +260,19 @@ internal static class OrbitBodyPainter
                     resolveBrush("OrbitMoonDetailBrush") ?? fallbackTrack,
                     outlinePen);
                 break;
+            case OrbitBodyKind.Mars:
+                DrawMoon(drawingContext, center, radius,
+                    resolveBrush("OrbitMarsBrush") ?? fallbackFill,
+                    resolveBrush("OrbitMarsDetailBrush") ?? fallbackTrack, outlinePen);
+                break;
+            case OrbitBodyKind.Venus:
+            case OrbitBodyKind.Jupiter:
+                var jupiter = body == OrbitBodyKind.Jupiter;
+                DrawBandedPlanet(drawingContext, center, radius,
+                    resolveBrush(jupiter ? "OrbitJupiterBrush" : "OrbitVenusBrush") ?? fallbackFill,
+                    resolveBrush(jupiter ? "OrbitJupiterBandBrush" : "OrbitVenusBandBrush") ?? fallbackTrack,
+                    resolveBrush("OrbitMarsDetailBrush") ?? fallbackTrack, outlinePen, jupiter);
+                break;
             case OrbitBodyKind.Saturn:
                 DrawSaturn(drawingContext, center, radius,
                     resolveBrush("OrbitSaturnBrush") ?? fallbackFill,
@@ -319,6 +335,26 @@ internal static class OrbitBodyPainter
             new WpfPoint(center.X + radius * 0.3, center.Y + radius * 0.24), radius * 0.16, radius * 0.16);
         drawingContext.DrawEllipse(detail, null,
             new WpfPoint(center.X + radius * 0.24, center.Y - radius * 0.34), radius * 0.1, radius * 0.1);
+    }
+
+    private static void DrawBandedPlanet(DrawingContext dc, WpfPoint center, double radius,
+        WpfBrush surface, WpfBrush bands, WpfBrush spot, WpfPen outline, bool jupiter)
+    {
+        dc.DrawEllipse(surface, outline, center, radius, radius);
+        dc.PushClip(new EllipseGeometry(center, radius * 0.92, radius * 0.92));
+        var pen = new WpfPen(bands, Math.Max(0.8, radius * 0.3));
+        foreach (var offset in jupiter ? new[] { -0.5, 0.05, 0.58 } : new[] { -0.38, 0.4 })
+        {
+            var figure = new PathFigure { StartPoint = new WpfPoint(center.X - radius, center.Y + offset * radius) };
+            figure.Segments.Add(new BezierSegment(
+                new WpfPoint(center.X - radius * 0.3, center.Y + (offset + 0.24) * radius),
+                new WpfPoint(center.X + radius * 0.25, center.Y + (offset - 0.24) * radius),
+                new WpfPoint(center.X + radius, center.Y + offset * radius), true));
+            dc.DrawGeometry(null, pen, new PathGeometry([figure]));
+        }
+        if (jupiter) dc.DrawEllipse(spot, null,
+            new WpfPoint(center.X + radius * 0.3, center.Y + radius * 0.32), radius * 0.24, radius * 0.13);
+        dc.Pop();
     }
 
     private static void DrawSaturn(DrawingContext drawingContext, WpfPoint center, double radius,

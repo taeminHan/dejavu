@@ -87,7 +87,7 @@ Important assertions:
 - Shared colors and styles belong in `ThemeResources.xaml`; theme values and style keys belong in `ThemeManager.cs`.
 - A theme should change structure or rendering character, not only its palette.
 - Paper Ink uses the bundled OFL-licensed handwriting font and pencil progress renderer. Widget card ledger underlines are intentionally absent; expanded details may retain record-sheet separators.
-- Orbit uses vector celestial markers on circular progress: Claude 5-hour limits use a cratered moon, Claude weekly limits use Earth, Fable uses a ray-drawn sun, and Codex always uses Saturn. Small mode uses the same mapping with a larger marker while retaining its 30 px ring geometry.
+- Orbit uses Mars (Claude 5-hour), Earth (Claude weekly), Venus (Fable), Jupiter (Codex 5-hour) and Saturn (Codex weekly). The floating widget keeps separate provider systems; only the expanded details view combines them around one sun. See the shared-center contract below.
 - Terminal uses terminal-like progress rendering and angular chrome.
 - All themes must retain visible hover, pressed, disabled, loading, and focus states in settings and dialogs.
 - Widget transparency applies only to chrome and decorative surface brushes. Keep the WPF window, text, icons, borders, and progress geometry at full opacity.
@@ -192,3 +192,45 @@ The taskbar is itself topmost and moves to the front of the topmost band when cl
 The structural layout probe must also measure and arrange the real WPF tree for all themes, densities, layouts, forced and automatically detected provider states, and progress on/off. Every provider-present case must fit inside the calculated window height, every zero/one-provider `TwoRows` case must match its `SingleRow` visible-element geometry, and automatic detection must match the equivalent forced-provider result; a successful compile alone does not satisfy this check.
 
 The probe also docks a synthetic `TaskbarDock` for the same axes at 32, 40 and 48 DIP bands (1512 cases) and must print `Taskbar layout matrix: 1512 checked, 0 clipped, 0 over band, 0 mismatched`. It fails when card content or any label/value (including a `100%` sample) does not fit, when the window is taller than the band or passes the anchor, when a non-taskbar panel is visible, when a hidden provider leaves a gap, when bar visibility disagrees with progress, provider visibility and the 38 DIP threshold, or when geometry differs across themes, densities, layouts or forced/auto-detected services. It then replays the tracker's settle timelines (see `docs/DEVELOPMENT.md`) and must print `Taskbar tracker transitions: 166 checked, 0 mismatched`.
+
+## Orbit shared-center systems
+
+Floating Orbit widgets use `OrbitSystemView` as separate provider systems. Their geometry and
+one-row/two-row behavior are unchanged by the unified details design.
+Claude has Mars (5-hour), Earth (weekly), Venus (Fable) tracks from inner to outer.
+Codex has Jupiter (5-hour) and Saturn (weekly). A floating 5-hour-only Codex value uses Jupiter;
+weekly-only uses Saturn. Floating views retain the existing optional-window policy.
+
+`OrbitDetailsView` composes ONE `OrbitSystemChart` for the visible services, with one central
+sun and inner-to-outer Mars, Earth, Venus, Jupiter, Saturn tracks. This is information order,
+not astronomical distance. The exact same metric objects drive the chart and provider legends.
+Below the chart, Claude and Codex legends remain independently named; credits and expiry belong
+only to the Codex column. One visible service has one legend column and only its own tracks.
+No service means no chart/card. Progress off removes the whole chart and its separator/margins,
+but retains values and reset times. Width is 480 DIP for both providers and 420 otherwise;
+the shared themed scroll viewer retains header/footer access on shorter work areas.
+Switching away from Orbit restores the original provider cards and 420 DIP width.
+
+New Mars/Venus/Jupiter vector artwork lives in `OrbitBodyPainter`; enum values are appended.
+Arc colors have dedicated light/dark semantic resources, not the planet artwork's surface colors.
+The shared chart's `solar` flag controls larger detail markers and the sun; it never changes widget geometry.
+
+`OrbitMetric` normalizes each finite percentage once for text, arc sweep and endpoint angle.
+Zero has a marker at twelve o'clock and no filled arc; 100 has a full circle.
+Unknown/expired values have dotted tracks and no marker; Desktop Fable without a reading retains
+the Code-login explanation. No network calls, credentials, continuous animation or timers belong in these controls.
+
+`OrbitSystemMetrics` owns provider dimensions and outer insets, consumed by both the view and
+`WidgetLayoutCalculator`. Progress off removes the chart column but preserves the legend.
+Two providers have equal-sized system slots; two-row mode puts Codex above Claude.
+Single-provider two-row mode must remain identical to single-row mode.
+The taskbar stays on its independent neutral geometry and never displays the orbital panel.
+
+The additional Orbit probe checks 120 light/dark widget+detail combinations, seven numerical
+boundaries, four Fable availability/expiry states and four endpoint angles. It also checks
+legend text bounds, chart visibility, optional Codex slots and switching back to Modern.
+`SolarDetailsProbe` adds 216 provider/status/progress/light-dark combinations, enforcing one
+shared chart, provider-dependent track/column counts, credit ownership, no-provider collapse,
+scrollable content with an accessible footer at 380 DIP height, and non-Orbit restoration.
+Run only those tests with `DEJAVU_ORBIT_ONLY=1`; set `DEJAVU_ORBIT_PREVIEW` to a temporary
+directory to render synthetic sample PNGs without reading credentials or saving settings.

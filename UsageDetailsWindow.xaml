@@ -10,14 +10,14 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Border x:Name="DetailsHeader" Padding="0,0,0,14"
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
                 <Grid>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,48,0">
                         <Border x:Name="DetailsThemeBadge" Width="34" Height="34" Margin="0,0,11,0"
                                 CornerRadius="{DynamicResource BadgeCornerRadius}"
                                 Background="{DynamicResource AccentSoftBrush}"
@@ -29,7 +29,7 @@
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock x:Name="DetailsBrandText" Text="dejavu" FontSize="17" FontWeight="SemiBold" />
                             <TextBlock x:Name="StatusText" Text="확인 중" Margin="0,3,0,0" FontSize="11"
-                                       Foreground="{DynamicResource MutedTextBrush}" />
+                                       Foreground="{DynamicResource MutedTextBrush}" TextWrapping="Wrap" MaxWidth="270" />
                         </StackPanel>
                     </StackPanel>
                     <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Right"
@@ -37,12 +37,15 @@
                 </Grid>
             </Border>
 
-            <StackPanel x:Name="DetailsBody" Grid.Row="1" Margin="0,14,0,12">
+            <ScrollViewer x:Name="DetailsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="DetailsBody" Margin="0,14,0,12">
+                <local:OrbitDetailsView x:Name="SolarSystem" Visibility="Collapsed" />
                 <Border x:Name="ClaudeCard" Padding="0">
                     <StackPanel x:Name="ClaudeSection">
                         <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock x:Name="ClaudeSectionTitle" Text="Claude" FontSize="13" FontWeight="SemiBold" />
-                            <TextBlock x:Name="ClaudeStatusText" HorizontalAlignment="Right" FontSize="11"
+                            <TextBlock x:Name="ClaudeStatusText" Grid.Column="1" Margin="12,0,0,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" FontSize="11"
                                        Foreground="{DynamicResource MutedTextBrush}" />
                         </Grid>
                         <Grid x:Name="ClaudeFiveRow" Margin="0,0,0,14">
@@ -71,8 +74,9 @@
                 <Border x:Name="CodexCard" Padding="0">
                     <StackPanel x:Name="CodexSection">
                         <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <TextBlock x:Name="CodexSectionTitle" Text="Codex" FontSize="13" FontWeight="SemiBold" />
-                            <TextBlock x:Name="CodexStatusText" HorizontalAlignment="Right" FontSize="11"
+                            <TextBlock x:Name="CodexStatusText" Grid.Column="1" Margin="12,0,0,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" FontSize="11"
                                        Foreground="{DynamicResource MutedTextBrush}" />
                         </Grid>
                         <Grid x:Name="CodexFiveRow" Margin="0,0,0,14">
@@ -96,13 +100,15 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </ScrollViewer>
 
             <Border x:Name="DetailsFooter" Grid.Row="2" Padding="0,12,0,0"
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
                 <Grid>
-                    <TextBlock x:Name="FooterText" VerticalAlignment="Center" FontSize="10"
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock x:Name="FooterText" TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Center" FontSize="10"
                                Foreground="{DynamicResource MutedTextBrush}" Text="마지막 값을 표시합니다" />
-                    <Button x:Name="ActionButton" Style="{StaticResource AppButton}" HorizontalAlignment="Right"
+                    <Button x:Name="ActionButton" Grid.Column="1" Style="{StaticResource AppButton}" HorizontalAlignment="Right"
                             Content="지금 새로고침" Click="OnActionClick" />
                 </Grid>
             </Border>

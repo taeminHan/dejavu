@@ -35,6 +35,15 @@ internal static class ThemeManager
         var widgetMutedText = Blend(palette.WidgetMutedText, palette.WidgetText, legibilityStrength * 0.82);
         var widgetMetricText = Blend(palette.WidgetAccent, palette.WidgetText, legibilityStrength * 0.62);
 
+        // Orbital arcs need contrast against their surface; body/ring artwork
+        // keeps its own colors and must not be reused as a light-theme progress stroke.
+        SetBrush("OrbitMarsProgressBrush", light ? "#B54A2C" : "#FF9875");
+        SetBrush("OrbitVenusProgressBrush", light ? "#956514" : "#EAC16A");
+        SetBrush("OrbitJupiterProgressBrush", light ? "#966039" : "#DCAA7E");
+        SetBrush("OrbitMoonProgressBrush", light ? "#526781" : "#B4C4D9");
+        SetBrush("OrbitEarthProgressBrush", light ? "#1777C9" : "#65B5FF");
+        SetBrush("OrbitSunProgressBrush", light ? "#A96A00" : "#F6B93B");
+        SetBrush("OrbitSaturnProgressBrush", light ? "#966828" : "#E5BF65");
         SetBrush("BackgroundBrush", palette.Background);
         SetBrush("SurfaceBrush", palette.Surface);
         SetBrush("SurfaceRaisedBrush", palette.SurfaceRaised);

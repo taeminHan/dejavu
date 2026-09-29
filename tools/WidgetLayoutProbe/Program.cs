@@ -5,12 +5,13 @@ using System.Windows.Media;
 using System.Windows.Shell;
 using System.Windows.Threading;
 
-internal static class Program
+internal static partial class Program
 {
     private const double HeightTolerance = 0.5;
     private const double IdentityTolerance = 0.01;
     private static readonly string[] GeometryElementNames =
     [
+        "OrbitSystemsPanel", "OrbitClaudeSystem", "OrbitCodexSystem",
         "SmallPanel", "SmallProviderPanel", "SmallClaudePanel", "SmallCodexPanel", "SmallCodexFivePanel",
         "CompactPanel", "CompactFiveCard", "CompactWeeklyCard", "CompactFableCard",
         "CompactCodexFiveCard", "CompactCodexCard",
@@ -30,7 +31,7 @@ internal static class Program
     private static readonly int[] TaskbarBandHeights = [32, 40, 48];
     private static readonly string[] TaskbarLinearPanelNames =
     [
-        "SmallPanel", "CompactPanel", "ComfortablePanel", "CompactMessagePanel", "ThemeTextureOverlay"
+        "OrbitSystemsPanel", "SmallPanel", "CompactPanel", "ComfortablePanel", "CompactMessagePanel", "ThemeTextureOverlay"
     ];
     private static readonly TaskbarCellNames[] TaskbarCells =
     [
@@ -94,6 +95,8 @@ internal static class Program
                           ?? throw new MissingMethodException("SettingsWindow.UpdateWindowFrameAppearance");
         var stateFactory = new StateFactory(statusType, limitType, snapshotType, sourceType, codexSnapshotType,
             stateType);
+        if (Environment.GetEnvironmentVariable("DEJAVU_ORBIT_ONLY") == "1")
+            return RunOrbitProbe(assembly, stateFactory) == 0 ? 0 : 1;
         var services = new[]
         {
             new ServiceScenario("ClaudeOnly", "ClaudeOnly", true, false),
@@ -561,7 +564,8 @@ internal static class Program
                           $"{taskbarOverBand.Count} over band, {taskbarMismatches.Count} mismatched");
         Console.WriteLine($"Taskbar tracker transitions: {tracker.Count} checked, {tracker.Failures.Count} mismatched");
         Console.WriteLine($"Codex window variants: {codexVariantCount} checked, {codexVariantFailures.Count} mismatched");
-        return clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
+        var orbitFailures = RunOrbitProbe(assembly, stateFactory);
+        return orbitFailures == 0 && clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
                taskbarClipping.Count == 0 && taskbarOverBand.Count == 0 && taskbarMismatches.Count == 0 &&
                tracker.Failures.Count == 0 && codexVariantFailures.Count == 0
             ? 0
@@ -1125,7 +1129,13 @@ internal static class Program
         internal bool HasExpectedProviderSplit(LayoutSnapshot twoRows, bool small) =>
             Width > twoRows.Width + HeightTolerance &&
             Height + HeightTolerance < twoRows.Height &&
-            (small
+            (IsVisible("OrbitSystemsPanel")
+                ? twoRows.IsVisible("OrbitSystemsPanel") &&
+                  IsVisible("OrbitClaudeSystem") && IsVisible("OrbitCodexSystem") &&
+                  twoRows.IsVisible("OrbitClaudeSystem") && twoRows.IsVisible("OrbitCodexSystem") &&
+                  Left("OrbitClaudeSystem") < Left("OrbitCodexSystem") &&
+                  twoRows.Top("OrbitCodexSystem") < twoRows.Top("OrbitClaudeSystem")
+                : small
                 ? IsVisible("SmallPanel") && twoRows.IsVisible("SmallPanel") &&
                   IsVisible("SmallClaudePanel") && IsVisible("SmallCodexPanel") &&
                   twoRows.IsVisible("SmallClaudePanel") && twoRows.IsVisible("SmallCodexPanel") &&

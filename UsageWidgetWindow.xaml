@@ -34,6 +34,10 @@
                 </Rectangle.Fill>
             </Rectangle>
             <Grid x:Name="WidgetBody">
+            <StackPanel x:Name="OrbitSystemsPanel" Orientation="Horizontal" Visibility="Collapsed">
+                <local:OrbitSystemView x:Name="OrbitClaudeSystem" />
+                <local:OrbitSystemView x:Name="OrbitCodexSystem" />
+            </StackPanel>
             <!-- Small: every metric uses the same 48 px cell and the same 30 px ring. -->
             <Grid x:Name="SmallPanel" Visibility="Collapsed">
                 <StackPanel x:Name="SmallProviderPanel" Orientation="Horizontal">

@@ -160,6 +160,15 @@ internal static class WidgetLayoutCalculator
         if (providerCount == 0)
             return (small ? 250 : comfortable ? 360 : 300, small ? 34 : comfortable ? 48 : 40);
 
+        if (request.Theme == WidgetVisualTheme.Orbit)
+        {
+            var orbit = OrbitSystemMetrics.For(request.Density);
+            var w = orbit.Width(request.ShowProgressBars);
+            var h = orbit.Height(request.ShowProgressBars);
+            return (2 * orbit.PaddingX + 2 + (singleRow ? providerCount * w + (providerCount - 1) * OrbitSystemMetrics.ProviderGap : w),
+                2 * orbit.PaddingY + 2 + (singleRow ? h : providerCount * h + (providerCount - 1) * 12));
+        }
+
         if (small)
         {
             var width = request.ShowClaude ? 168 : 72;

@@ -787,4 +787,31 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <SolidColorBrush x:Key="OrbitMoonProgressBrush" Color="#B4C4D9" />
+    <SolidColorBrush x:Key="OrbitEarthProgressBrush" Color="#65B5FF" />
+    <SolidColorBrush x:Key="OrbitSunProgressBrush" Color="#F6B93B" />
+    <SolidColorBrush x:Key="OrbitSaturnProgressBrush" Color="#E5BF65" />
+    <SolidColorBrush x:Key="OrbitMarsBrush" Color="#E68155" />
+    <SolidColorBrush x:Key="OrbitMarsDetailBrush" Color="#A94632" />
+    <SolidColorBrush x:Key="OrbitVenusBrush" Color="#F6DFAC" />
+    <SolidColorBrush x:Key="OrbitVenusBandBrush" Color="#BA8B3C" />
+    <SolidColorBrush x:Key="OrbitJupiterBrush" Color="#F0D4AB" />
+    <SolidColorBrush x:Key="OrbitJupiterBandBrush" Color="#AC7046" />
+    <SolidColorBrush x:Key="OrbitMarsProgressBrush" Color="#FF9875" />
+    <SolidColorBrush x:Key="OrbitVenusProgressBrush" Color="#EAC16A" />
+    <SolidColorBrush x:Key="OrbitJupiterProgressBrush" Color="#DCAA7E" />
+    <Style x:Key="OrbitSystemCard" TargetType="Border" BasedOn="{StaticResource CardBorder}">
+        <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+    <!-- Shared typography for the Orbit system and its numeric legend. -->
+    <Style x:Key="OrbitLegendText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+    </Style>
+    <Style x:Key="OrbitProviderText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style x:Key="OrbitValueText" TargetType="TextBlock" BasedOn="{StaticResource OrbitProviderText}" />
 </ResourceDictionary>

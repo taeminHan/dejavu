@@ -37,8 +37,12 @@ public partial class UsageDetailsWindow : Window
                  })
             bar.Style = progressStyle;
         var (showClaude, showCodex) = settings.ResolveServices(state);
-        ClaudeCard.Visibility = showClaude ? Visibility.Visible : Visibility.Collapsed;
-        CodexCard.Visibility = showCodex ? Visibility.Visible : Visibility.Collapsed;
+        var orbit = settings.WidgetTheme == WidgetVisualTheme.Orbit;
+        Width = orbit && showClaude && showCodex ? 480 : 420;
+        SolarSystem.Visibility = orbit && (showClaude || showCodex) ? Visibility.Visible : Visibility.Collapsed;
+        if (orbit) SolarSystem.Update(state, settings);
+        ClaudeCard.Visibility = showClaude && !orbit ? Visibility.Visible : Visibility.Collapsed;
+        CodexCard.Visibility = showCodex && !orbit ? Visibility.Visible : Visibility.Collapsed;
         ServiceDivider.Visibility = showClaude && showCodex &&
                                     settings.WidgetTheme is not (WidgetVisualTheme.FluentGlass or WidgetVisualTheme.Orbit)
             ? Visibility.Visible : Visibility.Collapsed;
@@ -169,10 +173,10 @@ public partial class UsageDetailsWindow : Window
                 DetailsThemeBadge.Width = DetailsThemeBadge.Height = 42;
                 DetailsThemeBadge.CornerRadius = new CornerRadius(21);
                 DetailsBrandText.Text = "DEJAVU ORBIT";
-                ClaudeSectionTitle.Text = "CLAUDE CLUSTER";
-                CodexSectionTitle.Text = "CODEX CLUSTER";
-                ConfigureSectionCard(ClaudeCard, 18, new Thickness(16), new Thickness(0, 0, 0, 12), "RaisedSurfaceBrush");
-                ConfigureSectionCard(CodexCard, 18, new Thickness(16), new Thickness(0), "RaisedSurfaceBrush");
+                ClaudeSectionTitle.Text = "CLAUDE SYSTEM";
+                CodexSectionTitle.Text = "CODEX SYSTEM";
+                ConfigureSectionCard(ClaudeCard, 18, new Thickness(16), new Thickness(0, 0, 0, 12), "SurfaceRaisedBrush");
+                ConfigureSectionCard(CodexCard, 18, new Thickness(16), new Thickness(0), "SurfaceRaisedBrush");
                 ConfigureSectionCard(CreditsCard, 14, new Thickness(12, 10, 12, 10), new Thickness(0), "SurfaceBrush");
                 ServiceDivider.Visibility = Visibility.Collapsed;
                 break;
@@ -275,6 +279,7 @@ public partial class UsageDetailsWindow : Window
         var work = new System.Windows.Rect(
             toDip.Transform(new System.Windows.Point(workPixels.Left, workPixels.Top)),
             toDip.Transform(new System.Windows.Point(workPixels.Right, workPixels.Bottom)));
+        MaxHeight = Math.Max(MinHeight, Math.Min(680, work.Height - 16));
         Left = Math.Clamp(widget.Left + widget.Width - Width, work.Left + 8, Math.Max(work.Left + 8, work.Right - Width - 8));
         // A WPF Window cannot be measured safely before its native HWND exists.
         // .NET 10 treats that path as an invariant violation and terminates the

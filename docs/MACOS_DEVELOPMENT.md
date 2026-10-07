@@ -1,5 +1,7 @@
 # Dejavu macOS development guide
 
+> 2026-10-02 범위 갱신: Mac 구현·검증은 추후 Mac에서 별도로 진행합니다. 아래는 기존 개발/배포 참고 자료이며 이번 문서 작업에서 도구 버전이나 실행 결과를 새로 검증하지 않았습니다. 재개 시 [macos/AGENTS.md](../macos/AGENTS.md)와 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)를 먼저 읽고 실제 OS/SDK에 맞춰 확인합니다. 서명·배포 예시는 실행 승인이 아닙니다.
+
 macOS 앱은 기존 Windows WPF 앱을 변경하지 않는 별도 SwiftUI/AppKit 제품이다. 구현 범위와 개인정보 경계는 `MACOS_SUPPORT_PLAN.md`, UI 불변조건은 `WIDGET_UI.md`, 취소·저장 원칙은 `STABILITY.md`를 따른다.
 
 ## Prerequisites
@@ -126,3 +128,28 @@ Widget extension에서는 provider process, Keychain과 네트워크를 사용�
 ## Local settings
 
 macOS 설정은 `~/Library/Application Support/dejavu/settings.json`에 저장한다. 메뉴 막대의 Claude 지표 선택, Codex 단일 퍼센트 표시 여부와 플로팅 위젯 표시 여부도 같은 원자적 설정 파일을 사용한다. 위젯을 꺼도 `NSStatusItem`은 남으며, 저장된 꺼짐 상태로 다시 시작할 때 플로팅 패널을 먼저 표시하지 않는다.
+
+## Deferred issue: Claude is hidden after connecting
+
+기록일: 2026-10-07. 사용자 보고는 2026-10-06 Mac 실행에서 Claude Code를 연결했는데 Codex만 표시됐다는 내용이다. 설치한 Dejavu/Claude Code 버전, macOS 버전, 연결 이후 실제 응답 수신 여부는 아직 확인되지 않았다. Windows에서 기존 Mac 소스만 검토했으며, 원인 확정이나 native Mac 재현/수정/빌드 검증은 하지 않았다. Mac에서 후속 작업할 때 이 항목을 먼저 확인한다.
+
+### Confirmed code behavior, not a confirmed incident cause
+
+- `AppModel.connectClaudeStatusLine()`의 `.connected`는 상태 표시줄 설정과 bridge 설치가 성공했다는 뜻이다. 로그인 유효성이나 첫 사용량 snapshot 수신을 확인하지 않는다.
+- 기본 `ClaudeCombinedUsageProvider`는 확장 접근이 꺼져 있으면 `ClaudeStatusSnapshotProvider`만 사용한다. Claude Code 로그인 자체를 설치/연결 감지 근거로 삼지 않는다.
+- 공식 status-line `rate_limits`는 지원 계정에서 세션의 첫 API 응답 이후 제공된다. 로그인 또는 수집기 연결만으로 사용량이 생성된다고 안내하면 안 된다. 창별 값이 없을 수 있으며, 현재 bridge는 gateway의 `spend_limit`가 아닌 `five_hour`/`seven_day`만 읽는다. 참고: [Claude Code status-line fields](https://code.claude.com/docs/en/statusline).
+- snapshot이 없으면 `UsageProviderAdapters.swift`는 이를 `.loginRequired`로 변환한다. 값이 없거나 만료된 snapshot은 unavailable이 될 수 있다. 따라서 데이터 수신 대기와 실제 로그인 실패가 UI에서 혼동될 수 있다.
+- `ServiceVisibilityResolver`의 자동 감지는 snapshot 또는 `.ready`를 기준으로 한다. Codex만 준비된 상태에서는 Claude 항목이 숨겨진다. 서비스가 숨겨졌다는 사실만으로 Claude Code 미설치나 로그아웃을 확정할 수 없다.
+- `AppModel.localPaths()`의 연결 대상은 `~/.claude/settings.json`으로 고정돼 있다. 다른 `CLAUDE_CONFIG_DIR` 또는 project/local/managed 설정이 실제 status line을 정하면 Dejavu가 설치한 수집기가 실행되지 않을 가능성이 있다. 이는 확인할 가설이지 이번 사용자 환경의 확정 원인이 아니다.
+- 선택적 Fable 확장 접근은 별도 경로다. `MacOSClaudeKeychainCredentialReader`는 고정 service `Claude Code-credentials`를 읽는다. 접근 승인/거부, custom profile 및 파일 저장 fallback 호환성은 기본 status-line 수신과 분리해서 확인해야 한다. 문제 해결을 위해 이 옵션을 자동 활성화하거나 credential을 복사하지 않는다.
+
+### Mac follow-up checklist
+
+1. 설치 앱과 소스의 정확한 Dejavu 버전/커밋, Claude Code 버전, macOS 버전, 서비스 표시 설정과 메뉴 막대 지표 선택을 기록한다. 이번 보고를 특정 릴리스의 재현 성공으로 기재하지 않는다.
+2. 연결 결과를 설정 설치 여부와 데이터 수신 여부로 나눠 확인한다. bridge가 설치됐는지, Claude Code가 실제 사용하는 설정과 수집기 설정이 일치하는지 확인하되 설정 전체나 기존 명령을 공개 로그에 출력하지 않는다.
+3. 연결 뒤 새 Claude Code 세션에서 사용자가 평소 작업으로 받은 응답이 있는지 확인한다. 진단을 위해 모델 요청을 자동 생성하거나 사용량을 소비하지 않는다. 최초 응답 전/후, CLI 재시작 전/후, 다른 설정 폴더와 status-line 우선순위를 각각 구분한다.
+4. Dejavu의 `claude-status.json` 존재/수정 시각, schema 유효 여부, 지원 사용량 창 존재 여부와 만료 판정만 확인한다. credential, account id, 대화 또는 원본 status-line payload를 수집하거나 출력하지 않는다.
+5. 자동 감지와 강제 Claude 표시를 비교해 수집 실패와 표시 정책을 분리한다. Codex 정상 여부를 Claude 인증 정상의 근거로 사용하지 않는다.
+6. 후속 수정 시 미연결, 설정 연결됨/수신 대기, 사용량 수신됨, 오래된 데이터, 권한 거부, 실제 로그인 필요를 구분한다. 연결 후 수신 대기 상태를 숨기지 않는 UX와 원인별 안내를 검토한다. 구현과 native 검증은 Mac에서 별도 승인 후 진행한다.
+
+Status: deferred. 이번 작업은 문제 기록만 추가한다. Mac provider, 인증/설정 또는 배포 파일은 변경하지 않는다.

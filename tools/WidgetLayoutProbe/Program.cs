@@ -97,6 +97,10 @@ internal static partial class Program
             stateType);
         if (Environment.GetEnvironmentVariable("DEJAVU_ORBIT_ONLY") == "1")
             return RunOrbitProbe(assembly, stateFactory) == 0 ? 0 : 1;
+        if (Environment.GetEnvironmentVariable("DEJAVU_SETTINGS_ONLY") == "1")
+            return RunSettingsRedesignProbe(assembly) == 0 ? 0 : 1;
+        if (Environment.GetEnvironmentVariable("DEJAVU_RETRO_ONLY") == "1")
+            return RunRetroProbe(assembly, stateFactory) == 0 ? 0 : 1;
         var services = new[]
         {
             new ServiceScenario("ClaudeOnly", "ClaudeOnly", true, false),
@@ -565,7 +569,8 @@ internal static partial class Program
         Console.WriteLine($"Taskbar tracker transitions: {tracker.Count} checked, {tracker.Failures.Count} mismatched");
         Console.WriteLine($"Codex window variants: {codexVariantCount} checked, {codexVariantFailures.Count} mismatched");
         var orbitFailures = RunOrbitProbe(assembly, stateFactory);
-        return orbitFailures == 0 && clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
+        var retroFailures = RunRetroProbe(assembly, stateFactory);
+        return retroFailures == 0 && orbitFailures == 0 && clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
                taskbarClipping.Count == 0 && taskbarOverBand.Count == 0 && taskbarMismatches.Count == 0 &&
                tracker.Failures.Count == 0 && codexVariantFailures.Count == 0
             ? 0

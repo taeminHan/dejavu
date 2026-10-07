@@ -103,10 +103,10 @@ public partial class SettingsWindow : Window
     {
         var wasVisible = IsVisible;
         LoadValues();
-        // A fresh open starts from the prompt. Re-activating an open window keeps a check's progress
+        // A fresh open starts from the unchecked state. Re-activating an open window keeps a check's progress
         // or result, and so does reopening while a manual check is still running.
         if (!wasVisible && !_updateCheckInFlight)
-            SetUpdateCheckResult("업데이트 확인 버튼을 눌러 현재 상태를 확인하세요.");
+            SetUpdateCheckResult("아직 확인하지 않았습니다.");
         if (!IsVisible) Show();
         WindowState = WindowState.Normal;
         Activate();
@@ -340,21 +340,11 @@ public partial class SettingsWindow : Window
         }
         SaveStateText.Text = saved ? "저장됨" : "저장 실패";
         SaveStateText.SetResourceReference(TextBlock.ForegroundProperty, saved ? "MutedTextBrush" : "DangerBrush");
-        SettingsSubtitleText.Text = saved ? ThemeSubtitle(_settings.WidgetTheme)
+        SettingsSubtitleText.Text = saved ? "설정은 자동으로 저장됩니다"
             : "설정을 저장하지 못했습니다 · 폴더 권한과 디스크 상태를 확인해 주세요";
         UpdateStatusLabels();
         SettingsChanged?.Invoke(this, EventArgs.Empty);
     }
-
-    private static string ThemeSubtitle(WidgetVisualTheme theme) => theme switch
-    {
-        WidgetVisualTheme.RetroNight => "SYSTEM MENU · 변경 즉시 저장",
-        WidgetVisualTheme.FluentGlass => "Windows 작업 공간에 맞춘 사용량 패널",
-        WidgetVisualTheme.TerminalMono => "$ autosave = true",
-        WidgetVisualTheme.Orbit => "Claude · Codex telemetry interface",
-        WidgetVisualTheme.PaperInk => "변경 내용은 자동으로 기록됩니다",
-        _ => "설정은 자동으로 저장됩니다"
-    };
 
     private void UpdateStatusLabels()
     {
@@ -418,8 +408,10 @@ public partial class SettingsWindow : Window
 
     private void OnNavigationChanged(object sender, RoutedEventArgs e)
     {
-        if (AppearancePanel is null) return;
+        if (DisplayPanel is null || ConnectionsPanel is null || AppearancePanel is null) return;
+        DisplayPanel.Visibility = DisplayNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         AppearancePanel.Visibility = AppearanceNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        ConnectionsPanel.Visibility = ConnectionsNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         BehaviorPanel.Visibility = BehaviorNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         UpdatePanel.Visibility = UpdateNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         PrivacyPanel.Visibility = PrivacyNav.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
@@ -596,8 +588,8 @@ public partial class SettingsWindow : Window
             WidgetVisualTheme.FluentGlass => "반투명 레이어와 부드러운 캡슐형 컨트롤을 사용합니다",
             WidgetVisualTheme.TerminalMono => "고정폭 정렬과 터미널형 선·게이지를 사용합니다",
             WidgetVisualTheme.Orbit => "원형 계기와 선명한 궤도형 상태 표시를 사용합니다",
-            WidgetVisualTheme.PaperInk => "저자극 종이 표면과 잉크형 진행 표시를 사용합니다",
-            _ => "Windows에 자연스러운 균형 잡힌 기본 디자인입니다"
+            WidgetVisualTheme.PaperInk => "종이 질감과 색연필형 그래프를 사용합니다",
+            _ => "기본 테마입니다"
         };
     }
 
@@ -605,69 +597,18 @@ public partial class SettingsWindow : Window
     {
         if (SettingsShell is null) return;
         var theme = _settings.WidgetTheme;
-        SettingsTitleRow.Height = new GridLength(theme switch
-        {
-            WidgetVisualTheme.RetroNight => 58,
-            WidgetVisualTheme.FluentGlass => 70,
-            WidgetVisualTheme.TerminalMono => 54,
-            WidgetVisualTheme.Orbit => 68,
-            WidgetVisualTheme.PaperInk => 62,
-            _ => 64
-        });
-        SettingsSidebarColumn.Width = new GridLength(theme switch
-        {
-            WidgetVisualTheme.TerminalMono => 208,
-            WidgetVisualTheme.Orbit => 190,
-            WidgetVisualTheme.PaperInk => 164,
-            _ => 176
-        });
+        // Navigation meaning and hit targets stay stable across themes. Themes
+        // still own surface/row treatment, but must not replace icons with text glyphs.
+        SettingsTitleRow.Height = new GridLength(68);
+        SettingsSidebarColumn.Width = new GridLength(184);
         SettingsTextureOverlay.Visibility = theme is WidgetVisualTheme.RetroNight
             or WidgetVisualTheme.TerminalMono or WidgetVisualTheme.PaperInk
             ? Visibility.Visible : Visibility.Collapsed;
         SettingsTextureOverlay.Opacity = theme == WidgetVisualTheme.TerminalMono ? 0.22
             : theme == WidgetVisualTheme.PaperInk ? 0.16 : 0.12;
 
-        AppearanceNav.Content = theme switch
-        {
-            WidgetVisualTheme.RetroNight => "▣  모양",
-            WidgetVisualTheme.TerminalMono => "[01] APPEARANCE",
-            WidgetVisualTheme.Orbit => "◎  모양",
-            WidgetVisualTheme.PaperInk => "I.  모양",
-            _ => "모양"
-        };
-        BehaviorNav.Content = theme switch
-        {
-            WidgetVisualTheme.RetroNight => "▶  동작",
-            WidgetVisualTheme.TerminalMono => "[02] BEHAVIOR",
-            WidgetVisualTheme.Orbit => "◌  동작",
-            WidgetVisualTheme.PaperInk => "II.  동작",
-            _ => "동작"
-        };
-        UpdateNav.Content = theme switch
-        {
-            WidgetVisualTheme.RetroNight => "↑  업데이트",
-            WidgetVisualTheme.TerminalMono => "[03] UPDATE",
-            WidgetVisualTheme.Orbit => "↥  업데이트",
-            WidgetVisualTheme.PaperInk => "III.  업데이트",
-            _ => "업데이트"
-        };
-        PrivacyNav.Content = theme switch
-        {
-            WidgetVisualTheme.RetroNight => "◆  데이터 및 정보",
-            WidgetVisualTheme.TerminalMono => "[04] DATA & INFO",
-            WidgetVisualTheme.Orbit => "◍  데이터 및 정보",
-            WidgetVisualTheme.PaperInk => "IV.  데이터 및 정보",
-            _ => "데이터 및 정보"
-        };
-        (SettingsBrandText.Text, SettingsSubtitleText.Text) = theme switch
-        {
-            WidgetVisualTheme.RetroNight => ("DEJAVU / CONFIG", "SYSTEM MENU · 변경 즉시 저장"),
-            WidgetVisualTheme.FluentGlass => ("dejavu glass", "Windows 작업 공간에 맞춘 사용량 패널"),
-            WidgetVisualTheme.TerminalMono => ("dejavu.config", "$ autosave = true"),
-            WidgetVisualTheme.Orbit => ("DEJAVU CONTROL", "Claude · Codex telemetry interface"),
-            WidgetVisualTheme.PaperInk => ("dejavu 설정 기록", "변경 내용은 자동으로 기록됩니다"),
-            _ => ("dejavu", "설정은 자동으로 저장됩니다")
-        };
+        SettingsBrandText.Text = "Dejavu";
+        SettingsSubtitleText.Text = "설정은 자동으로 저장됩니다";
 
         SettingsTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty,
             theme is WidgetVisualTheme.TerminalMono or WidgetVisualTheme.PaperInk ? "BackgroundBrush" : "SurfaceBrush");
@@ -689,7 +630,7 @@ public partial class SettingsWindow : Window
             WidgetVisualTheme.PaperInk => new Thickness(34, 26, 24, 26),
             _ => new Thickness(28, 24, 28, 24)
         };
-        foreach (var panel in new[] { AppearancePanel, BehaviorPanel, UpdatePanel, PrivacyPanel })
+        foreach (var panel in new[] { DisplayPanel, AppearancePanel, ConnectionsPanel, BehaviorPanel, UpdatePanel, PrivacyPanel })
             panel.Padding = contentPadding;
 
         var rowStyle = TryFindResource("SettingRow") as Style;

@@ -110,7 +110,39 @@ For lifecycle changes, exercise first start, second-instance activation, forced 
 
 ## Manual data-path tests
 
+### Native Settings redesign probe
+
+Run the focused Settings matrix without starting the controller, saving settings or querying providers:
+
+```powershell
+$env:DEJAVU_SETTINGS_ONLY = '1'
+try {
+    dotnet run --project .\tools\WidgetLayoutProbe\WidgetLayoutProbe.csproj -c Release
+} finally {
+    Remove-Item Env:DEJAVU_SETTINGS_ONLY
+}
+```
+
+Expected: `Settings redesign matrix: 144 checked, 0 invalid` and 48 inline update states. The matrix arranges real WPF trees at default/minimum size, checks all six navigation destinations, row overlap, scrolling width, picker label bounds/accessibility names and loading/results. The ordinary probe still checks native window frames, widgets, Orbit and taskbar behavior independently.
+
+Optional `DEJAVU_SETTINGS_PREVIEW=<temporary directory>` writes synthetic WPF PNGs; unset it after the run. These are not installed-app screenshots or physical-DPI/keyboard acceptance. See [WINDOWS_REDESIGN.md](WINDOWS_REDESIGN.md) for current scope and remaining manual checks.
+
+### Retro pixel rendering
+
+For native Retro rendering, run the ordinary full probe or set `DEJAVU_RETRO_ONLY=1` for
+`Retro pixel matrix: 144 widget/detail states, 0 failures`. Optional `DEJAVU_RETRO_PREVIEW`
+writes sample WPF PNGs. Unset these variables after the test. Font regeneration and licensing
+are documented in [README-DejavuPixel.md](../assets/Fonts/README-DejavuPixel.md).
+
 ### Claude
+
+Run the pure production-parser regression probe before changing Claude response mapping:
+
+```powershell
+dotnet run --project .\tools\ClaudeUsageParserProbe\ClaudeUsageParserProbe.csproj -c Release
+```
+
+Expected: `Claude usage parser: 20 checked, 0 failures`. It uses synthetic JSON only and does not launch the app/controller, read credentials, history or settings, or make HTTP requests. Cases cover legacy/modern Fable, zero usage, reset timestamps, precedence, absent/null Fable with Opus/Sonnet present, preserved 5-hour/weekly values and unchanged malformed-response rejection. Other model limits must never be relabeled as Fable. This is parser evidence, not live provider or UI acceptance.
 
 1. Claude Code credential available: verify 5-hour, weekly and account-provided Fable values.
 2. `DEJAVU_CLAUDE_SOURCE=desktop`: verify recent Desktop 5-hour/weekly values and unavailable Fable/reset data.

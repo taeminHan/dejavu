@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Dejavu — 모순의 프레임</title>
+  <!-- Vector interpretation of the selected concept, without raster shading. -->
+  <path fill="#203E2E" d="M8 8h40v9H17z"/>
+  <path fill="#AFB99E" d="M8 8l9 9v30l-9-9zM48 8l9 9h-9z"/>
+  <path fill="#203E2E" d="M48 17h9v38l-9-9z"/>
+  <path fill="#203E2E" d="M17 46h31l9 9H17z"/>
+  <path fill="#AFB99E" d="M8 38l9 9v8l-9-9z"/>
+</svg>

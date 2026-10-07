@@ -92,6 +92,10 @@ public partial class UsageDetailsWindow : Window
 
     private void ApplyThemeStructure(WidgetVisualTheme theme)
     {
+        DetailsCard.ClearValue(System.Windows.Controls.Border.CornerRadiusProperty);
+        DetailsCard.ClearValue(System.Windows.Controls.Border.BorderThicknessProperty);
+        DetailsCard.ClearValue(System.Windows.Controls.Border.BorderBrushProperty);
+        RetroDetailsFrame.Visibility = theme == WidgetVisualTheme.RetroNight ? Visibility.Visible : Visibility.Collapsed;
         DetailsCard.Padding = new Thickness(18);
         DetailsHeader.Padding = new Thickness(0, 0, 0, 14);
         DetailsHeader.BorderThickness = new Thickness(0, 0, 0, 1);
@@ -116,17 +120,20 @@ public partial class UsageDetailsWindow : Window
         switch (theme)
         {
             case WidgetVisualTheme.RetroNight:
+                DetailsCard.CornerRadius = new CornerRadius(0);
+                DetailsCard.BorderThickness = new Thickness(2);
+                DetailsCard.BorderBrush = MediaBrushes.Transparent;
                 DetailsCard.Padding = new Thickness(12);
                 DetailsHeader.Padding = new Thickness(0, 0, 0, 10);
                 DetailsBody.Margin = new Thickness(0, 10, 0, 10);
                 DetailsThemeBadge.Width = DetailsThemeBadge.Height = 30;
                 DetailsThemeBadge.CornerRadius = new CornerRadius(0);
-                DetailsBrandText.Text = "DEJAVU // STATUS";
-                ClaudeSectionTitle.Text = "CLAUDE STATUS";
-                CodexSectionTitle.Text = "CODEX STATUS";
+                DetailsBrandText.Text = "DEJAVU";
+                ClaudeSectionTitle.Text = "CLAUDE";
+                CodexSectionTitle.Text = "CODEX";
                 ConfigureSectionCard(ClaudeCard, 0, new Thickness(10), new Thickness(0), "SurfaceBrush");
                 ConfigureSectionCard(CodexCard, 0, new Thickness(10), new Thickness(0), "SurfaceBrush");
-                ConfigureSectionCard(CreditsCard, 0, new Thickness(10, 8, 10, 8), new Thickness(0), "RaisedSurfaceBrush");
+                ConfigureSectionCard(CreditsCard, 0, new Thickness(10, 8, 10, 8), new Thickness(0), "SurfaceRaisedBrush");
                 StyleRowsAsCells(new Thickness(7, 5, 7, 5), 1);
                 ServiceDivider.Height = 2;
                 ServiceDivider.Margin = new Thickness(0, 8, 0, 8);

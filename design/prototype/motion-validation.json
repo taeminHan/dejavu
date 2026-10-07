@@ -1,0 +1,584 @@
+{
+  "opening": {
+    "graphs": [
+      {
+        "clip": "none",
+        "type": "usage-graph graph-native",
+        "value": "8",
+        "width": 29.359375
+      },
+      {
+        "clip": "none",
+        "type": "usage-graph graph-native",
+        "value": "24",
+        "width": 88.078125
+      },
+      {
+        "clip": "none",
+        "type": "usage-graph graph-native",
+        "value": "3",
+        "width": 11
+      },
+      {
+        "clip": "none",
+        "type": "usage-graph graph-native",
+        "value": "35",
+        "width": 128.4375
+      },
+      {
+        "clip": "none",
+        "type": "usage-graph graph-native",
+        "value": "62",
+        "width": 227.53125
+      }
+    ],
+    "open": true,
+    "values": [
+      "8",
+      "24",
+      "3",
+      "35",
+      "62"
+    ],
+    "visual": "native"
+  },
+  "early": [
+    {
+      "clip": "inset(0px 5.08644% 0px 0px)",
+      "width": 29.359375
+    },
+    {
+      "clip": "inset(0px 7.08738% 0px 0px)",
+      "width": 88.078125
+    },
+    {
+      "clip": "inset(0px 9.71447% 0px 0px)",
+      "width": 11
+    },
+    {
+      "clip": "inset(0px 13.1967% 0px 0px)",
+      "width": 128.4375
+    },
+    {
+      "clip": "inset(0px 17.8908% 0px 0px)",
+      "width": 227.53125
+    }
+  ],
+  "reduced": {
+    "clips": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none"
+    ],
+    "reduced": "true"
+  },
+  "escape": null,
+  "disabled": {
+    "clips": [
+      "none",
+      "none",
+      "none",
+      "none",
+      "none"
+    ],
+    "reduced": "true"
+  },
+  "outsideClosed": null,
+  "transparency": {
+    "filter": "none",
+    "flag": "true"
+  },
+  "windows": [
+    {
+      "creditsInWidget": false,
+      "graphs": [
+        {
+          "class": "usage-graph graph-modern ",
+          "clip": "inset(0px 3.98414% 0px 0px)",
+          "value": "8"
+        },
+        {
+          "class": "usage-graph graph-modern ",
+          "clip": "inset(0px 5.64403% 0px 0px)",
+          "value": "24"
+        },
+        {
+          "class": "usage-graph graph-modern ",
+          "clip": "inset(0px 7.818% 0px 0px)",
+          "value": "3"
+        },
+        {
+          "class": "usage-graph graph-modern ",
+          "clip": "inset(0px 10.6785% 0px 0px)",
+          "value": "35"
+        },
+        {
+          "class": "usage-graph graph-modern ",
+          "clip": "inset(0px 14.4867% 0px 0px)",
+          "value": "62"
+        }
+      ],
+      "values": [
+        "8",
+        "24",
+        "3",
+        "35",
+        "62"
+      ],
+      "visual": "modern"
+    },
+    {
+      "creditsInWidget": false,
+      "graphs": [
+        {
+          "class": "usage-graph graph-retro ",
+          "clip": "inset(0px 5.08099% 0px 0px)",
+          "value": "8"
+        },
+        {
+          "class": "usage-graph graph-retro ",
+          "clip": "inset(0px 7.08025% 0px 0px)",
+          "value": "24"
+        },
+        {
+          "class": "usage-graph graph-retro ",
+          "clip": "inset(0px 9.70508% 0px 0px)",
+          "value": "3"
+        },
+        {
+          "class": "usage-graph graph-retro ",
+          "clip": "inset(0px 13.1842% 0px 0px)",
+          "value": "35"
+        },
+        {
+          "class": "usage-graph graph-retro ",
+          "clip": "inset(0px 17.8737% 0px 0px)",
+          "value": "62"
+        }
+      ],
+      "values": [
+        "8",
+        "24",
+        "3",
+        "35",
+        "62"
+      ],
+      "visual": "retro"
+    },
+    {
+      "creditsInWidget": false,
+      "graphs": [
+        {
+          "class": "usage-graph graph-glass ",
+          "clip": "inset(0px 5.07519% 0px 0px)",
+          "value": "8"
+        },
+        {
+          "class": "usage-graph graph-glass ",
+          "clip": "inset(0px 7.07264% 0px 0px)",
+          "value": "24"
+        },
+        {
+          "class": "usage-graph graph-glass ",
+          "clip": "inset(0px 9.69506% 0px 0px)",
+          "value": "3"
+        },
+        {
+          "class": "usage-graph graph-glass ",
+          "clip": "inset(0px 13.1708% 0px 0px)",
+          "value": "35"
+        },
+        {
+          "class": "usage-graph graph-glass ",
+          "clip": "inset(0px 17.8555% 0px 0px)",
+          "value": "62"
+        }
+      ],
+      "values": [
+        "8",
+        "24",
+        "3",
+        "35",
+        "62"
+      ],
+      "visual": "glass"
+    },
+    {
+      "creditsInWidget": false,
+      "graphs": [
+        {
+          "class": "usage-graph graph-terminal ",
+          "clip": "inset(0px 5.08055% 0px 0px)",
+          "value": "8"
+        },
+        {
+          "class": "usage-graph graph-terminal ",
+          "clip": "inset(0px 7.07968% 0px 0px)",
+          "value": "24"
+        },
+        {
+          "class": "usage-graph graph-terminal ",
+          "clip": "inset(0px 9.70433% 0px 0px)",
+          "value": "3"
+        },
+        {
+          "class": "usage-graph graph-terminal ",
+          "clip": "inset(0px 13.1832% 0px 0px)",
+          "value": "35"
+        },
+        {
+          "class": "usage-graph graph-terminal ",
+          "clip": "inset(0px 17.8723% 0px 0px)",
+          "value": "62"
+        }
+      ],
+      "values": [
+        "8",
+        "24",
+        "3",
+        "35",
+        "62"
+      ],
+      "visual": "terminal"
+    },
+    {
+      "creditsInWidget": false,
+      "graphs": [
+        {
+          "class": "usage-graph graph-paper ",
+          "clip": "inset(0px 92.4065% 0px 0px)",
+          "value": "8"
+        },
+        {
+          "class": "usage-graph graph-paper ",
+          "clip": "inset(0px 77.6993% 0px 0px)",
+          "value": "24"
+        },
+        {
+          "class": "usage-graph graph-paper ",
+          "clip": "inset(0px 97.2912% 0px 0px)",
+          "value": "3"
+        },
+        {
+          "class": "usage-graph graph-paper ",
+          "clip": "inset(0px 69.6145% 0px 0px)",
+          "value": "35"
+        },
+        {
+          "class": "usage-graph graph-paper ",
+          "clip": "inset(0px 49.0818% 0px 0px)",
+          "value": "62"
+        }
+      ],
+      "values": [
+        "8",
+        "24",
+        "3",
+        "35",
+        "62"
+      ],
+      "visual": "paper"
+    }
+  ],
+  "mac": [
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 7.999829700272479,
+          "type": "usage-graph graph-native",
+          "value": "8"
+        },
+        {
+          "ratio": 23.99948910081744,
+          "type": "usage-graph graph-native",
+          "value": "24"
+        },
+        {
+          "ratio": 2.997275204359673,
+          "type": "usage-graph graph-native",
+          "value": "3"
+        }
+      ],
+      "mode": "light",
+      "services": [
+        "Claude"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 34.996594005449595,
+          "type": "usage-graph graph-native",
+          "value": "35"
+        },
+        {
+          "ratio": 61.99761580381471,
+          "type": "usage-graph graph-native",
+          "value": "62"
+        }
+      ],
+      "mode": "light",
+      "services": [
+        "Codex"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 7.999829700272479,
+          "type": "usage-graph graph-native",
+          "value": "8"
+        },
+        {
+          "ratio": 23.99948910081744,
+          "type": "usage-graph graph-native",
+          "value": "24"
+        },
+        {
+          "ratio": 2.997275204359673,
+          "type": "usage-graph graph-native",
+          "value": "3"
+        },
+        {
+          "ratio": 34.996594005449595,
+          "type": "usage-graph graph-native",
+          "value": "35"
+        },
+        {
+          "ratio": 61.99761580381471,
+          "type": "usage-graph graph-native",
+          "value": "62"
+        }
+      ],
+      "mode": "light",
+      "services": [
+        "Claude",
+        "Codex"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 7.999829700272479,
+          "type": "usage-graph graph-native",
+          "value": "8"
+        },
+        {
+          "ratio": 23.99948910081744,
+          "type": "usage-graph graph-native",
+          "value": "24"
+        },
+        {
+          "ratio": 2.997275204359673,
+          "type": "usage-graph graph-native",
+          "value": "3"
+        },
+        {
+          "ratio": 34.996594005449595,
+          "type": "usage-graph graph-native",
+          "value": "35"
+        },
+        {
+          "ratio": 61.99761580381471,
+          "type": "usage-graph graph-native",
+          "value": "62"
+        }
+      ],
+      "mode": "light",
+      "services": [
+        "Claude",
+        "Codex"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 7.999829700272479,
+          "type": "usage-graph graph-native",
+          "value": "8"
+        },
+        {
+          "ratio": 23.99948910081744,
+          "type": "usage-graph graph-native",
+          "value": "24"
+        },
+        {
+          "ratio": 2.997275204359673,
+          "type": "usage-graph graph-native",
+          "value": "3"
+        }
+      ],
+      "mode": "dark",
+      "services": [
+        "Claude"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 34.996594005449595,
+          "type": "usage-graph graph-native",
+          "value": "35"
+        },
+        {
+          "ratio": 61.99761580381471,
+          "type": "usage-graph graph-native",
+          "value": "62"
+        }
+      ],
+      "mode": "dark",
+      "services": [
+        "Codex"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 7.999829700272479,
+          "type": "usage-graph graph-native",
+          "value": "8"
+        },
+        {
+          "ratio": 23.99948910081744,
+          "type": "usage-graph graph-native",
+          "value": "24"
+        },
+        {
+          "ratio": 2.997275204359673,
+          "type": "usage-graph graph-native",
+          "value": "3"
+        },
+        {
+          "ratio": 34.996594005449595,
+          "type": "usage-graph graph-native",
+          "value": "35"
+        },
+        {
+          "ratio": 61.99761580381471,
+          "type": "usage-graph graph-native",
+          "value": "62"
+        }
+      ],
+      "mode": "dark",
+      "services": [
+        "Claude",
+        "Codex"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    },
+    {
+      "boundsOK": true,
+      "font": "-apple-system, BlinkMacSystemFont, \"Segoe UI\", \"Malgun Gothic\", sans-serif",
+      "footerOK": true,
+      "graphs": [
+        {
+          "ratio": 7.999829700272479,
+          "type": "usage-graph graph-native",
+          "value": "8"
+        },
+        {
+          "ratio": 23.99948910081744,
+          "type": "usage-graph graph-native",
+          "value": "24"
+        },
+        {
+          "ratio": 2.997275204359673,
+          "type": "usage-graph graph-native",
+          "value": "3"
+        },
+        {
+          "ratio": 34.996594005449595,
+          "type": "usage-graph graph-native",
+          "value": "35"
+        },
+        {
+          "ratio": 61.99761580381471,
+          "type": "usage-graph graph-native",
+          "value": "62"
+        }
+      ],
+      "mode": "dark",
+      "services": [
+        "Claude",
+        "Codex"
+      ],
+      "themePickerCount": 0,
+      "visual": "native",
+      "widgetVisible": false
+    }
+  ],
+  "macAfterWindowsGraphsOff": 5,
+  "autoOne": [
+    "Codex"
+  ],
+  "empty": {
+    "copy": "아직 연결된 서비스가 없어요연결 설정에서 서비스를 선택해 주세요.연결 설정 보기",
+    "graphs": 0,
+    "menu": "연결 필요",
+    "monochrome": true
+  },
+  "disconnected": {
+    "copy": "Claude연결 필요연결한 계정의 사용량을 이곳에서 볼 수 있어요.연결 설정 보기Codex연결 필요연결한 계정의 사용량을 이곳에서 볼 수 있어요.연결 설정 보기",
+    "graphs": 0,
+    "menu": "--%--%"
+  },
+  "keyboard": {
+    "focused": "details-body"
+  },
+  "expandedEscape": {
+    "detailOpen": false,
+    "focused": "menu-open",
+    "previewOpen": true
+  },
+  "console": [],
+  "date": "2026-10-02",
+  "scope": "HTML prototype only; no native macOS runtime validation",
+  "pureTests": [
+    "check-motion.cjs passed",
+    "40 graph boundary tests passed"
+  ],
+  "failures": 0
+}

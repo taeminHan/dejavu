@@ -61,7 +61,7 @@ Claude source selection is deliberately asymmetric:
 1. Unless `DEJAVU_CLAUDE_SOURCE=desktop`, locate a non-empty credential file in `CLAUDE_CONFIG_DIR\.credentials.json` or `%UserProfile%\.claude\.credentials.json`.
 2. Copy the credential file to memory under `FileShare.ReadWrite | FileShare.Delete`, close it, then parse the OAuth access token.
 3. Query `https://api.anthropic.com/api/oauth/usage`. This is used by Claude Code but is not a documented third-party API contract.
-4. Parse session, weekly-all and scoped Fable limits. Legacy response names remain supported for compatibility.
+4. `ClaudeUsageClient.ParseUsage` parses session, weekly-all and scoped Fable limits from an in-memory response. Legacy response names remain supported for compatibility. Fable accepts only a `weekly_scoped` entry whose model display name is `Fable` (case-insensitive), or `seven_day_fable`; never substitute `seven_day_opus` or `seven_day_sonnet`. An absent Fable limit remains `null`, not a fabricated zero or another model's percentage.
 5. If credentials are missing, expired, unauthorized or malformed, try a recent Claude Desktop history snapshot. Without one, the outcome is classified as follows (`ReadClaudeAsync`):
 
    | Outcome | Provider status, message and `ClaudeIssue` |

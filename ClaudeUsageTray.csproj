@@ -34,10 +34,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="tools\WidgetLayoutProbe\**\*.cs" />
+    <Compile Remove="tools\ClaudeUsageParserProbe\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="Assets\Fonts\NanumPenScript-Regular.ttf" />
     <Resource Include="Assets\Fonts\NanumPenScript-Regular.ttf" />
+    <None Remove="Assets\Fonts\DejavuPixel-Regular.ttf" />
+    <Resource Include="Assets\Fonts\DejavuPixel-Regular.ttf" />
     <None Update="Assets\Fonts\OFL-NanumPenScript.txt"
           CopyToOutputDirectory="PreserveNewest"
           CopyToPublishDirectory="PreserveNewest" />

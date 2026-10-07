@@ -13,7 +13,9 @@ public enum UsageProgressVisualMode
 {
     Terminal,
     Orbit,
-    Pencil
+    Pencil,
+    Pixel,
+    PixelRing
 }
 
 public enum OrbitBodyKind
@@ -54,8 +56,12 @@ public sealed class UsageProgressRenderer : FrameworkElement
     public static readonly DependencyProperty ValueProperty = RenderProperty(nameof(Value), typeof(double), 0d);
     public static readonly DependencyProperty MinimumProperty = RenderProperty(nameof(Minimum), typeof(double), 0d);
     public static readonly DependencyProperty MaximumProperty = RenderProperty(nameof(Maximum), typeof(double), 100d);
-    public static readonly DependencyProperty VisualModeProperty = RenderProperty(
-        nameof(VisualMode), typeof(UsageProgressVisualMode), UsageProgressVisualMode.Terminal);
+    public static readonly DependencyProperty VisualModeProperty = DependencyProperty.Register(
+        nameof(VisualMode), typeof(UsageProgressVisualMode), typeof(UsageProgressRenderer),
+        new FrameworkPropertyMetadata(UsageProgressVisualMode.Terminal, FrameworkPropertyMetadataOptions.AffectsRender,
+            static (sender, e) => RenderOptions.SetEdgeMode(sender,
+                (UsageProgressVisualMode)e.NewValue is UsageProgressVisualMode.Pixel or UsageProgressVisualMode.PixelRing
+                    ? EdgeMode.Aliased : EdgeMode.Unspecified)));
     public static readonly DependencyProperty OrbitBodyProperty = RenderProperty(
         nameof(OrbitBody), typeof(OrbitBodyKind), OrbitBodyKind.Earth);
     public static readonly DependencyProperty FillProperty = RenderProperty(
@@ -82,10 +88,57 @@ public sealed class UsageProgressRenderer : FrameworkElement
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
-        var ratio = Maximum <= Minimum ? 0 : Math.Clamp((Value - Minimum) / (Maximum - Minimum), 0, 1);
+        var ratio = !double.IsFinite(Value) || !double.IsFinite(Minimum) || !double.IsFinite(Maximum) ||
+                    Maximum <= Minimum ? 0 : Math.Clamp((Value - Minimum) / (Maximum - Minimum), 0, 1);
         if (VisualMode == UsageProgressVisualMode.Orbit) DrawCircular(drawingContext, ratio);
         else if (VisualMode == UsageProgressVisualMode.Pencil) DrawPencil(drawingContext, ratio);
+        else if (VisualMode == UsageProgressVisualMode.Pixel) DrawPixels(drawingContext, ratio);
+        else if (VisualMode == UsageProgressVisualMode.PixelRing) DrawPixelRing(drawingContext, ratio);
         else DrawTerminal(drawingContext, ratio);
+    }
+
+    private void DrawPixels(DrawingContext dc, double ratio)
+    {
+        if (ActualWidth < 4 || ActualHeight < 4) return;
+        var border = TryFindResource("WidgetBorderBrush") as WpfBrush ?? Track;
+        dc.DrawRectangle(border, null, new Rect(0, 0, ActualWidth, ActualHeight));
+        var inner = new Rect(1, 1, ActualWidth - 2, ActualHeight - 2);
+        dc.DrawRectangle(Track, null, inner);
+        var endpoint = inner.X + inner.Width * ratio;
+        if (ratio <= 0) return;
+        dc.PushClip(new RectangleGeometry(new Rect(inner.X, inner.Y, inner.Width * ratio, inner.Height)));
+        var shine = TryFindResource("RetroHighlightBrush") as WpfBrush ?? Fill;
+        for (var x = inner.X; x < inner.Right; x += 5)
+        {
+            var width = Math.Min(4, inner.Right - x);
+            dc.DrawRectangle(Fill, null, new Rect(x, inner.Y, width, inner.Height));
+            dc.DrawRectangle(shine, null, new Rect(x, inner.Y, width, Math.Min(1, inner.Height)));
+        }
+        // A final partial cell shows the precise reading even when it ends inside a gap.
+        dc.DrawRectangle(Fill, null, new Rect(Math.Max(inner.X, endpoint - 1), inner.Y,
+            Math.Min(1, inner.Width * ratio), inner.Height));
+        dc.Pop();
+    }
+
+    private static readonly WpfPoint[] PixelRingCells = Enumerable.Range(0, 15)
+        .SelectMany(y => Enumerable.Range(0, 15).Select(x => new WpfPoint(x, y)))
+        .Where(p => Math.Sqrt(Math.Pow(p.X - 7, 2) + Math.Pow(p.Y - 7, 2)) is >= 6.2 and <= 7.2)
+        .OrderBy(p => (Math.Atan2(p.Y - 7, p.X - 7) + Math.PI / 2 + Math.PI * 2) % (Math.PI * 2)).ToArray();
+
+    private void DrawPixelRing(DrawingContext dc, double ratio)
+    {
+        if (ActualWidth <= 0 || ActualHeight <= 0) return;
+        var unit = Math.Min(ActualWidth, ActualHeight) / 15;
+        var offsetX = (ActualWidth - 15 * unit) / 2;
+        var offsetY = (ActualHeight - 15 * unit) / 2;
+        for (var i = 0; i < PixelRingCells.Length; i++)
+        {
+            var p = PixelRingCells[i];
+            var rect = new Rect(offsetX + p.X * unit, offsetY + p.Y * unit, unit, unit);
+            dc.DrawRectangle(Track, null, rect);
+            var fraction = Math.Clamp(ratio * PixelRingCells.Length - i, 0, 1);
+            if (fraction > 0) dc.DrawRectangle(Fill, null, new Rect(rect.X, rect.Y, rect.Width * fraction, rect.Height));
+        }
     }
 
     private void DrawTerminal(DrawingContext drawingContext, double ratio)

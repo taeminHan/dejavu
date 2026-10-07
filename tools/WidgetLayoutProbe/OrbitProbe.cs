@@ -65,6 +65,13 @@ internal static partial class Program
                 CheckOrbitTree(system, card, prefix, failures);
                 var chart = ((Grid)system).Children.OfType<FrameworkElement>().Single(e => e.GetType().Name == "OrbitSystemChart");
                 if ((chart.Visibility == Visibility.Visible) != progress) failures.Add(prefix + ": progress visibility");
+                var widgetBodies = ((System.Collections.IEnumerable)Get(chart, "Metrics")!).Cast<object>()
+                    .Select(metric => Get(metric, "Body")!.ToString());
+                var expectedBodies = name == "OrbitClaudeSystem" ? "Venus,Earth,Mars"
+                    : variant is "both" or "expired" ? "Jupiter,Saturn"
+                    : variant == "five" ? "Jupiter" : "Saturn";
+                if (string.Join(",", widgetBodies) != expectedBodies)
+                    failures.Add(prefix + ": widget solar order " + name);
             }
             var codex = RequiredElement<Grid>(widget, "OrbitCodexSystem");
             var values = Descendants(codex).OfType<TextBlock>().Select(t => t.Text).Where(t => t.EndsWith('%')).ToArray();
@@ -87,8 +94,22 @@ internal static partial class Program
             {
                 var metrics = (System.Collections.IEnumerable)Get(charts[0], "Metrics")!;
                 var bodies = metrics.Cast<object>().Select(m => Get(m, "Body")!.ToString());
-                if (string.Join(",", bodies) != "Mars,Earth,Venus,Jupiter,Saturn")
+                if (string.Join(",", bodies) != "Venus,Earth,Mars,Jupiter,Saturn")
                     failures.Add(prefix + ": shared orbit order/mapping");
+                if (variant == "both")
+                {
+                    var expected = new Dictionary<string, (string Label, string Value)>
+                    {
+                        ["Venus"] = ("Fable", "63%"), ["Earth"] = ("주간", "24%"),
+                        ["Mars"] = ("5시간", "8%"), ["Jupiter"] = ("5시간", "0%"), ["Saturn"] = ("주간", "36%")
+                    };
+                    foreach (var metric in metrics.Cast<object>())
+                    {
+                        var expectedMetric = expected[Get(metric, "Body")!.ToString()!];
+                        if (Get<string>(metric, "Label") != expectedMetric.Label || Get<string>(metric, "ValueText") != expectedMetric.Value)
+                            failures.Add(prefix + ": reordering changed a planet's label/value");
+                    }
+                }
             }
             if (preview is not null && variant == "both" && progress && rows == "SingleRow")
             {

@@ -1,5 +1,7 @@
 # Dejavu macOS Apple-native design
 
+> 2026-10-02 범위 갱신: 현재 개발은 Windows만 진행하며 Mac 구현은 추후 Mac에서 별도로 재개합니다. 아래 플로팅/WidgetKit/기존 메뉴 구성은 이전 구현 방향의 기록입니다. 새 메뉴 막대 중심·테마 없는 macOS 27 방향은 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md)와 [macos/AGENTS.md](../macos/AGENTS.md)를 따릅니다. 기존 소스는 보존하고 재개 시 변경 범위를 확인합니다.
+
 이 문서는 macOS 제품의 UI 원칙을 고정한다. Windows 구현은 데이터 의미와 안정성 요구의 참고 자료일 뿐, macOS 화면의 시각 구조나 상호작용 템플릿이 아니다.
 
 ## 원칙

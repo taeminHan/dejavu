@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko" data-theme="dark">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dejavu · 디자인 스튜디오</title><link rel="icon" href="brand-mark.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="preview.css"><link rel="stylesheet" href="themes.css"><link rel="stylesheet" href="platform.css"></head>
+<body>
+<header class="studio"><div class="brand"><img class="brand-icon" src="brand-mark.svg" alt=""><strong>dejavu</strong><span class="divider"></span><span>DESIGN STUDY / 01</span></div><div class="studio-controls"><div class="segmented" id="platform" aria-label="플랫폼"><button data-value="windows" aria-pressed="true">Windows</button><button data-value="mac" aria-pressed="false">macOS</button></div><button id="theme" class="quiet icon-label"><span data-icon="sun"></span><span>라이트 모드</span></button><span class="sample">예시 데이터</span></div></header>
+<main>
+<section class="intro"><div><p class="eyebrow">LESS INTERRUPTION. MORE CLARITY.</p><h1>작업은 그대로.<br>사용량은 한눈에.</h1><p class="intro-copy">작게 보고, 필요할 때만 펼치는 Dejavu.<br>위젯부터 설정까지 하나의 흐름으로 다시 설계합니다.</p></div><div class="intro-note"><span class="number">01 — 03</span><p>상시 위젯 / 상세 사용량 / 설정</p><small>실제 계정에 연결하지 않는 UI 시안입니다.<br>설정은 이 페이지를 여는 동안만 유지됩니다.</small></div></section>
+<section class="workspace" aria-label="Dejavu 인터랙티브 시안">
+<div class="app-window"><div class="titlebar"><div class="traffic" aria-hidden="true"><i></i><i></i><i></i></div><span id="settings-window-title">dejavu 설정</span><span class="saved" aria-live="polite">변경사항 자동 적용</span><div class="win-chrome" aria-hidden="true">─ &nbsp; □ &nbsp; ×</div></div><div class="app-layout">
+<aside class="sidebar"><div class="traffic sidebar-traffic" aria-hidden="true"><i></i><i></i><i></i></div><div class="app-brand"><img class="brand-icon" src="brand-mark.svg" alt=""><div><strong>dejavu</strong><small>나의 작업 리듬에 맞게</small></div></div><nav aria-label="설정 메뉴"><button data-page="display" aria-current="page"><span data-icon="display"></span>표시</button><button data-page="appearance"><span data-icon="appearance"></span>꾸미기</button><button data-page="connections"><span data-icon="connections"></span>연결</button><button data-page="behavior"><span data-icon="behavior"></span>동작</button><button data-page="updates"><span data-icon="updates"></span>업데이트</button><button data-page="privacy"><span data-icon="privacy"></span>개인정보</button></nav><div class="sidebar-bottom"><span class="status-dot"></span> 디자인 프로토타입<small>Windows · macOS</small></div></aside>
+<div class="settings-content" id="settings"></div>
+</div></div>
+<aside class="preview-column">
+  <div class="preview-head"><div><p class="eyebrow">LIVE PREVIEW</p><h2>내 화면에서는 이렇게</h2></div><button id="expand-preview" class="quiet icon-label"><span>넓게 보기</span><span data-icon="expand"></span></button></div>
+  <div class="preview-toolbar"><span id="preview-platform">Windows 11 · 화면 오른쪽</span><span class="preview-scale" title="브라우저 기본 배율에서 실제 앱의 논리 크기에 맞춘 1:1 표시">1:1 · 기본 배율</span></div>
+  <div class="screen-viewport" id="screen-viewport">
+    <div class="desktop native-preview" id="desktop">
+      <div class="desktop-menu" id="desktop-menu">
+        <div class="mac-app-menu" aria-hidden="true"><strong>Finder</strong><span>파일</span><span>편집</span><span>보기</span></div>
+        <div class="mac-menu-right"><button id="menu-open" aria-label="메뉴 막대에서 Dejavu 메뉴 열기"></button><span class="system-symbol" data-symbol="wifi" aria-hidden="true"></span><span class="system-symbol" data-symbol="battery" aria-hidden="true"></span><time>10월 1일 (목) 14:32</time></div>
+      </div>
+      <section class="context-window" aria-label="작업 중인 파일 창 예시">
+        <div class="context-title"><div class="context-traffic" aria-hidden="true"><i></i><i></i><i></i></div><span id="context-window-title">파일 탐색기</span><div class="context-controls" aria-hidden="true">─ &nbsp; □ &nbsp; ×</div></div>
+        <div class="context-path"><span aria-hidden="true">← &nbsp; → &nbsp; ↑</span><span>문서 &nbsp; › &nbsp; 프로젝트</span><span class="system-symbol" data-symbol="search" aria-hidden="true"></span></div>
+        <div class="context-files"><div class="context-folders" aria-hidden="true"><span>홈</span><span>바탕 화면</span><span>다운로드</span><strong>문서</strong></div><div class="file-list"><div class="file-list-head">이름 <span>수정한 날짜</span></div><div><span class="folder-icon" aria-hidden="true"></span>디자인<span>2026-10-01</span></div><div><span class="folder-icon" aria-hidden="true"></span>프로젝트<span>2026-10-01</span></div><div><span class="document-icon" aria-hidden="true"></span>회의 메모.txt<span>2026-10-01</span></div></div></div>
+        <div class="context-status">3개 항목</div>
+      </section>
+      <div id="widget-anchor"><button id="widget" class="widget" aria-label="사용량 위젯, 클릭하면 상세 사용량 열기"></button></div>
+      <div class="desktop-taskbar" id="native-taskbar">
+        <div class="taskbar-apps" aria-hidden="true"><span class="windows-start"></span><span class="system-symbol" data-symbol="search"></span><span class="task-view-icon"></span><span class="folder-icon"></span><span class="browser-icon"></span><img src="brand-mark.svg" alt=""></div>
+        <div id="taskbar-widget-host"></div>
+        <div class="native-tray"><span class="system-symbol" data-symbol="chevron" aria-hidden="true"></span><button id="tray-open" aria-label="트레이에서 Dejavu 메뉴 열기" class="native-dejavu-tray"><img src="brand-mark.svg" alt=""></button><span class="input-language" aria-hidden="true">A</span><div class="quick-settings" aria-hidden="true"><span class="system-symbol" data-symbol="wifi"></span><span class="system-symbol" data-symbol="volume"></span><span class="system-symbol" data-symbol="battery"></span></div><time class="native-clock"><span>오후 2:32</span><span>2026-10-01</span></time><span class="show-desktop-edge" aria-hidden="true"></span></div>
+      </div>
+      <div class="mac-dock" aria-hidden="true"><span class="finder-icon">⌣</span><span class="browser-icon"></span><span class="folder-icon"></span><img src="brand-mark.svg" alt=""><span class="dock-divider"></span><span class="trash-icon">▥</span></div>
+      <div id="menu-popover" class="native-menu-popover" hidden></div>
+    </div>
+  </div>
+  <p class="preview-hint" id="preview-hint"></p>
+  <div class="preview-footer"><span id="dimensions"></span><button class="text-button" id="reset-position">위치 되돌리기</button></div>
+  <button class="open-details" id="show-details">상세 사용량 살펴보기 <span data-icon="details"></span></button>
+  <div class="design-note"><span>PREVIEW GUIDE</span><p>글자 크기와 배치를 함께 확인하세요.</p><small>화면이 좁을 때는 미리보기를 좌우로 이동할 수 있습니다.<br>배경·아이콘은 예시이며, 숫자는 예시 사용량입니다.</small></div>
+</aside>
+</section>
+<section class="apple-guide" aria-labelledby="apple-guide-title"><p class="eyebrow">MACOS 27 / SYSTEM FIRST</p><h2 id="apple-guide-title">Mac에서는, Mac답게.</h2><p>macOS 27 공식 자료를 기준으로 설정과 상세 패널을 보정했습니다. Mac에는 별도 테마가 없습니다.</p><ul><li>설정창 가장자리까지 이어지는 사이드바, 내용에 맞춰 정렬된 툴바와 그룹형 설정 행을 사용합니다.</li><li>메뉴 막대의 사용량을 클릭하면 그 아래에서 상세 내용을 확인합니다. 다시 클릭하거나 바깥 클릭·Esc로 닫습니다.</li><li>설정·새로고침은 상단에, 숫자와 그래프는 읽기 편한 내용 영역에 둡니다. 투명한 효과를 내용 전체에 덮지 않습니다.</li><li>시스템 색상 모드와 동작 줄이기·투명도 줄이기를 존중합니다. 숫자는 애니메이션 중에도 최종 사용률 그대로 표시합니다.</li></ul><p><a href="https://www.apple.com/os/macos/" target="_blank" rel="noopener">macOS 27</a> · <a href="https://developer.apple.com/design/resources/" target="_blank" rel="noopener">Apple 디자인 자료</a> · <a href="https://developer.apple.com/design/human-interface-guidelines/materials" target="_blank" rel="noopener">재질 가이드</a> · <a href="https://developer.apple.com/documentation/swiftui/menubarextra" target="_blank" rel="noopener">MenuBarExtra</a></p><p>이 화면은 HTML 시안입니다. 실제 Liquid Glass, SF Symbols 및 시스템 컨트롤은 macOS 네이티브 구현에서 적용합니다.</p></section>
+<section class="theme-lab" id="theme-lab" aria-labelledby="theme-lab-title">
+ <div class="theme-lab-head"><div><p class="eyebrow">DEJAVU / THEME SYSTEM 02</p><h2 id="theme-lab-title">같은 숫자, 다른 장면.</h2><p>색을 바꾸는 데서 끝내지 않습니다. 창의 형태와 글자, 사용량을 그리는 방식까지.</p></div><a class="theme-lab-link" href="#icon-system">새 브랜드와 아이콘 보기 ↓</a></div>
+ <div class="theme-grid" id="theme-grid"></div>
+</section>
+<section class="icon-system" id="icon-system" aria-labelledby="icon-system-title">
+ <div class="icon-system-head"><div><p class="eyebrow">DEJAVU / ICON SYSTEM</p><h2 id="icon-system-title">작은 아이콘도, 같은 언어로.</h2></div><p>브랜드는 알아보기 쉽게.<br>기능은 익숙하고 분명하게.</p></div>
+ <div class="identity-grid">
+  <article><img class="identity-mark" src="brand-mark.svg" alt="Dejavu 모순의 프레임 로고"><h3>모순의 프레임</h3><p>익숙한 형태인데, 다시 보게 되는 느낌.<br>컬러 앱 아이콘 · 단색 트레이를 하나의 형태로.</p><div class="brand-size-guide" aria-label="단색 32px, 컬러 24px, 컬러 16px 로고"><span aria-hidden="true"></span><img src="brand-mark.svg" alt="24px"><img src="brand-mark.svg" alt="16px"></div></article>
+  <article><div class="service-marks"><span class="provider-template claude" role="img" aria-label="Claude"></span><span class="provider-template codex" role="img" aria-label="Codex"></span></div><h3>Claude · Codex</h3><p>서비스 로고를 그대로 사용.<br>메뉴 막대에서는 단색으로.</p></article>
+  <article><span class="identity-line" data-icon="settings"></span><h3>기능 아이콘</h3><p>24 기준 · 2 선 두께 · 둥근 끝.<br>색상은 바뀌어도 모양은 그대로.</p></article>
+ </div>
+ <div class="icon-grid" id="icon-grid"></div>
+ <p class="icon-system-note">테마 장식과 기능 아이콘은 분리합니다. 초기화권은 새로고침 아이콘으로 대신하지 않고, 상세 패널에 이름과 개수를 표시합니다.</p>
+</section>
+<footer class="page-footer"><span>DEJAVU / CROSS-PLATFORM REDESIGN</span><span>모순의 프레임 · 네 테마 개편 · Orbit·Paper Ink 기존안 유지</span></footer>
+</main>
+<dialog id="details" aria-labelledby="detail-heading" tabindex="-1"><div class="detail-title"><div><span class="eyebrow">USAGE OVERVIEW</span><h2 id="detail-heading">지금, 얼마나 썼을까?</h2></div><div id="detail-toolbar-actions"></div><button class="icon-button" id="close-details" aria-label="상세 사용량 닫기"><span data-icon="close"></span></button></div><div id="details-body" role="region" aria-label="서비스별 사용량" tabindex="0"></div><div class="detail-footer"><span id="freshness" aria-live="polite">예시 데이터 · 방금 확인</span><div class="panel-actions"><button id="panel-settings" class="secondary icon-label" hidden><span data-icon="settings"></span><span>설정</span></button><button id="refresh" class="secondary icon-label"><span data-icon="refresh"></span><span>새로고침</span></button></div></div></dialog>
+<div id="announcement" class="sr-only" aria-live="polite"></div>
+<dialog id="screen-dialog" class="screen-dialog"><div class="screen-dialog-header"><div><strong id="expanded-title">Windows 11 화면 미리보기</strong><span>위젯을 누르면 상세 정보를 확인할 수 있어요.</span></div><button id="close-preview" class="icon-button" aria-label="넓은 화면 미리보기 닫기"><span data-icon="close"></span></button></div><div id="expanded-screen"></div></dialog>
+<script src="icons.js"></script>
+<script src="themes.js"></script>
+<script src="motion.js"></script>
+<script src="app.js"></script>
+</body></html>

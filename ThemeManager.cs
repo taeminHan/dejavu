@@ -28,6 +28,8 @@ internal static class ThemeManager
         var accent = NormalizeColor(settings.AccentColor, "#6D8EFF");
         _taskbarAccent = accent;
         var palette = CreatePalette(settings.WidgetTheme, light, accent);
+        SetValue("RetroPixelEnabled", settings.WidgetTheme == WidgetVisualTheme.RetroNight);
+        SetBrush("RetroHighlightBrush", "#88FFFFFF");
         // Transparent chrome exposes the text to an unpredictable desktop background.
         // Preserve the theme at normal opacity, then progressively prioritize legibility
         // for secondary and metric text as the chrome approaches its minimum opacity.
@@ -65,8 +67,14 @@ internal static class ThemeManager
         SetBrush("WidgetMetricTextBrush", widgetMetricText);
         SetBrush("WidgetTrackBrush", palette.WidgetTrack);
         SetBrush("ThemeGridBrush", palette.Grid);
-        SetValue("AppFontFamily", new System.Windows.Media.FontFamily(palette.AppFont));
-        SetValue("WidgetFontFamily", new System.Windows.Media.FontFamily(palette.WidgetFont));
+        // Resource font references created in code need an explicit assembly base URI.
+        // Otherwise WPF silently substitutes a system face instead of the bitmap alphabet.
+        var fontBase = settings.WidgetTheme == WidgetVisualTheme.RetroNight
+            ? new Uri("pack://application:,,,/dejavu;component/") : null;
+        SetValue("AppFontFamily", fontBase is null ? new System.Windows.Media.FontFamily(palette.AppFont)
+            : new System.Windows.Media.FontFamily(fontBase, palette.AppFont));
+        SetValue("WidgetFontFamily", fontBase is null ? new System.Windows.Media.FontFamily(palette.WidgetFont)
+            : new System.Windows.Media.FontFamily(fontBase, palette.WidgetFont));
         SetValue("WindowCornerRadius", new CornerRadius(palette.WindowRadius));
         SetValue("CardCornerRadius", new CornerRadius(palette.CardRadius));
         SetValue("ControlCornerRadius", new CornerRadius(palette.ControlRadius));
@@ -177,7 +185,8 @@ internal static class ThemeManager
                 "#ECE9DC", "#9BA2BB", BlendWithWhite(accent, 0.34), WithOpacity(accent, 0.28),
                 "#FF7B83", "#F2B35F", "#0C0F1C", BlendWithWhite(accent, 0.34), "#454D70",
                 "#ECE9DC", "#9BA2BB", "#191D2E", "#242A43",
-                "Cascadia Mono, Consolas", "Cascadia Mono, Consolas", 0, 0, 0, 0, 0, 2, 1, 8, "▣"),
+                "./Assets/Fonts/#Dejavu Pixel, Malgun Gothic, Segoe UI", "./Assets/Fonts/#Dejavu Pixel, Malgun Gothic, Segoe UI",
+                0, 0, 0, 0, 0, 2, 1, 8, "▣"),
             WidgetVisualTheme.FluentGlass => light
                 ? new("#F2F6FB", "#ECFFFFFF", "#DDE9F1FA", "#7C9AABBF", "#A9B7C7D8",
                     "#172033", "#657188", accent, WithOpacity(accent, 0.15), "#D9434A", "#A96716",

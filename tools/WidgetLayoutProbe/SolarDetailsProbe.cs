@@ -59,6 +59,15 @@ internal static partial class Program
             if (charts.Length != (progress && expectedTracks > 0 ? 1 : 0)) failures.Add(prefix + ": chart count");
             if (charts.Length == 1 && ((System.Collections.IEnumerable)Get(charts[0], "Metrics")!).Cast<object>().Count() != expectedTracks)
                 failures.Add(prefix + ": hidden provider left tracks");
+            if (charts.Length == 1)
+            {
+                var expectedBodies = new List<string>();
+                if (service.ShowClaude) expectedBodies.AddRange(["Venus", "Earth", "Mars"]);
+                if (service.ShowCodex) expectedBodies.AddRange(["Jupiter", "Saturn"]);
+                var actualBodies = ((System.Collections.IEnumerable)Get(charts[0], "Metrics")!).Cast<object>()
+                    .Select(metric => Get(metric, "Body")!.ToString());
+                if (!actualBodies.SequenceEqual(expectedBodies)) failures.Add(prefix + ": solar orbit order");
+            }
             var texts = Descendants(solar).OfType<TextBlock>().Select(t => t.Text).ToArray();
             if (solar.Visibility == Visibility.Visible && texts.Contains("초기화권") != service.ShowCodex)
                 failures.Add(prefix + ": credit ownership");

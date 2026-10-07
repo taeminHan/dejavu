@@ -112,13 +112,17 @@ internal sealed class ClaudeUsageClient
         response.EnsureSuccessStatusCode();
         await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var usageDocument = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
-        var root = usageDocument.RootElement;
+        return ParseUsage(usageDocument.RootElement);
+    }
 
+    // Pure response parsing: regression tests do not need credentials or HTTP requests.
+    internal static UsageSnapshot ParseUsage(JsonElement root)
+    {
         return new UsageSnapshot(
             ReadArrayLimit(root, "session") ?? ReadLegacyLimit(root, "five_hour"),
             ReadArrayLimit(root, "weekly_all") ?? ReadLegacyLimit(root, "seven_day"),
-            ReadScopedLimit(root, "Fable") ?? ReadLegacyLimit(root, "seven_day_fable") ??
-                ReadLegacyLimit(root, "seven_day_opus") ?? ReadLegacyLimit(root, "seven_day_sonnet"));
+            // Other model limits are not aliases for Fable. Missing Fable stays null.
+            ReadScopedLimit(root, "Fable") ?? ReadLegacyLimit(root, "seven_day_fable"));
     }
 
     private static bool HasUsableRefreshToken(JsonElement oauth)

@@ -268,7 +268,8 @@ internal static class WidgetLayoutCalculator
     {
         internal static LinearHeightMetrics For(WidgetVisualTheme theme) => theme switch
         {
-            WidgetVisualTheme.RetroNight => new(20, 25, 25, 30, 8),
+            // Bundled bitmap typography needs one more DIP per Comfortable row.
+            WidgetVisualTheme.RetroNight => new(20, 25, 25, 31, 8),
             WidgetVisualTheme.FluentGlass => new(18, 23, 31, 36, 6),
             WidgetVisualTheme.TerminalMono => new(18, 23, 28, 33, 16),
             WidgetVisualTheme.Orbit => new(18, 23, 34, 40, 32),

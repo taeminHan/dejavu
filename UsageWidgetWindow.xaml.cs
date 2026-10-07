@@ -313,8 +313,7 @@ public partial class UsageWidgetWindow : Window
         };
         var widgetFont = FindResource("WidgetFontFamily") as System.Windows.Media.FontFamily
             ?? new System.Windows.Media.FontFamily("Segoe UI Variable Text");
-        ThemeTextureOverlay.Visibility = theme is WidgetVisualTheme.RetroNight
-            or WidgetVisualTheme.TerminalMono or WidgetVisualTheme.PaperInk
+        ThemeTextureOverlay.Visibility = theme is WidgetVisualTheme.TerminalMono or WidgetVisualTheme.PaperInk
             ? Visibility.Visible : Visibility.Collapsed;
         var textureOpacity = theme == WidgetVisualTheme.TerminalMono ? 0.2
             : theme == WidgetVisualTheme.PaperInk ? 0.1 : 0.14;
@@ -381,7 +380,13 @@ public partial class UsageWidgetWindow : Window
         foreach (var ring in new FrameworkElement[] { SmallFiveHourTrack, SmallFiveHourArc,
                      SmallWeeklyTrack, SmallWeeklyArc, SmallFableTrack, SmallFableArc,
                      SmallCodexFiveTrack, SmallCodexFiveArc, SmallCodexTrack, SmallCodexArc })
-            ring.Visibility = settings.ShowProgressBars ? Visibility.Visible : Visibility.Collapsed;
+            ring.Visibility = settings.ShowProgressBars && theme != WidgetVisualTheme.RetroNight
+                ? Visibility.Visible : Visibility.Collapsed;
+        foreach (var ring in new[] { RetroFiveHourRing, RetroWeeklyRing, RetroFableRing, RetroCodexFiveRing, RetroCodexRing })
+            ring.Visibility = settings.ShowProgressBars && theme == WidgetVisualTheme.RetroNight
+                ? Visibility.Visible : Visibility.Collapsed;
+        RetroWidgetFrame.Visibility = theme == WidgetVisualTheme.RetroNight && !IsTaskbarDocked
+            ? Visibility.Visible : Visibility.Collapsed;
         _taskbarLayoutActive = IsTaskbarDocked;
         if (_taskbarLayoutActive && _taskbarDock is TaskbarDock dock) ApplyTaskbarChrome(dock);
         else
@@ -923,6 +928,14 @@ public partial class UsageWidgetWindow : Window
                             ?? System.Windows.Media.Brushes.Transparent;
         label.Foreground = metricBrush;
         arc.Stroke = progressBrush;
+        var pixelRing = arc.Name switch
+        {
+            "SmallFiveHourArc" => RetroFiveHourRing, "SmallWeeklyArc" => RetroWeeklyRing,
+            "SmallFableArc" => RetroFableRing, "SmallCodexFiveArc" => RetroCodexFiveRing,
+            _ => RetroCodexRing
+        };
+        pixelRing.Value = value ?? 0;
+        pixelRing.Fill = progressBrush;
         var showPlanet = _settings.WidgetTheme == WidgetVisualTheme.Orbit &&
                          _settings.ShowProgressBars && value is > 0;
         planet.Visibility = showPlanet ? Visibility.Visible : Visibility.Collapsed;

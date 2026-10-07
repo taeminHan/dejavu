@@ -1,0 +1,101 @@
+/* macOS has no product themes. These tokens belong to the platform, not state.visual.
+   HTML approximates the hierarchy; native Liquid Glass must come from SwiftUI/AppKit. */
+body[data-os=mac] :is(.app-window,#details){--surface:#242426;--field:#1e1e20;--raised:#38383b;--line:#ffffff24;--text:#f5f5f7;--muted:#b3b3ba;--accent:#78b4ff;--accent-text:#fff;--track:#ffffff20;--claude:#78b4ff;--codex:#78b4ff;--family-radius:18px;--family-font:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic',sans-serif;font-family:var(--family-font);color:var(--text)}
+html[data-theme=light] body[data-os=mac] :is(.app-window,#details){--surface:#f7f7f9;--field:#efeff2;--raised:#fff;--line:#00000020;--text:#1d1d1f;--muted:#626269;--accent:#0066cc;--accent-text:#fff;--track:#00000015;--claude:#0066cc;--codex:#0066cc}
+.sidebar-traffic{display:none}
+#detail-toolbar-actions:empty{display:none}
+/* macOS 27 layout study: edge-to-edge sidebar and a content-aligned toolbar.
+   Dimensions are prototype choices, not measurements mandated by Apple. */
+body[data-os=mac] .app-window{display:grid;grid-template-columns:160px minmax(0,1fr);grid-template-rows:58px minmax(0,1fr);height:636px;border-radius:22px;box-shadow:0 18px 50px #0003;border:1px solid var(--line);background:var(--surface);--chrome:color-mix(in srgb,var(--field) 92%,transparent)}
+body[data-os=mac] .titlebar{grid-column:2;grid-row:1;height:auto;min-width:0;padding:0 24px;background:var(--chrome);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);font-size:15px;font-weight:650}
+body[data-os=mac] .titlebar>.traffic{display:none}
+body[data-os=mac] .traffic i{width:12px;height:12px}body[data-os=mac] .saved{font-size:10px;font-weight:400}body[data-os=mac] .saved::before{display:none}
+body[data-os=mac] .app-layout{display:contents}
+body[data-os=mac] .sidebar{grid-column:1;grid-row:1 / span 2;background:var(--chrome);backdrop-filter:blur(18px);padding:0 10px 20px;border-right:1px solid var(--line);min-height:0}
+body[data-os=mac] .sidebar-traffic{display:flex;height:58px;align-items:center;padding-left:10px;flex-shrink:0}
+body[data-os=mac] .app-brand{padding:18px 9px 24px;gap:9px}body[data-os=mac] .app-brand strong{font-size:15px}body[data-os=mac] .app-brand small{display:none}
+body[data-os=mac] .sidebar nav{gap:3px}body[data-os=mac] .sidebar nav button{padding:9px 10px;border-radius:7px;font-size:13px;color:var(--text);gap:9px}
+body[data-os=mac] .sidebar nav button[aria-current=page]{background:var(--raised);box-shadow:0 1px 2px #0001}
+body[data-os=mac] .settings-content{grid-column:2;grid-row:2;min-height:0;padding:24px;line-height:1.5;overflow:auto}
+body[data-os=mac] .section-kicker{display:none}body[data-os=mac] .settings-content h2{font-size:23px;letter-spacing:-.5px;font-weight:650}
+body[data-os=mac] .section-desc{font-size:13px;line-height:1.65;margin:0 0 24px;color:var(--muted)}
+body[data-os=mac] .mac-form-section{margin-bottom:22px}
+body[data-os=mac] .mac-form-section h3{margin:0 0 8px 12px;font-size:12px;font-weight:600;color:var(--muted)}
+body[data-os=mac] .mac-form-group{background:var(--raised);border-radius:14px;padding:0 14px;border:1px solid var(--line)}
+body[data-os=mac] :is(.mac-form-row,.mac-form-group .setting-row){display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:52px;padding:12px 0;margin:0;border:0}
+body[data-os=mac] .mac-form-group>:not(:first-child){border-top:1px solid var(--line)}
+body[data-os=mac] :is(.mac-form-row,.mac-form-group .setting-row)>span{min-width:0}
+body[data-os=mac] .mac-form-row strong{display:block;font-size:13px;font-weight:500}
+body[data-os=mac] .mac-form-row small{display:block;font-size:12px;line-height:1.55;color:var(--muted);margin-top:3px}
+body[data-os=mac] .mac-form-row select{color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:5px 8px;max-width:150px;font:inherit;font-size:12px;flex-shrink:0;min-height:30px;color-scheme:dark}
+html[data-theme=light] body[data-os=mac] .mac-form-row select{color-scheme:light}
+body[data-os=mac] .mac-form-section>.help{margin:8px 12px 0;line-height:1.6}
+body[data-os=mac] .mac-form-group .setting-row small{line-height:1.55}
+body[data-os=mac] .mac-form-group .setting-row strong{font-weight:500}
+body[data-os=mac] .mac-info{display:flex;gap:10px;margin:12px 12px 0;color:var(--muted)}
+body[data-os=mac] .mac-info>.ui-icon{width:17px;height:17px;flex-shrink:0;margin-top:2px}
+body[data-os=mac] .mac-info p{margin:0;font-size:12px;line-height:1.7}
+body[data-os=mac] .mac-provider-row>.provider-template{width:22px;height:22px;flex-shrink:0}
+body[data-os=mac] .mac-provider-row>span:nth-child(2){flex:1}
+body[data-os=mac] .mac-connection-state{font-size:11px;color:var(--muted)}
+body[data-os=mac] .mac-connection-state.is-ready{color:var(--accent)}
+body[data-os=mac] .mac-update-status{font-size:12px;line-height:1.6;color:var(--muted);padding:12px 0}
+body[data-os=mac] .mac-update-status:empty{display:none}
+body[data-os=mac] :is(.placement-note,.provider-card){background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:16px}
+body[data-os=mac] .field-label{font-size:13px;font-weight:600}
+body[data-os=mac] .segmented{border-radius:8px;padding:3px;gap:2px;background:var(--field)}
+body[data-os=mac] .segmented button{border-radius:5px;padding:5px 12px;font-size:13px}
+body[data-os=mac] .segmented button[aria-pressed=true]{background:var(--raised);color:var(--text);box-shadow:0 1px 3px #0002}
+body[data-os=mac] .setting-row{padding:16px 0}body[data-os=mac] .setting-row strong{font-size:13px}body[data-os=mac] .setting-row small{font-size:12px}
+body[data-os=mac] .switch{width:34px;height:20px;border-radius:12px;border-color:var(--muted);background:var(--track)}
+body[data-os=mac] .switch:before{width:16px;height:16px;left:1px;top:1px;background:#fff;box-shadow:0 1px 3px #0004}
+body[data-os=mac] .switch:checked{background:var(--accent);border-color:var(--accent)}body[data-os=mac] .switch:checked:before{transform:translateX(14px);background:#fff}
+body[data-os=mac] .help{font-size:12px}body[data-os=mac] .inline-note{border:0;border-radius:8px;background:var(--field);font-size:12px;padding:12px 14px}
+body[data-os=mac] :is(.secondary,.icon-button){background:var(--raised);border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 2px #0001}
+body[data-os=mac] .secondary{font-size:13px;padding:6px 12px;min-height:30px}
+body[data-os=mac] .native-preview #details.product-surface{padding:0;border-radius:22px;background:var(--surface);border:1px solid var(--line);box-shadow:0 12px 36px #0005;max-height:calc(100% - 46px);--chrome:color-mix(in srgb,var(--field) 92%,transparent)}
+body[data-os=mac] #details .detail-title{padding:12px 16px;margin:0;background:var(--chrome);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);align-items:center;gap:12px;min-height:56px}
+body[data-os=mac] #details .detail-title .eyebrow{display:none}body[data-os=mac] #details .detail-title h2{font-size:16px;letter-spacing:0;margin:0;font-weight:650}
+body[data-os=mac] #close-details{display:none}
+body[data-os=mac] #detail-toolbar-actions{margin-left:auto;min-width:0}
+body[data-os=mac] #detail-toolbar-actions .panel-actions{display:flex;gap:6px}
+body[data-os=mac] #detail-toolbar-actions .secondary{border-radius:999px;font-size:12px;padding:5px 9px;white-space:nowrap}
+body[data-os=mac] #detail-toolbar-actions .ui-icon{width:14px;height:14px}
+body[data-os=mac] .native-preview #details #details-body{padding:16px 18px;scrollbar-gutter:stable}
+body[data-os=mac] #details .detail-provider{margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none}
+body[data-os=mac] #details .detail-provider+.detail-provider{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+body[data-os=mac] #details .detail-provider h3{font-size:13px;font-weight:650;margin-bottom:12px}
+body[data-os=mac] #details .detail-provider h3 span{font-size:11px}
+body[data-os=mac] #details .detail-metric{display:grid;grid-template-columns:80px minmax(0,1fr) 38px;grid-template-rows:20px auto;column-gap:10px;row-gap:2px;margin:12px 0;align-items:center}
+body[data-os=mac] #details .detail-metric>div:first-child{display:contents;font-size:12px}
+body[data-os=mac] #details .detail-metric>div:first-child>span{grid-column:1;grid-row:1}
+body[data-os=mac] #details .detail-metric b{grid-column:3;grid-row:1;font-size:13px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;color:var(--text)}
+body[data-os=mac] #details .detail-metric>[role=progressbar]{grid-column:2;grid-row:1;min-width:0}
+body[data-os=mac] #details .detail-metric small{grid-column:2 / span 2;grid-row:2;display:block;font-size:11px;line-height:16px;white-space:normal;min-width:0}
+.graph-native{height:5px}.graph-native .graph-track,.graph-native .graph-fill{border-radius:5px}
+body[data-os=mac] #details .detail-metric .usage-graph{height:6px;margin:0}
+body[data-os=mac] #details .credits{padding:12px;margin-top:16px;border:1px solid var(--line);border-radius:10px;background:var(--field)}
+body[data-os=mac] #details .credits strong{font-size:17px}body[data-os=mac] #details .credits small{font-size:11px}
+body[data-os=mac] .native-preview #details .detail-footer{padding:12px 18px;margin:0;background:var(--field);font-size:11px;gap:10px}
+body[data-os=mac] .native-preview .desktop-menu{color:#f5f5f7;background:#202126c9;border-bottom:1px solid #ffffff18;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body[data-os=mac] .native-preview{--accent:#78b4ff}
+html[data-theme=light] body[data-os=mac] .native-preview{--accent:#0066cc}
+body[data-os=mac] .native-preview .desktop-menu #menu-open{color:inherit;min-height:26px;border-radius:7px;font-size:13px;font-weight:550;padding:0 7px}
+body[data-os=mac] .native-preview .desktop-menu #menu-open:is(:hover,[aria-expanded=true]){background:#ffffff26}
+html[data-theme=light] body[data-os=mac] .native-preview .desktop-menu{color:#1d1d1f;background:#f5f5f7d9;border-color:#00000012}
+html[data-theme=light] body[data-os=mac] .native-preview .desktop-menu #menu-open:is(:hover,[aria-expanded=true]){background:#00000012}
+body[data-os=mac] .mac-dock>img{display:none}/* Menu-bar utility, not a second Dock entry. */
+.menu-brand-template{display:inline-block;flex-shrink:0;width:14px;height:14px;background:currentColor;mask:url('brand-exploration/frame-mono.svg') center/contain no-repeat}
+body[data-os=mac] .theme-lab{display:none}
+.apple-guide{display:none;margin-top:48px;border-top:1px solid var(--line);padding-top:30px;max-width:960px}
+body[data-os=mac] .apple-guide{display:block}.apple-guide h2{font-size:26px;letter-spacing:-.7px;margin:8px 0 12px}.apple-guide p{color:var(--muted);line-height:1.8;font-size:13px}
+.apple-guide ul{padding-left:20px;line-height:1.9;font-size:13px;color:var(--muted)}.apple-guide a{color:var(--accent);text-underline-offset:4px}
+body[data-os=mac] :is(.app-window,#details) *{scrollbar-color:var(--muted) var(--field)}
+body[data-reduce-transparency=true][data-os=mac] :is(.desktop-menu,.mac-dock){backdrop-filter:none;background:var(--os-surface);color:var(--os-text)}
+body[data-reduce-transparency=true][data-os=mac] :is(.titlebar,.sidebar,#details .detail-title){backdrop-filter:none;background:var(--field)}
+body[data-reduce-transparency=true][data-os=mac] .native-preview .desktop-menu #menu-open{color:var(--os-text)}
+body[data-reduce-motion=true] *{transition:none!important;scroll-behavior:auto!important}
+body[data-reduce-transparency=true] dialog::backdrop{backdrop-filter:none}
+@media(prefers-reduced-transparency:reduce){body[data-os=mac] :is(.desktop-menu,.mac-dock){backdrop-filter:none;background:var(--os-surface)}body[data-os=mac] :is(.titlebar,.sidebar,#details .detail-title){backdrop-filter:none;background:var(--field)}}
+@media(prefers-contrast:more){body[data-os=mac] :is(.app-window,#details){--line:var(--muted);--track:var(--muted)}body[data-os=mac] :is(.desktop-menu,.mac-dock){backdrop-filter:none;background:var(--os-surface)}body[data-os=mac] :is(.titlebar,.sidebar,#details .detail-title){backdrop-filter:none;background:var(--field)}body[data-os=mac] .native-preview .desktop-menu #menu-open{color:var(--os-text)}}
+@media(max-width:620px){body[data-os=mac] .app-window{display:flex;flex-direction:column;height:auto;min-height:540px}body[data-os=mac] .titlebar{order:0;height:54px;flex-shrink:0;padding:0 18px}body[data-os=mac] .titlebar>.traffic{display:flex}body[data-os=mac] .app-layout{display:contents}body[data-os=mac] .sidebar{order:1;padding:10px;border-right:0;border-bottom:1px solid var(--line)}body[data-os=mac] .sidebar-traffic{display:none}body[data-os=mac] .settings-content{order:2;padding:22px 18px}body[data-os=mac] .saved{display:none}body[data-os=mac] .mac-form-row{gap:10px}body[data-os=mac] .mac-form-row select{max-width:126px}}

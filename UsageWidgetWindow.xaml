@@ -18,6 +18,9 @@
             <Setter Property="TextOptions.TextHintingMode" Value="Fixed" />
             <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
         </Style>
+        <Style TargetType="{x:Type local:RetroPixelText}" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="PixelEnabled" Value="{DynamicResource RetroPixelEnabled}" />
+        </Style>
     </Window.Resources>
     <Border x:Name="WidgetCard" Style="{StaticResource WidgetCardModern}" CornerRadius="14" Padding="14,11"
             MouseLeftButtonDown="OnWidgetMouseDown" MouseMove="OnWidgetMouseMove"
@@ -43,69 +46,79 @@
                 <StackPanel x:Name="SmallProviderPanel" Orientation="Horizontal">
                     <StackPanel x:Name="SmallClaudePanel" Orientation="Horizontal">
                         <StackPanel Width="48">
-                            <TextBlock Text="5H" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <local:RetroPixelText Text="5H" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                             <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <local:UsageProgressRenderer x:Name="RetroFiveHourRing" VisualMode="PixelRing"
+                                    Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}" Visibility="Collapsed" />
                                 <Ellipse x:Name="SmallFiveHourTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallFiveHourArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                                 <local:OrbitBodyMarker x:Name="SmallFiveHourPlanet" Width="10" Height="10" Body="Moon"
                                                        Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
                                                        Visibility="Collapsed" />
-                                <TextBlock x:Name="SmallFiveHourValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                <local:RetroPixelText x:Name="SmallFiveHourValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
                         </StackPanel>
                         <StackPanel Width="48">
-                            <TextBlock Text="주간" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <local:RetroPixelText Text="주간" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                             <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <local:UsageProgressRenderer x:Name="RetroWeeklyRing" VisualMode="PixelRing"
+                                    Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}" Visibility="Collapsed" />
                                 <Ellipse x:Name="SmallWeeklyTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallWeeklyArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                                 <local:OrbitBodyMarker x:Name="SmallWeeklyPlanet" Width="10" Height="10" Body="Earth"
                                                        Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
                                                        Visibility="Collapsed" />
-                                <TextBlock x:Name="SmallWeeklyValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                <local:RetroPixelText x:Name="SmallWeeklyValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
                         </StackPanel>
                         <StackPanel Width="48">
-                            <TextBlock Text="Fable" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <local:RetroPixelText Text="Fable" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                             <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <local:UsageProgressRenderer x:Name="RetroFableRing" VisualMode="PixelRing"
+                                    Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}" Visibility="Collapsed" />
                                 <Ellipse x:Name="SmallFableTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallFableArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                                 <local:OrbitBodyMarker x:Name="SmallFablePlanet" Width="10" Height="10" Body="Sun"
                                                        Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
                                                        Visibility="Collapsed" />
-                                <TextBlock x:Name="SmallFableValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                <local:RetroPixelText x:Name="SmallFableValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
                         </StackPanel>
                     </StackPanel>
                     <StackPanel x:Name="SmallCodexPanel" Orientation="Horizontal" Margin="8,0,0,0">
                         <StackPanel x:Name="SmallCodexFivePanel" Width="48" Visibility="Collapsed">
-                            <TextBlock x:Name="SmallCodexFiveLabel" Text="5시간" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <local:RetroPixelText x:Name="SmallCodexFiveLabel" Text="5시간" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                             <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <local:UsageProgressRenderer x:Name="RetroCodexFiveRing" VisualMode="PixelRing"
+                                    Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}" Visibility="Collapsed" />
                                 <Ellipse x:Name="SmallCodexFiveTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallCodexFiveArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                                 <local:OrbitBodyMarker x:Name="SmallCodexFivePlanet" Width="10" Height="10" Body="Saturn"
                                                        Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
                                                        Visibility="Collapsed" />
-                                <TextBlock x:Name="SmallCodexFiveValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                <local:RetroPixelText x:Name="SmallCodexFiveValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
                         </StackPanel>
                         <StackPanel Width="48">
-                            <TextBlock x:Name="SmallCodexLabel" Text="Codex" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                            <local:RetroPixelText x:Name="SmallCodexLabel" Text="Codex" FontSize="9" FontWeight="SemiBold" TextAlignment="Center" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                             <Grid Width="30" Height="30" Margin="0,3,0,0" HorizontalAlignment="Center">
+                                <local:UsageProgressRenderer x:Name="RetroCodexRing" VisualMode="PixelRing"
+                                    Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}" Visibility="Collapsed" />
                                 <Ellipse x:Name="SmallCodexTrack" Stroke="{DynamicResource WidgetTrackBrush}" StrokeThickness="3" />
                                 <Path x:Name="SmallCodexArc" Stroke="{DynamicResource AccentBrush}" StrokeThickness="3"
                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                                 <local:OrbitBodyMarker x:Name="SmallCodexPlanet" Width="10" Height="10" Body="Saturn"
                                                        Fill="{DynamicResource WidgetAccentBrush}" Track="{DynamicResource WidgetBorderBrush}"
                                                        Visibility="Collapsed" />
-                                <TextBlock x:Name="SmallCodexValue" Text="--%" FontSize="9" FontWeight="Bold"
+                                <local:RetroPixelText x:Name="SmallCodexValue" Text="--%" FontSize="9" FontWeight="Bold"
                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Grid>
                         </StackPanel>
@@ -129,8 +142,8 @@
                 <Border x:Name="CompactFiveCard" Grid.Column="0">
                 <StackPanel x:Name="CompactClaudeFivePanel">
                     <Grid>
-                        <TextBlock x:Name="CompactFiveHourLabel" Text="5H" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <TextBlock x:Name="CompactFiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
+                        <local:RetroPixelText x:Name="CompactFiveHourLabel" Text="5H" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                        <local:RetroPixelText x:Name="CompactFiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
                     </Grid>
                     <local:UsageProgressBar x:Name="CompactFiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,5,0,0" />
                 </StackPanel>
@@ -138,8 +151,8 @@
                 <Border x:Name="CompactWeeklyCard" Grid.Column="2">
                 <StackPanel x:Name="CompactClaudeWeeklyPanel">
                     <Grid>
-                        <TextBlock x:Name="CompactWeeklyLabel" Text="주간" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <TextBlock x:Name="CompactWeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
+                        <local:RetroPixelText x:Name="CompactWeeklyLabel" Text="주간" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                        <local:RetroPixelText x:Name="CompactWeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
                     </Grid>
                     <local:UsageProgressBar x:Name="CompactWeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,5,0,0" />
                 </StackPanel>
@@ -147,8 +160,8 @@
                 <Border x:Name="CompactFableCard" Grid.Column="4">
                 <StackPanel x:Name="CompactClaudeFablePanel">
                     <Grid>
-                        <TextBlock x:Name="CompactFableLabel" Text="Fable" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <TextBlock x:Name="CompactFableValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
+                        <local:RetroPixelText x:Name="CompactFableLabel" Text="Fable" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                        <local:RetroPixelText x:Name="CompactFableValue" Text="--%" HorizontalAlignment="Right" FontSize="12" FontWeight="SemiBold" />
                     </Grid>
                     <local:UsageProgressBar x:Name="CompactFableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,5,0,0" />
                 </StackPanel>
@@ -156,8 +169,8 @@
                 <Border x:Name="CompactCodexFiveCard" Grid.Column="6" Visibility="Collapsed">
                 <StackPanel x:Name="CompactCodexFivePanel">
                     <Grid>
-                        <TextBlock x:Name="CompactCodexFiveLabel" Text="5시간" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <TextBlock x:Name="CompactCodexFiveValue" Text="--%" HorizontalAlignment="Right"
+                        <local:RetroPixelText x:Name="CompactCodexFiveLabel" Text="5시간" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                        <local:RetroPixelText x:Name="CompactCodexFiveValue" Text="--%" HorizontalAlignment="Right"
                                    FontSize="12" FontWeight="SemiBold" />
                     </Grid>
                     <local:UsageProgressBar x:Name="CompactCodexFiveBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,5,0,0" />
@@ -166,8 +179,8 @@
                 <Border x:Name="CompactCodexCard" Grid.Column="8">
                 <StackPanel x:Name="CompactCodexPanel">
                     <Grid>
-                        <TextBlock x:Name="CompactCodexLabel" Text="Codex" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                        <TextBlock x:Name="CompactCodexValue" Text="--%" HorizontalAlignment="Right"
+                        <local:RetroPixelText x:Name="CompactCodexLabel" Text="Codex" FontSize="10" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                        <local:RetroPixelText x:Name="CompactCodexValue" Text="--%" HorizontalAlignment="Right"
                                    FontSize="12" FontWeight="SemiBold" />
                     </Grid>
                     <local:UsageProgressBar x:Name="CompactCodexBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,5,0,0" />
@@ -178,7 +191,7 @@
             <Grid x:Name="CompactMessagePanel" Visibility="Collapsed">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Ellipse x:Name="CompactMessageDot" Width="6" Height="6" Margin="0,0,8,0" Fill="{DynamicResource AccentBrush}" />
-                    <TextBlock x:Name="CompactMessageText" FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
+                    <local:RetroPixelText x:Name="CompactMessageText" FontSize="11" FontWeight="Medium" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis" Foreground="{DynamicResource WidgetMutedTextBrush}" />
                 </StackPanel>
             </Grid>
@@ -199,15 +212,15 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel x:Name="ComfortableCodexFivePanel" Grid.Column="0" Visibility="Collapsed">
                             <Grid>
-                                <TextBlock x:Name="CodexFiveLabel" Text="5시간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                                <TextBlock x:Name="CodexFiveValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
+                                <local:RetroPixelText x:Name="CodexFiveLabel" Text="5시간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                                <local:RetroPixelText x:Name="CodexFiveValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
                             </Grid>
                             <local:UsageProgressBar x:Name="CodexFiveBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0" />
                         </StackPanel>
                         <StackPanel Grid.Column="2">
                             <Grid>
-                                <TextBlock x:Name="CodexLabel" Text="Codex 주간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
-                                <TextBlock x:Name="CodexValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
+                                <local:RetroPixelText x:Name="CodexLabel" Text="Codex 주간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" />
+                                <local:RetroPixelText x:Name="CodexValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" />
                             </Grid>
                             <local:UsageProgressBar x:Name="CodexBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0" />
                         </StackPanel>
@@ -224,25 +237,25 @@
                     </Grid.ColumnDefinitions>
                     <Border x:Name="ComfortableFiveCard" Grid.Column="0">
                     <StackPanel>
-                        <Grid><TextBlock x:Name="FiveHourLabel" Text="5시간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><TextBlock x:Name="FiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
+                        <Grid><local:RetroPixelText x:Name="FiveHourLabel" Text="5시간" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><local:RetroPixelText x:Name="FiveHourValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
                         <local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,7,0,0" />
                     </StackPanel>
                     </Border>
                     <Border x:Name="ComfortableWeeklyCard" Grid.Column="2">
                     <StackPanel>
-                        <Grid><TextBlock x:Name="WeeklyLabel" Text="주간 전체" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><TextBlock x:Name="WeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
+                        <Grid><local:RetroPixelText x:Name="WeeklyLabel" Text="주간 전체" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><local:RetroPixelText x:Name="WeeklyValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
                         <local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,7,0,0" />
                     </StackPanel>
                     </Border>
                     <Border x:Name="ComfortableFableCard" Grid.Column="4">
                     <StackPanel>
-                        <Grid><TextBlock x:Name="FableLabel" Text="주간 Fable" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><TextBlock x:Name="FableValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
+                        <Grid><local:RetroPixelText x:Name="FableLabel" Text="주간 Fable" FontSize="11" FontWeight="Medium" Foreground="{DynamicResource WidgetMutedTextBrush}" /><local:RetroPixelText x:Name="FableValue" Text="--%" HorizontalAlignment="Right" FontSize="13" FontWeight="SemiBold" /></Grid>
                         <local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,7,0,0" />
                     </StackPanel>
                     </Border>
                 </Grid>
                 <Grid x:Name="MessagePanel" Grid.Row="0" Visibility="Collapsed" Margin="0,5,0,0">
-                    <TextBlock x:Name="MessageText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                    <local:RetroPixelText x:Name="MessageText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
                                Foreground="{DynamicResource WidgetMutedTextBrush}" />
                 </Grid>
             </Grid>
@@ -327,6 +340,8 @@
                 </StackPanel>
             </StackPanel>
             </Grid>
+            <local:RetroPixelFrame x:Name="RetroWidgetFrame" Margin="-2" Visibility="Collapsed"
+                                   Stroke="{DynamicResource WidgetBorderBrush}" />
         </Grid>
     </Border>
 </Window>

@@ -56,6 +56,9 @@ GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에
 
 ## 배포 문서
 
+- [디자인 시스템과 리디자인 방향](docs/DESIGN_SYSTEM.md)
+- [브랜드·아이콘 시스템](docs/ICON_SYSTEM.md)
+- [기여자·AI 작업 지침](AGENTS.md)
 - [아키텍처와 데이터 흐름](docs/ARCHITECTURE.md)
 - [개발·검증 안내](docs/DEVELOPMENT.md)
 - [위젯 UI 계약](docs/WIDGET_UI.md)

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Dejavu — 모순의 프레임</title>
+  <rect x="1" y="1" width="62" height="62" rx="15" fill="#DDE2D2"/>
+  <g transform="translate(9 9) scale(.72)">
+    <path fill="#203E2E" d="M8 8h40v9H17zM48 17h9v38l-9-9zM17 46h31l9 9H17z"/>
+    <path fill="#97A789" d="M8 8l9 9v30l-9-9zM48 8l9 9h-9zM8 38l9 9v8l-9-9z"/>
+  </g>
+</svg>

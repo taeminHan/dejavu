@@ -89,6 +89,15 @@ Important assertions:
 - Paper Ink uses the bundled OFL-licensed handwriting font and pencil progress renderer. Widget card ledger underlines are intentionally absent; expanded details may retain record-sheet separators.
 - Orbit uses Mars (Claude 5-hour), Earth (Claude weekly), Venus (Fable), Jupiter (Codex 5-hour) and Saturn (Codex weekly). The floating widget keeps separate provider systems; only the expanded details view combines them around one sun. See the shared-center contract below.
 - Terminal uses terminal-like progress rendering and angular chrome.
+- Retro Night uses the original bundled `Dejavu Pixel` bitmap alphabet for Latin labels/numbers,
+  a pixel-step frame, square-cell linear gauges and a 15 x 15 pixel annulus in Small mode.
+  Korean descriptions retain readable native fallback text. Smooth Small rings and decorative
+  scanlines are hidden for this theme; graph-off and theme switches restore the correct visuals.
+  Linear fill clips to the normalized percentage, with a partial final cell and visible endpoint;
+  pixel-ring fill uses the same normalized value, including a fractional final cell. Unknown is
+  empty, zero is empty and 100 fills all ring cells. All foreground geometry remains opaque.
+  The bundled font adds one DIP per Comfortable row, owned by the layout calculator. Taskbar
+  fonts and neutral geometry are unchanged. See `Assets/Fonts/README-DejavuPixel.md`.
 - All themes must retain visible hover, pressed, disabled, loading, and focus states in settings and dialogs.
 - Widget transparency applies only to chrome and decorative surface brushes. Keep the WPF window, text, icons, borders, and progress geometry at full opacity.
 - The transparent widget uses layout rounding, pixel snapping, Display text metrics, fixed hinting, and grayscale antialiasing. At low background opacity, progressively move muted labels and metric text toward the theme's primary text color instead of fading the glyphs; progress geometry retains the accent color.
@@ -197,13 +206,18 @@ The probe also docks a synthetic `TaskbarDock` for the same axes at 32, 40 and 4
 
 Floating Orbit widgets use `OrbitSystemView` as separate provider systems. Their geometry and
 one-row/two-row behavior are unchanged by the unified details design.
-Claude has Mars (5-hour), Earth (weekly), Venus (Fable) tracks from inner to outer.
+Claude keeps Mars (5-hour), Earth (weekly), Venus (Fable) metric identities. Its chart now
+places Venus, Earth and Mars from inner to outer; the legend retains 5-hour, weekly, Fable order.
 Codex has Jupiter (5-hour) and Saturn (weekly). A floating 5-hour-only Codex value uses Jupiter;
 weekly-only uses Saturn. Floating views retain the existing optional-window policy.
 
 `OrbitDetailsView` composes ONE `OrbitSystemChart` for the visible services, with one central
-sun and inner-to-outer Mars, Earth, Venus, Jupiter, Saturn tracks. This is information order,
-not astronomical distance. The exact same metric objects drive the chart and provider legends.
+sun and inner-to-outer Venus, Earth, Mars, Jupiter, Saturn tracks. This matches the orbital
+order of the selected planets, but track spacing and body sizes are illustrative, not astronomical
+distance/scale. Mercury is not a selected metric and no decorative data-less orbit is added.
+`OrbitSystemChart` sorts the same metric objects once at construction, independently of legend
+order, so reordering never assigns Fable's reading to a different planet. The exact same metric
+objects drive the chart and provider legends.
 Below the chart, Claude and Codex legends remain independently named; credits and expiry belong
 only to the Codex column. One visible service has one legend column and only its own tracks.
 No service means no chart/card. Progress off removes the whole chart and its separator/margins,
@@ -228,9 +242,16 @@ The taskbar stays on its independent neutral geometry and never displays the orb
 
 The additional Orbit probe checks 120 light/dark widget+detail combinations, seven numerical
 boundaries, four Fable availability/expiry states and four endpoint angles. It also checks
-legend text bounds, chart visibility, optional Codex slots and switching back to Modern.
+legend text bounds, chart visibility, optional Codex slots and switching back to Modern,
+plus planetary order in widgets/details and unchanged per-planet label/value mapping.
 `SolarDetailsProbe` adds 216 provider/status/progress/light-dark combinations, enforcing one
 shared chart, provider-dependent track/column counts, credit ownership, no-provider collapse,
 scrollable content with an accessible footer at 380 DIP height, and non-Orbit restoration.
 Run only those tests with `DEJAVU_ORBIT_ONLY=1`; set `DEJAVU_ORBIT_PREVIEW` to a temporary
 directory to render synthetic sample PNGs without reading credentials or saving settings.
+
+`DEJAVU_RETRO_ONLY=1` runs 144 actual Retro widget/detail trees (light/dark preference,
+three densities, both row preferences, graph on/off, three forced providers, ready/unknown
+readings). It verifies packaged font loading and real advance widths, pixel glyph rendering,
+text bounds, smooth-ring removal, and switching the same windows back to Modern. Optional
+`DEJAVU_RETRO_PREVIEW` writes synthetic WPF PNGs, not installed-app screenshots.

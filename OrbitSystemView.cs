@@ -151,7 +151,20 @@ public sealed class OrbitSystemView : Grid
 
 internal sealed class OrbitSystemChart(OrbitMetric[] metrics, bool thresholds, bool widget, bool solar = false) : FrameworkElement
 {
-    internal IReadOnlyList<OrbitMetric> Metrics => metrics;
+    // Keep provider legends in their familiar 5-hour/weekly/Fable order, but
+    // draw the selected planets in actual inner-to-outer solar-system order.
+    // Sort the same metric objects once; never reassign a reading to another body.
+    private readonly OrbitMetric[] _orbitalMetrics = metrics.OrderBy(metric => metric.Body switch
+    {
+        OrbitBodyKind.Venus => 0,
+        OrbitBodyKind.Earth => 1,
+        OrbitBodyKind.Mars => 2,
+        OrbitBodyKind.Jupiter => 3,
+        OrbitBodyKind.Saturn => 4,
+        _ => int.MaxValue
+    }).ToArray();
+
+    internal IReadOnlyList<OrbitMetric> Metrics => _orbitalMetrics;
 
     internal static Point Position(Point center, double radius, double value)
     {
@@ -163,11 +176,11 @@ internal sealed class OrbitSystemChart(OrbitMetric[] metrics, bool thresholds, b
     {
         base.OnRender(dc);
         var diameter = Math.Min(ActualWidth, ActualHeight);
-        if (diameter <= 0 || metrics.Length == 0) return;
+        if (diameter <= 0 || _orbitalMetrics.Length == 0) return;
         var center = new Point(ActualWidth / 2, ActualHeight / 2);
         var marker = Math.Clamp(diameter / 22, 2.8, solar ? 9 : 5.5);
         var outer = diameter / 2 - marker * 1.85 - 2;
-        var inner = metrics.Length == 1 ? outer : outer * (solar && metrics.Length > 3 ? 0.25 : 0.42);
+        var inner = _orbitalMetrics.Length == 1 ? outer : outer * (solar && _orbitalMetrics.Length > 3 ? 0.25 : 0.42);
         var track = Resolve(widget ? "WidgetTrackBrush" : "BorderBrush");
         var accent = Resolve(widget ? "WidgetAccentBrush" : "AccentBrush");
         if (solar)
@@ -180,10 +193,10 @@ internal sealed class OrbitSystemChart(OrbitMetric[] metrics, bool thresholds, b
             dc.DrawEllipse(null, new Pen(track, 1), center, 5, 5);
             dc.DrawEllipse(accent, null, center, 2, 2);
         }
-        for (var i = 0; i < metrics.Length; i++)
+        for (var i = 0; i < _orbitalMetrics.Length; i++)
         {
-            var metric = metrics[i];
-            var radius = metrics.Length == 1 ? outer : inner + (outer - inner) * i / (metrics.Length - 1);
+            var metric = _orbitalMetrics[i];
+            var radius = _orbitalMetrics.Length == 1 ? outer : inner + (outer - inner) * i / (_orbitalMetrics.Length - 1);
             var pen = new Pen(track, diameter < 90 ? 1 : 1.4);
             if (metric.Value is null) pen.DashStyle = DashStyles.Dot;
             dc.DrawEllipse(null, pen, center, radius, radius);

@@ -22,13 +22,13 @@
                                 CornerRadius="{DynamicResource BadgeCornerRadius}"
                                 Background="{DynamicResource AccentSoftBrush}"
                                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                            <TextBlock Text="{DynamicResource ThemeMarkText}" FontSize="15" FontWeight="Bold"
+                            <local:RetroPixelText Text="{DynamicResource ThemeMarkText}" FontSize="15" FontWeight="Bold"
                                        Foreground="{DynamicResource AccentBrush}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock x:Name="DetailsBrandText" Text="dejavu" FontSize="17" FontWeight="SemiBold" />
-                            <TextBlock x:Name="StatusText" Text="확인 중" Margin="0,3,0,0" FontSize="11"
+                            <local:RetroPixelText x:Name="DetailsBrandText" Text="dejavu" FontSize="17" FontWeight="SemiBold" />
+                            <local:RetroPixelText x:Name="StatusText" Text="확인 중" Margin="0,3,0,0" FontSize="11"
                                        Foreground="{DynamicResource MutedTextBrush}" TextWrapping="Wrap" MaxWidth="270" />
                         </StackPanel>
                     </StackPanel>
@@ -44,27 +44,27 @@
                     <StackPanel x:Name="ClaudeSection">
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock x:Name="ClaudeSectionTitle" Text="Claude" FontSize="13" FontWeight="SemiBold" />
-                            <TextBlock x:Name="ClaudeStatusText" Grid.Column="1" Margin="12,0,0,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" FontSize="11"
+                            <local:RetroPixelText x:Name="ClaudeSectionTitle" Text="Claude" FontSize="13" FontWeight="SemiBold" />
+                            <local:RetroPixelText x:Name="ClaudeStatusText" Grid.Column="1" Margin="12,0,0,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" FontSize="11"
                                        Foreground="{DynamicResource MutedTextBrush}" />
                         </Grid>
                         <Grid x:Name="ClaudeFiveRow" Margin="0,0,0,14">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock x:Name="FiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,7,0,0"/><TextBlock x:Name="FiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <local:RetroPixelText Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
+                            <local:RetroPixelText x:Name="FiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Moon" Margin="0,7,0,0"/><local:RetroPixelText x:Name="FiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Grid x:Name="ClaudeWeeklyRow" Margin="0,0,0,14">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="주간 전체" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock x:Name="WeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,7,0,0"/><TextBlock x:Name="WeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <local:RetroPixelText Text="주간 전체" Foreground="{DynamicResource MutedTextBrush}" />
+                            <local:RetroPixelText x:Name="WeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="WeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Earth" Margin="0,7,0,0"/><local:RetroPixelText x:Name="WeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Grid x:Name="ClaudeFableRow">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="주간 Fable" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock x:Name="FableValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,7,0,0"/><TextBlock x:Name="FableReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <local:RetroPixelText Text="주간 Fable" Foreground="{DynamicResource MutedTextBrush}" />
+                            <local:RetroPixelText x:Name="FableValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="FableBar" Style="{StaticResource UsageProgress}" OrbitBody="Sun" Margin="0,7,0,0"/><local:RetroPixelText x:Name="FableReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -75,26 +75,26 @@
                     <StackPanel x:Name="CodexSection">
                         <Grid Margin="0,0,0,10">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock x:Name="CodexSectionTitle" Text="Codex" FontSize="13" FontWeight="SemiBold" />
-                            <TextBlock x:Name="CodexStatusText" Grid.Column="1" Margin="12,0,0,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" FontSize="11"
+                            <local:RetroPixelText x:Name="CodexSectionTitle" Text="Codex" FontSize="13" FontWeight="SemiBold" />
+                            <local:RetroPixelText x:Name="CodexStatusText" Grid.Column="1" Margin="12,0,0,0" TextAlignment="Right" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" FontSize="11"
                                        Foreground="{DynamicResource MutedTextBrush}" />
                         </Grid>
                         <Grid x:Name="CodexFiveRow" Margin="0,0,0,14">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock x:Name="CodexFiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexFiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0"/><TextBlock x:Name="CodexFiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <local:RetroPixelText Text="5시간" Foreground="{DynamicResource MutedTextBrush}" />
+                            <local:RetroPixelText x:Name="CodexFiveHourValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexFiveHourBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0"/><local:RetroPixelText x:Name="CodexFiveHourReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Grid x:Name="CodexWeeklyRow" Margin="0,0,0,12">
                             <Grid.ColumnDefinitions><ColumnDefinition Width="84"/><ColumnDefinition Width="50"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <TextBlock Text="주간" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock x:Name="CodexWeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
-                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexWeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0"/><TextBlock x:Name="CodexWeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
+                            <local:RetroPixelText Text="주간" Foreground="{DynamicResource MutedTextBrush}" />
+                            <local:RetroPixelText x:Name="CodexWeeklyValue" Grid.Column="1" Text="--%" FontWeight="SemiBold" />
+                            <StackPanel Grid.Column="2"><local:UsageProgressBar x:Name="CodexWeeklyBar" Style="{StaticResource UsageProgress}" OrbitBody="Saturn" Margin="0,7,0,0"/><local:RetroPixelText x:Name="CodexWeeklyReset" Margin="0,4,0,0" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/></StackPanel>
                         </Grid>
                         <Border x:Name="CreditsCard" Style="{StaticResource CardBorder}" Padding="12,9">
                             <Grid>
-                                <StackPanel><TextBlock Text="초기화권" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><TextBlock x:Name="CodexResetCredits" Text="--개" Margin="0,2,0,0" FontWeight="SemiBold"/></StackPanel>
-                                <TextBlock x:Name="CodexResetExpiry" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/>
+                                <StackPanel><local:RetroPixelText Text="초기화권" FontSize="11" Foreground="{DynamicResource MutedTextBrush}"/><local:RetroPixelText x:Name="CodexResetCredits" Text="--개" Margin="0,2,0,0" FontWeight="SemiBold"/></StackPanel>
+                                <local:RetroPixelText x:Name="CodexResetExpiry" HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="10" Foreground="{DynamicResource MutedTextBrush}"/>
                             </Grid>
                         </Border>
                     </StackPanel>
@@ -106,12 +106,14 @@
                     BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                    <TextBlock x:Name="FooterText" TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Center" FontSize="10"
+                    <local:RetroPixelText x:Name="FooterText" TextWrapping="Wrap" Margin="0,0,12,0" VerticalAlignment="Center" FontSize="10"
                                Foreground="{DynamicResource MutedTextBrush}" Text="마지막 값을 표시합니다" />
                     <Button x:Name="ActionButton" Grid.Column="1" Style="{StaticResource AppButton}" HorizontalAlignment="Right"
                             Content="지금 새로고침" Click="OnActionClick" />
                 </Grid>
             </Border>
+            <local:RetroPixelFrame x:Name="RetroDetailsFrame" Grid.RowSpan="3" Margin="-12"
+                                   Stroke="{DynamicResource BorderBrush}" Visibility="Collapsed" />
         </Grid>
     </Border>
 </Window>

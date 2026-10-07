@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-02",
+  "scope": "Dejavu HTML prototype in Windows browser; not a native macOS 27 build",
+  "references": [
+    "https://www.apple.com/os/macos/",
+    "https://developer.apple.com/design/resources/",
+    "https://developer.apple.com/wwdc26/guides/design/",
+    "https://developer.apple.com/design/human-interface-guidelines/toolbars"
+  ],
+  "settings": {
+    "cases": 12,
+    "matrix": "6 pages x light/dark at default 673px viewport",
+    "sidebarReachesWindowTop": true,
+    "toolbarAlignedWithContent": true,
+    "horizontalOverflowOrClippedControls": 0,
+    "themePickerPresent": false
+  },
+  "panels": {
+    "cases": 11,
+    "matrix": "Both, Claude only, Codex only, auto empty, forced both missing x light/dark; plus expanded both",
+    "outOfPreviewOrHorizontalOverflow": 0,
+    "topToolbarActionsVisibleInEveryCase": true,
+    "shortTwoProviderPanelScrollsInternally": true,
+    "expandedTwoProviderPanelScrolls": false,
+    "expandedWidth": 420,
+    "expandedHeight": 544.96875,
+    "graphTargetPercentages": [8, 24, 3, 35, 62],
+    "measuredFillPercentages": [8, 24, 3, 35, 62],
+    "resetCredits": "Named Codex count, 2, in details only"
+  },
+  "responsive": {
+    "viewport": "390 x 844",
+    "cases": 6,
+    "settingsOrWindowHorizontalOverflow": 0,
+    "navigation": "Horizontally scrollable; logical-size OS preview is not scaled down"
+  },
+  "wideLayout": {
+    "viewport": "1280 x 900",
+    "sidebarReachesWindowTop": true,
+    "toolbarAlignedWithContent": true,
+    "menuClockWithinViewport": true,
+    "menuClockRightEdgeGap": 13.25,
+    "previewScrollLeft": 190,
+    "settingsHorizontalOverflow": false
+  },
+  "interactions": {
+    "keyboardEnterOpens": true,
+    "escapeClosesAndRestoresMenuFocus": true,
+    "repeatMenuClickCloses": true,
+    "outsideClickCloses": true,
+    "outsideTestTarget": "Visible preview-platform label outside the panel",
+    "settingsClosesPanelAndExpandedPreview": true,
+    "refreshShowsDisabledBusyState": true,
+    "updateShowsInlineBusyAndSimulationResult": true,
+    "weeklyMenuValues": "Claude 24%, Codex 62%",
+    "reducedTransparencySidebarAndToolbarBackdrop": "none",
+    "reducedMotionGraphClips": "none on all five fills",
+    "windowsPreferencesDoNotThemeMacOrHideGraphs": true
+  },
+  "windowsRegression": {
+    "cases": 20,
+    "matrix": "5 themes x taskbar/floating x graph on/off, Medium, both services, dark",
+    "clippedLabels": 0,
+    "footerActionsPreserved": true,
+    "sidebarTrafficHidden": true,
+    "taskbarSizeWithGraph": "222 x 36",
+    "taskbarSizeWithoutGraph": "222 x 31",
+    "taskbarRemainsThemeNeutral": true
+  },
+  "pureChecks": {
+    "syntax": "app, themes, motion, icons, server",
+    "graphBoundaryCases": 40,
+    "mismatches": 0,
+    "motionContract": "passed"
+  },
+  "screenshots": ["macos27-settings.png", "macos-hig-preview.png"],
+  "notValidated": [
+    "Native macOS 27 execution and VoiceOver",
+    "Retina and multiple physical displays",
+    "Authentic Liquid Glass refraction, SF Symbols and native controls",
+    "Real accounts, data providers, login, updates or OS settings changes"
+  ]
+}

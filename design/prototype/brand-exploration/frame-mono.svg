@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Dejavu — 모순의 프레임 단색</title>
+  <!-- Broad diagonal cuts preserve the folded relationship in one colour. -->
+  <path fill="currentColor" d="M11 8h37v9H20zM8 11l9 9v26h31l9 9H17l-9-9zM50 10l7 7v35l-9-9V17h2z"/>
+</svg>

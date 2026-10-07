@@ -90,6 +90,15 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Release build validation failed." }
           dotnet run --project tools/WidgetLayoutProbe/WidgetLayoutProbe.csproj -c Release
           if ($LASTEXITCODE -ne 0) { throw "WPF layout validation failed." }
+          $env:DEJAVU_SETTINGS_ONLY = '1'
+          try {
+            dotnet run --project tools/WidgetLayoutProbe/WidgetLayoutProbe.csproj -c Release
+            if ($LASTEXITCODE -ne 0) { throw "Settings redesign validation failed." }
+          } finally {
+            Remove-Item Env:DEJAVU_SETTINGS_ONLY
+          }
+          dotnet run --project tools/ClaudeUsageParserProbe/ClaudeUsageParserProbe.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw "Claude usage parser validation failed." }
 
       - name: Install Velopack CLI
         run: dotnet tool install --global vpk --version 1.2.0

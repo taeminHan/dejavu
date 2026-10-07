@@ -1,6 +1,14 @@
 # Public release checklist
 
-`0.9.0`은 제품 소유자의 결정으로 아래 신뢰·호환성 검토가 완료되기 전에 공개됩니다. 특히 SignPath 승인 전 설치 파일은 미서명 상태이며 SmartScreen 경고가 표시될 수 있습니다.
+`0.9.5`는 제품 소유자의 릴리스 요청에 따라 아래 신뢰·호환성 검토가 완료되기 전에 공개됩니다. 특히 SignPath 연동 전 설치 파일은 미서명 상태이며 SmartScreen 경고가 표시될 수 있습니다.
+
+## 0.9.5 release validation scope — 2026-10-07
+
+- Windows 개선 범위: 여섯 메뉴 설정 화면, Retro Night 픽셀 렌더링, Orbit 행성 순서, Fable 전용 한도 매핑.
+- 필수 자동 검사: Release 빌드, 전체 위젯·작업표시줄·Orbit·Retro 프로브, 설정 144조합/업데이트 48상태, Claude 파서 20사례.
+- 태그 workflow는 기존 macOS 코드를 같은 제품 버전으로 재패키징합니다. 이번 Windows 작업에서 Mac 기능을 수정하거나 네이티브 Mac 사용성을 검증하지 않습니다.
+- 공개 전 workflow 성공, 정식 릴리스 여부, 태그 대상, 설치 파일·업데이트 피드·패키지와 SHA-256을 확인합니다.
+- 아래 수동 설치·업데이트·제거, 실제 DPI·포커스·접근성 및 공인 서명 항목은 자동 검사와 별개이며 미완료 상태를 유지합니다.
 
 ## Outstanding before signed/trusted distribution
 

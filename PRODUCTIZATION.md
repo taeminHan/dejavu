@@ -1,8 +1,8 @@
 # dejavu productization status
 
-기준 버전: `0.9.0` (2026-08-12)
+기준 버전: `0.9.5` (2026-10-07)
 
-이 버전은 첫 정식 버전 번호로 공개합니다. 다만 아래 P0 항목이 해결되기 전에는 공인 서명되거나 신뢰된 설치 프로그램으로 표시하지 않습니다.
+이번 릴리스는 Windows 설정·테마·사용량 표시 개선을 포함합니다. 다만 아래 P0 항목이 해결되기 전에는 공인 서명되거나 신뢰된 설치 프로그램으로 표시하지 않습니다.
 
 ## Release priorities
 
@@ -32,6 +32,10 @@
 
 ## Implemented in this release
 
+- Six-destination native Windows Settings: Display, Appearance, Connections, Behavior, Updates and Privacy.
+- Retro Night bitmap lettering, stepped pixel frames/rings and square-cell widget/detail gauges.
+- Orbit ordering from Venus to Saturn, preserving separate widget systems and combined solar details.
+- Fable-specific response mapping with synthetic parser regression coverage; no Opus/Sonnet substitution.
 - WPF product shell replacing the prototype WinForms UI.
 - Compact always-on widget and a richer details panel.
 - First-run onboarding and credential-presence check.

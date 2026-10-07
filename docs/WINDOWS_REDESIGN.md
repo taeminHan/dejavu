@@ -1,6 +1,6 @@
 # Windows redesign implementation
 
-Updated: 2026-10-07. Windows only. This record does not authorize a version bump, installer, tag or publication. The user requested a source commit and a separate website design refresh on 2026-10-07; push and release remain separate actions.
+Updated: 2026-10-07. Windows only. The user explicitly requested an app release after the source push; completed work is prepared for 0.9.5. This record does not authorize future releases or the unfinished milestones below. See `RELEASE_CHECKLIST.md` for the release validation scope; browser previews and automated tree probes are not installed-app acceptance.
 
 ## Milestone 1: native Settings shell and identity
 

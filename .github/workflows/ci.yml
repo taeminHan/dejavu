@@ -22,7 +22,16 @@ jobs:
             [xml](Get-Content -LiteralPath $_.FullName -Raw) | Out-Null
           }
       - name: Verify widget layout matrix
+        env:
+          DEJAVU_THEME_REGRESSION_PREVIEW: ${{ runner.temp }}/dejavu-wpf-theme-preview
         run: dotnet run --project tools/WidgetLayoutProbe/WidgetLayoutProbe.csproj -c Release
+      - name: Save synthetic native WPF previews
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-theme-previews
+          path: ${{ runner.temp }}/dejavu-wpf-theme-preview/*.png
+          if-no-files-found: error
+          retention-days: 7
       - name: Verify Settings redesign matrix
         shell: pwsh
         run: |

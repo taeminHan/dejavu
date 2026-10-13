@@ -161,6 +161,8 @@ dotnet run --project .\tools\WindowsProviderProbe\WindowsProviderProbe.csproj -c
 
 기본 WPF layout probe에는 `Windows theme resource matrix: 36 checked, 0 failures`와 `Windows accent defaults: 5 checked`도 포함된다. 사용자 설정 저장 없이 실제 WPF 상세·시작 안내·업데이트 화면의 배경색과 새 기본값/이전 저장색/기본값 복원을 검사한다.
 
+`DEJAVU_THEME_REGRESSION_PREVIEW=<temporary directory>`를 지정하면 위 테마 검사에서 실제 WPF 트리의 합성 PNG 36개를 저장한다. CI의 `windows-theme-previews` artifact로 내려받아 배경색·대비를 육안 확인한다. 이 이미지는 실제 설치 앱 화면 또는 물리 DPI 검증이 아니다.
+
 1. Native CLI path and Desktop bundled path: verify `account/rateLimits/read` returns the same displayed structure.
 2. Logged-out state: verify the user-triggered browser login and post-login forced refresh.
 3. Missing executable: verify the official installation link and no orphan child process.

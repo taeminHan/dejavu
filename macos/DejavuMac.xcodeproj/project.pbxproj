@@ -659,7 +659,7 @@
 				CODE_SIGN_ENTITLEMENTS = DejavuMac/Config/DejavuMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -692,7 +692,7 @@
 				CODE_SIGN_ENTITLEMENTS = DejavuMac/Config/DejavuMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = NO;
@@ -752,7 +752,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = DejavuUsageWidget/Config/DejavuUsageWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEAD_CODE_STRIPPING = YES;
 				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
 				ENABLE_APP_SANDBOX = YES;
@@ -785,7 +785,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = DejavuUsageWidget/Config/DejavuUsageWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 43;
+				CURRENT_PROJECT_VERSION = 44;
 				DEAD_CODE_STRIPPING = YES;
 				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
 				ENABLE_APP_SANDBOX = YES;

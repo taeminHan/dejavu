@@ -8,11 +8,13 @@
 - macOS: 공식 로그인 흐름, 이전 Claude 로그인의 명시적 재사용 선택, 네이티브 설정/상세/시작 안내, 갱신·초기화·업데이트 상태·아이콘 개선. 사용자가 이전 로그인 선택 후 실제 Claude 사용량 표시를 확인했다.
 - 기존 사용자 설정과 플로팅/WidgetKit 구현을 보존한다. 인증 정보를 복사·삭제하지 않고, 합성 검사에서 실제 계정·공급자 API·모델 요청을 사용하지 않는다.
 - [x] macOS 핵심 211 tests, AppModel 65 checks, UpdateCoordinator 10 checks 및 네이티브 UI 474 states 로컬 검사(0.9.6 최종 재검사 로그는 `docs/MACOS_DEVELOPMENT.md`).
-- [ ] Windows CI에서 Release 빌드, XAML XML, 기존 전체 위젯/작업표시줄/Orbit/Retro, 설정 144/업데이트 48, Claude 파서 20 검사.
-- [ ] 새 Windows provider 72 checks 및 실제 WPF 테마 36 states/강조색 5 checks 검사.
+- [x] Windows CI에서 Release 빌드, XAML XML, 기존 전체 위젯/작업표시줄/Orbit/Retro, 설정 144/업데이트 48, Claude 파서 20 검사.
+- [x] 새 Windows provider 72 checks 및 실제 WPF 테마 36 states/강조색 5 checks 검사. 기존 연결 토큰 방식의 `early-abort reproduced`를 Windows runner에서 확인했으며, 수정된 실제 수집 코드는 취소 후 완료 표식 보존과 기존 15초 제한을 통과했다.
 - [ ] 태그 대상 커밋, 공통 0.9.6 버전, macOS 빌드 번호가 이전 공개 빌드 42보다 높은지 확인.
 - [ ] Windows·macOS 검증 후 단일 정식 Release 공개, 설치 파일/업데이트 피드/전체 체크섬 확인.
 - 개발 기기에서는 WPF를 실행하지 않는다. Windows 설치형 업그레이드·실제 물리 DPI·키보드·다중 모니터와 macOS 설치형 Sparkle/App Group은 CI/합성 검사와 별도 수락 범위다.
+
+첫 전체 CI 근거: [8cea7e5 Windows/macOS 검사](https://github.com/taeminHan/dejavu/actions/runs/38365333008). 테마 수정 화면의 합성 WPF PNG도 별도 artifact로 보관한다. 이는 실제 설치 앱·물리 DPI 수락 검사와 다르다.
 
 ## 0.9.5 release validation scope — 2026-10-07
 

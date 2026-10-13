@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 internal static partial class Program
 {
@@ -46,6 +47,7 @@ internal static partial class Program
                 if (theme is "RetroNight" or "TerminalMono")
                     foreach (var name in new[] { "ClaudeFiveRow", "ClaudeWeeklyRow", "ClaudeFableRow", "CodexFiveRow", "CodexWeeklyRow" })
                         VerifyRaisedBackground(details, name, raised, prefix + "/details", failures);
+                SaveThemeRegressionPreview(details, appearance + "-" + theme + "-details");
                 count++;
             }
             finally { details.Close(); }
@@ -57,6 +59,7 @@ internal static partial class Program
                 if (theme is "FluentGlass" or "TerminalMono" or "Orbit")
                     foreach (var name in new[] { "ClaudeCredentialCard", "CodexCredentialCard" })
                         VerifyRaisedBackground(onboarding, name, raised, prefix + "/onboarding", failures);
+                SaveThemeRegressionPreview(onboarding, appearance + "-" + theme + "-onboarding");
                 count++;
             }
             finally { onboarding.Close(); }
@@ -71,6 +74,7 @@ internal static partial class Program
                     VerifyRaisedBackground(update, "UpdateTitleBar", raised, prefix + "/update", failures);
                 if (theme is "FluentGlass" or "Orbit")
                     VerifyRaisedBackground(update, "UpdateNotesCard", raised, prefix + "/update", failures);
+                SaveThemeRegressionPreview(update, appearance + "-" + theme + "-update");
                 count++;
             }
             finally
@@ -108,6 +112,21 @@ internal static partial class Program
         };
         if (expected is null || actual is null || actual.Color != expected.Color)
             failures.Add(prefix + ": unresolved/wrong raised background: " + name);
+    }
+
+    private static void SaveThemeRegressionPreview(Window window, string name)
+    {
+        var directory = Environment.GetEnvironmentVariable("DEJAVU_THEME_REGRESSION_PREVIEW");
+        if (string.IsNullOrWhiteSpace(directory)) return;
+        var root = (FrameworkElement)window.Content;
+        Directory.CreateDirectory(directory);
+        var bitmap = new RenderTargetBitmap((int)Math.Ceiling(root.RenderSize.Width),
+            (int)Math.Ceiling(root.RenderSize.Height), 96, 96, PixelFormats.Pbgra32);
+        bitmap.Render(root);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var output = File.Create(Path.Combine(directory, name + ".png"));
+        encoder.Save(output);
     }
 
     private static int VerifyDefaultAndSavedAccents(Assembly assembly, Type settingsType, List<string> failures)

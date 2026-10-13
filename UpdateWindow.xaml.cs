@@ -36,7 +36,7 @@ public partial class UpdateWindow : Window
         {
             case WidgetVisualTheme.RetroNight:
                 UpdateTitleRow.Height = new GridLength(48);
-                UpdateTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                UpdateTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "SurfaceRaisedBrush");
                 UpdateThemeBadge.CornerRadius = new CornerRadius(0);
                 UpdateBrandText.Text = "DEJAVU // UPDATE";
                 UpdateContent.Margin = new Thickness(20, 18, 20, 18);
@@ -49,11 +49,11 @@ public partial class UpdateWindow : Window
                 UpdateThemeBadge.Width = UpdateThemeBadge.Height = 34;
                 UpdateBrandText.Text = "dejavu glass · update";
                 UpdateContent.Margin = new Thickness(28, 24, 28, 24);
-                UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "SurfaceRaisedBrush");
                 break;
             case WidgetVisualTheme.TerminalMono:
                 UpdateTitleRow.Height = new GridLength(46);
-                UpdateTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                UpdateTitleBar.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "SurfaceRaisedBrush");
                 UpdateThemeBadge.Width = 40;
                 UpdateThemeBadge.Height = 26;
                 UpdateThemeBadge.CornerRadius = new CornerRadius(0);
@@ -68,7 +68,7 @@ public partial class UpdateWindow : Window
                 UpdateThemeBadge.CornerRadius = new CornerRadius(19);
                 UpdateBrandText.Text = "DEJAVU ORBIT · UPDATE";
                 UpdateNotesCard.CornerRadius = new CornerRadius(18);
-                UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "RaisedSurfaceBrush");
+                UpdateNotesCard.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "SurfaceRaisedBrush");
                 break;
             case WidgetVisualTheme.PaperInk:
                 UpdateTitleRow.Height = new GridLength(50);

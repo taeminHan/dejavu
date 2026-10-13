@@ -15,6 +15,102 @@ final class ClaudeStatusLineConnectionManagerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
     }
 
+    func testOwnedBridgeUpgradeNeverReadsOrRewritesClaudeSettings() async throws {
+        let paths = try makePaths()
+        defer { try? FileManager.default.removeItem(at: paths.root) }
+        try makeExecutable(at: paths.bridge)
+        let manager = ClaudeStatusLineConnectionManager(configuration: paths.configuration)
+        let beforeConnect = try await manager.upgradeInstalledBridgeIfOwned()
+        XCTAssertEqual(beforeConnect, .notConnected)
+        try await manager.connect()
+        let settingsBeforeUpgrade = try Data(contentsOf: paths.settings)
+        try Data("new bundled helper".utf8).write(to: paths.bridge)
+        let upgraded = try await manager.upgradeInstalledBridgeIfOwned()
+        XCTAssertEqual(upgraded, .updated)
+        XCTAssertEqual(try Data(contentsOf: paths.installedBridge), try Data(contentsOf: paths.bridge))
+        XCTAssertEqual(try Data(contentsOf: paths.settings), settingsBeforeUpgrade)
+        // Even malformed/unreadable Claude settings cannot stop an owned-only
+        // upgrade, and must not get "repaired" as a startup side effect.
+        let malformed = Data("user-edited non-json".utf8)
+        try malformed.write(to: paths.settings)
+        let current = try await manager.upgradeInstalledBridgeIfOwned()
+        XCTAssertEqual(current, .current)
+        XCTAssertEqual(try Data(contentsOf: paths.settings), malformed)
+    }
+
+    func testManagedStatusLinePreflightBlocksConnectionWithoutMutation() async throws {
+        let paths = try makePaths()
+        defer { try? FileManager.default.removeItem(at: paths.root) }
+        try makeExecutable(at: paths.bridge)
+        let managed = paths.root.appendingPathComponent("managed-settings.json")
+        try writeJSONObject(["statusLine": ["type": "command", "command": "organization-command"], "disableAllHooks": true], to: managed)
+        let configuration = ClaudeStatusLineConnectionConfiguration(
+            settingsURL: paths.settings,
+            applicationSupportDirectoryURL: paths.support,
+            bridgeExecutableURL: paths.bridge,
+            snapshotURL: paths.snapshot,
+            preflightSettings: [ClaudePreflightSettingsFile(url: managed, scope: .managed)]
+        )
+        let manager = ClaudeStatusLineConnectionManager(configuration: configuration)
+        let warnings = try await manager.preflight()
+        XCTAssertTrue(warnings.contains(.managedStatusLine))
+        XCTAssertTrue(warnings.contains(.hooksDisabled))
+        await assertConnectionError(.managedSettingsOverride) { try await manager.connect() }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: paths.settings.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: paths.metadata.path))
+    }
+
+    func testProjectOverridePreflightWarnsWithoutModifyingProject() async throws {
+        let paths = try makePaths()
+        defer { try? FileManager.default.removeItem(at: paths.root) }
+        try makeExecutable(at: paths.bridge)
+        let project = paths.root.appendingPathComponent("project-settings.json")
+        try writeJSONObject(["statusLine": ["type": "command", "command": "project-command"]], to: project)
+        let original = try Data(contentsOf: project)
+        let configuration = ClaudeStatusLineConnectionConfiguration(
+            settingsURL: paths.settings,
+            applicationSupportDirectoryURL: paths.support,
+            bridgeExecutableURL: paths.bridge,
+            snapshotURL: paths.snapshot,
+            preflightSettings: [ClaudePreflightSettingsFile(url: project, scope: .project)]
+        )
+        let manager = ClaudeStatusLineConnectionManager(configuration: configuration)
+        let warnings = try await manager.preflight()
+        XCTAssertEqual(warnings, [.projectStatusLine])
+        try await manager.connect()
+        XCTAssertEqual(try Data(contentsOf: project), original)
+    }
+
+    func testConnectionMetadataCannotRestoreIntoAnotherProfile() async throws {
+        let paths = try makePaths()
+        defer { try? FileManager.default.removeItem(at: paths.root) }
+        try makeExecutable(at: paths.bridge)
+        try await ClaudeStatusLineConnectionManager(configuration: paths.configuration).connect()
+        let otherSettings = paths.root.appendingPathComponent("another-profile/settings.json")
+        let manager = ClaudeStatusLineConnectionManager(configuration: ClaudeStatusLineConnectionConfiguration(
+            settingsURL: otherSettings,
+            applicationSupportDirectoryURL: paths.support,
+            bridgeExecutableURL: paths.bridge,
+            snapshotURL: paths.snapshot
+        ))
+        await assertConnectionError(.conflict) { try await manager.disconnect() }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: otherSettings.path))
+    }
+
+    func testLegacyMetadataCannotWriteOriginalCommandIntoCustomProfile() async throws {
+        let paths = try makePaths()
+        defer { try? FileManager.default.removeItem(at: paths.root) }
+        try makeExecutable(at: paths.bridge)
+        try await ClaudeStatusLineConnectionManager(configuration: paths.configuration).connect()
+        var legacyMetadata = try readJSONObject(at: paths.metadata)
+        legacyMetadata.removeValue(forKey: "settingsFilePath")
+        try writeJSONObject(legacyMetadata, to: paths.metadata)
+        let manager = ClaudeStatusLineConnectionManager(configuration: paths.configuration)
+        await assertConnectionError(.conflict) { try await manager.disconnect() }
+        let upgrade = try await manager.upgradeInstalledBridgeIfOwned()
+        XCTAssertEqual(upgrade, .current, "Owned binary maintenance never requires opening Claude settings")
+    }
+
     func testConnectPreservesArbitraryRootAndChainsExistingCommand() async throws {
         let paths = try makePaths()
         defer { try? FileManager.default.removeItem(at: paths.root) }

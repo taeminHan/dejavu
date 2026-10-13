@@ -146,7 +146,8 @@ public enum WidgetLayoutCalculator {
             padding = 12
             providerGap = providerCount == 2 ? 10 : 0
             rowWithoutProgress = ceil(35 * scale)
-            progressFootprint = request.showProgress ? 9 : 0
+            // The native mini capacity gauge makes the provider row 48 pt.
+            progressFootprint = request.showProgress ? 13 : 0
         case .comfortable:
             baseMetricCellWidth = 88
             metricGap = 14
@@ -176,7 +177,8 @@ public enum WidgetLayoutCalculator {
             switch request.density {
             case .small:
                 emptyWidth = 250
-                emptyHeight = 34
+                // Native callout label (16 pt) plus the density's 20 pt padding.
+                emptyHeight = 36
             case .compact:
                 emptyWidth = 300
                 emptyHeight = 40

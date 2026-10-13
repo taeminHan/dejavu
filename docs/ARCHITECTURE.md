@@ -89,7 +89,7 @@ Codex does not read ChatGPT credentials directly.
 2. Unless `DEJAVU_CODEX_SOURCE=desktop`, inspect npm/nvm and `PATH` locations for the native Codex executable. Protected WindowsApps aliases are excluded.
 3. Fall back to `%LocalAppData%\OpenAI\Codex\bin` candidates bundled with Codex Desktop.
 4. Start `<codex executable> app-server` without a window and exchange newline-delimited JSON messages over standard input/output. Standard error is drained and discarded so verbose `RUST_LOG` output cannot fill the pipe and stall the child; it is never logged.
-5. Initialize the client and call `account/rateLimits/read`; parse 5-hour, weekly, plan and reset-credit information from the `codex` bucket of `rateLimitsByLimitId`, falling back to `rateLimits`. Optional fields that arrive as JSON `null` are skipped instead of failing the read. Outcomes are classified as follows; JSON-RPC error messages are never logged or displayed:
+5. Initialize the client and call `account/rateLimits/read`; parse 5-hour, weekly, plan and reset-credit information from the `codex` bucket of `rateLimitsByLimitId`. A supplied non-null map is authoritative even if its Codex bucket is absent or malformed; only an absent/null map may fall back to legacy `rateLimits`. Optional fields that arrive as JSON `null` are skipped instead of failing the read. Outcomes are classified as follows; JSON-RPC error messages are never logged or displayed:
 
    | Outcome | Exception | Provider status and message |
    |---|---|---|

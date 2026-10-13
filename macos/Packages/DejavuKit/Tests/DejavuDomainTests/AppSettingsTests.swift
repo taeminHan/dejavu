@@ -26,6 +26,7 @@ final class AppSettingsTests: XCTestCase {
             primaryMetric: .weekly,
             claudeMenuBarMetric: .weekly,
             codexMenuBarMetric: .hidden,
+            claudeCredentialIdentity: .previousDejavuDefault,
             trayIconStyle: .percentage,
             widgetDensity: .comfortable,
             widgetLayout: .twoRows,
@@ -49,6 +50,28 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(json["widgetPlacement"] as? String, "custom")
         XCTAssertEqual(json["appearance"] as? String, "dark")
         XCTAssertEqual(json["widgetTheme"] as? String, "modern")
+        XCTAssertEqual(json["claudeCredentialIdentity"] as? String, "previousDejavuDefault")
+    }
+
+    func testClaudeCredentialIdentityRoundTripsWithoutEnablingExtendedAccess() throws {
+        XCTAssertEqual(ClaudeCredentialIdentity.allCases, [.standard, .previousDejavuDefault])
+        for identity in ClaudeCredentialIdentity.allCases {
+            let settings = AppSettings(claudeCredentialIdentity: identity)
+            let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+            XCTAssertEqual(decoded.claudeCredentialIdentity, identity)
+            XCTAssertFalse(decoded.extendedFableAccessEnabled)
+            XCTAssertEqual(decoded, settings)
+        }
+    }
+
+    func testMissingUnknownAndInvalidCredentialIdentityUseStandardWithoutLosingSettings() throws {
+        for field in ["", #", "claudeCredentialIdentity":"future-identity""#, #", "claudeCredentialIdentity":true"#, #", "claudeCredentialIdentity":null"#] {
+            let data = Data((#"{"extendedFableAccessEnabled":true,"showsWidget":false"# + field + "}").utf8)
+            let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+            XCTAssertEqual(settings.claudeCredentialIdentity, .standard)
+            XCTAssertTrue(settings.extendedFableAccessEnabled)
+            XCTAssertFalse(settings.showsWidget)
+        }
     }
 
     func testMenuBarMetricHasStableCompleteCaseSet() {

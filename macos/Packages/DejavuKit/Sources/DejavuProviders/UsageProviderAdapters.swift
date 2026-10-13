@@ -9,7 +9,7 @@ extension ClaudeStatusSnapshotProvider: UsageProviding {
         } catch let error as ClaudeStatusSnapshotProviderError {
             switch error {
             case .snapshotUnavailable:
-                throw UsageProviderFailure.loginRequired
+                throw UsageProviderFailure.waitingForData
             case .snapshotStale, .snapshotTooLarge, .invalidSnapshot:
                 throw UsageProviderFailure.unavailable
             }

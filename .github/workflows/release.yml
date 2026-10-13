@@ -38,7 +38,12 @@ jobs:
         run: test -n "${SPARKLE_ED_PRIVATE_KEY}"
 
       - name: Test macOS package
-        run: swift test --package-path macos/Packages/DejavuKit -Xswiftc -warnings-as-errors
+        run: swift test --package-path macos/Packages/DejavuKit --scratch-path "${RUNNER_TEMP}/dejavu-package" -Xswiftc -warnings-as-errors
+
+      - name: Verify actual macOS AppModel and update coordinator
+        run: |
+          bash tools/RunMacAppModelProbe.sh "${RUNNER_TEMP}/dejavu-package"
+          bash tools/RunMacUpdateProbe.sh "${RUNNER_TEMP}/dejavu-package"
 
       - name: Build ad-hoc macOS release and signed update feed
         run: ./tools/BuildMacFreeRelease.sh
@@ -59,6 +64,7 @@ jobs:
           grep -q "<sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>" "${OUTPUT_ROOT}/appcast-macos.xml"
           grep -q 'sparkle:edSignature=' "${OUTPUT_ROOT}/appcast-macos.xml"
           xmllint --noout "${OUTPUT_ROOT}/appcast-macos.xml"
+          "${RUNNER_TEMP}/dejavu-macos-verify/Dejavu.app/Contents/MacOS/Dejavu" --validate-ui
 
       - name: Upload verified macOS assets
         uses: actions/upload-artifact@v6
@@ -81,11 +87,14 @@ jobs:
       - name: Set up .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "10.0.302"
+          dotnet-version: "10.0.401"
 
       - name: Verify release source
         shell: pwsh
         run: |
+          Get-ChildItem -File -Filter *.xaml | ForEach-Object {
+            [xml](Get-Content -LiteralPath $_.FullName -Raw) | Out-Null
+          }
           dotnet build ClaudeUsageTray.csproj -c Release
           if ($LASTEXITCODE -ne 0) { throw "Release build validation failed." }
           dotnet run --project tools/WidgetLayoutProbe/WidgetLayoutProbe.csproj -c Release
@@ -99,6 +108,8 @@ jobs:
           }
           dotnet run --project tools/ClaudeUsageParserProbe/ClaudeUsageParserProbe.csproj -c Release
           if ($LASTEXITCODE -ne 0) { throw "Claude usage parser validation failed." }
+          dotnet run --project tools/WindowsProviderProbe/WindowsProviderProbe.csproj -c Release
+          if ($LASTEXITCODE -ne 0) { throw "Provider parsing/cancellation validation failed." }
 
       - name: Install Velopack CLI
         run: dotnet tool install --global vpk --version 1.2.0

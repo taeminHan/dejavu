@@ -79,20 +79,40 @@ private struct RateLimitsResult: Decodable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        rateLimits = try container.decodeIfPresent(RateLimitBucket.self, forKey: .rateLimits)
-        rateLimitsByLimitID = try container.decodeIfPresent(
-            [String: RateLimitBucket].self,
+        rateLimits = try? container.decodeIfPresent(RateLimitBucket.self, forKey: .rateLimits)
+        rateLimitsByLimitID = (try? container.decodeIfPresent(
+            LossyBucketMap.self,
             forKey: .rateLimitsByLimitID
-        )
+        ))?.buckets
         if container.contains(.rateLimitsByLimitID) {
             hasRateLimitsByLimitID = !(try container.decodeNil(forKey: .rateLimitsByLimitID))
         } else {
             hasRateLimitsByLimitID = false
         }
-        rateLimitResetCredits = try container.decodeIfPresent(
+        rateLimitResetCredits = try? container.decodeIfPresent(
             ResetCredits.self,
             forKey: .rateLimitResetCredits
         )
+    }
+}
+
+private struct LossyBucketMap: Decodable {
+    let buckets: [String: RateLimitBucket]
+    private struct Key: CodingKey {
+        let stringValue: String
+        init?(stringValue: String) { self.stringValue = stringValue }
+        let intValue: Int? = nil
+        init?(intValue: Int) { return nil }
+    }
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: Key.self)
+        var buckets: [String: RateLimitBucket] = [:]
+        for key in container.allKeys {
+            if let bucket = try? container.decode(RateLimitBucket.self, forKey: key) {
+                buckets[key.stringValue] = bucket
+            }
+        }
+        self.buckets = buckets
     }
 }
 
@@ -100,6 +120,17 @@ private struct RateLimitBucket: Decodable {
     let planType: String?
     let primary: CodexWindow?
     let secondary: CodexWindow?
+
+    private enum CodingKeys: String, CodingKey { case planType, primary, secondary }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        planType = try? container.decodeIfPresent(String.self, forKey: .planType)
+        // A null/malformed optional window must not discard a valid sibling
+        // weekly window (or the independently supplied reset credits).
+        primary = try? container.decodeIfPresent(CodexWindow.self, forKey: .primary)
+        secondary = try? container.decodeIfPresent(CodexWindow.self, forKey: .secondary)
+    }
 }
 
 private struct CodexWindow: Decodable {

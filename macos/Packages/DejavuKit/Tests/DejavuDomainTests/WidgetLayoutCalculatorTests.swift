@@ -170,6 +170,43 @@ final class WidgetLayoutCalculatorTests: XCTestCase {
         }
     }
 
+    func testSmallEmptyStateFitsNativeCalloutAndPadding() {
+        for layout in WidgetLayout.allCases {
+            for showProgress in [false, true] {
+                let metrics = WidgetLayoutCalculator.calculate(
+                    WidgetLayoutRequest(
+                        density: .small,
+                        requestedLayout: layout,
+                        serviceState: .autoNone,
+                        showProgress: showProgress
+                    )
+                )
+                XCTAssertEqual(metrics.panelHeight, 36)
+                XCTAssertEqual(metrics.panelHeight - metrics.contentPadding * 2, 16)
+            }
+        }
+    }
+
+    func testCompactProgressFitsNativeCapacityGaugeRow() {
+        for layout in WidgetLayout.allCases {
+            let metrics = WidgetLayoutCalculator.calculate(
+                WidgetLayoutRequest(
+                    density: .compact,
+                    requestedLayout: layout,
+                    serviceState: .forcedBoth,
+                    showProgress: true
+                )
+            )
+            let rows = layout == .twoRows ? 2.0 : 1.0
+            let betweenRows = layout == .twoRows ? metrics.providerGap : 0
+            XCTAssertEqual(metrics.progressFootprint, 13)
+            XCTAssertEqual(
+                metrics.panelHeight,
+                48 * rows + betweenRows + metrics.contentPadding * 2
+            )
+        }
+    }
+
     func testAccessibilityScaleIsBoundedAndExpandsContent() {
         let baseline = WidgetLayoutCalculator.calculate(
             WidgetLayoutRequest(

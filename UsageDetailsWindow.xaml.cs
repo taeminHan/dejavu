@@ -146,8 +146,8 @@ public partial class UsageDetailsWindow : Window
                 DetailsFooter.BorderThickness = new Thickness(0);
                 DetailsThemeBadge.Width = DetailsThemeBadge.Height = 38;
                 DetailsBrandText.Text = "dejavu glass";
-                ConfigureSectionCard(ClaudeCard, 16, new Thickness(14), new Thickness(0, 0, 0, 10), "RaisedSurfaceBrush");
-                ConfigureSectionCard(CodexCard, 16, new Thickness(14), new Thickness(0), "RaisedSurfaceBrush");
+                ConfigureSectionCard(ClaudeCard, 16, new Thickness(14), new Thickness(0, 0, 0, 10), "SurfaceRaisedBrush");
+                ConfigureSectionCard(CodexCard, 16, new Thickness(14), new Thickness(0), "SurfaceRaisedBrush");
                 ConfigureSectionCard(CreditsCard, 12, new Thickness(12, 9, 12, 9), new Thickness(0), "SurfaceBrush");
                 ServiceDivider.Visibility = Visibility.Collapsed;
                 break;
@@ -166,7 +166,7 @@ public partial class UsageDetailsWindow : Window
                 CodexSectionTitle.Text = "[CODEX]";
                 ConfigureSectionCard(ClaudeCard, 0, new Thickness(10), new Thickness(0), "SurfaceBrush");
                 ConfigureSectionCard(CodexCard, 0, new Thickness(10), new Thickness(0), "SurfaceBrush");
-                ConfigureSectionCard(CreditsCard, 0, new Thickness(10, 8, 10, 8), new Thickness(0), "RaisedSurfaceBrush");
+                ConfigureSectionCard(CreditsCard, 0, new Thickness(10, 8, 10, 8), new Thickness(0), "SurfaceRaisedBrush");
                 StyleRowsAsCells(new Thickness(8, 6, 8, 6), 1);
                 ServiceDivider.Height = 1;
                 ServiceDivider.Margin = new Thickness(0, 7, 0, 7);
@@ -228,7 +228,7 @@ public partial class UsageDetailsWindow : Window
     {
         foreach (var row in MetricRows())
         {
-            row.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "RaisedSurfaceBrush");
+            row.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "SurfaceRaisedBrush");
             row.Opacity = opacity;
             row.Margin = new Thickness(0, 0, 0, paddingApproximation.Bottom + 3);
         }

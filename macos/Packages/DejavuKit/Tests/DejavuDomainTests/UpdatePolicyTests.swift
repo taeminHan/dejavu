@@ -51,4 +51,55 @@ final class UpdatePolicyTests: XCTestCase {
             lastNotifiedVersion: "1.2.3"
         ))
     }
+
+    func testManualFailurePreservesPreviouslyDiscoveredRelease() {
+        var state = UpdateCheckState()
+        state.foundUpdate(version: "0.9.6")
+        state.beginCheck(manual: true)
+        XCTAssertEqual(state.presentation, .checking)
+        XCTAssertEqual(state.availableVersion, "0.9.6")
+
+        state.finish(outcome: .failed, manual: true)
+        XCTAssertEqual(state.presentation, .available(version: "0.9.6"))
+        XCTAssertEqual(state.availableVersion, "0.9.6")
+    }
+
+    func testAutomaticFailureSilentlyPreservesDiscoveredRelease() {
+        var state = UpdateCheckState()
+        state.foundUpdate(version: "0.9.6")
+        state.beginCheck(manual: false)
+        XCTAssertEqual(state.presentation, .available(version: "0.9.6"))
+        state.finish(outcome: .failed, manual: false)
+        XCTAssertEqual(state.presentation, .available(version: "0.9.6"))
+    }
+
+    func testDefinitiveNoUpdateClearsReleaseForEitherCheckKind() {
+        for manual in [false, true] {
+            var state = UpdateCheckState()
+            state.foundUpdate(version: "0.9.6")
+            state.beginCheck(manual: manual)
+            state.finish(outcome: .noUpdate, manual: manual)
+            XCTAssertNil(state.availableVersion)
+            XCTAssertEqual(state.presentation, manual ? .current : .ready)
+        }
+    }
+
+    func testFailureWithoutDiscoveredReleaseOnlyShowsForManualCheck() {
+        for manual in [false, true] {
+            var state = UpdateCheckState()
+            state.beginCheck(manual: manual)
+            state.finish(outcome: .failed, manual: manual)
+            XCTAssertEqual(state.presentation, manual ? .failed : .ready)
+        }
+    }
+
+    func testSuccessfulCycleRetainsFoundReleaseAndRejectsEmptyVersions() {
+        var state = UpdateCheckState()
+        state.beginCheck(manual: true)
+        state.foundUpdate(version: " 0.9.6 ")
+        state.foundUpdate(version: " \n ")
+        state.finish(outcome: .completed, manual: true)
+        XCTAssertEqual(state.availableVersion, "0.9.6")
+        XCTAssertEqual(state.presentation, .available(version: "0.9.6"))
+    }
 }

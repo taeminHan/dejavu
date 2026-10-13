@@ -9,6 +9,7 @@ import SwiftUI
 struct ModernWidgetView: View {
     @ObservedObject var model: AppModel
     let layout: WidgetLayoutMetrics
+    var measuresNaturalSize = false
     let onOpenDetails: () -> Void
 
     var body: some View {
@@ -28,7 +29,7 @@ struct ModernWidgetView: View {
         .padding(layout.contentPadding)
         .frame(
             width: layout.panelWidth,
-            height: layout.panelHeight,
+            height: measuresNaturalSize ? nil : layout.panelHeight,
             alignment: .center
         )
         .background {
@@ -134,8 +135,10 @@ struct ModernWidgetView: View {
             }
 
             if model.showProgress, let percent = limit.displayPercent {
-                ProgressView(value: percent, total: 100)
-                    .progressViewStyle(.linear)
+                Gauge(value: percent, in: 0...100) {
+                    EmptyView()
+                }
+                    .gaugeStyle(.linearCapacity)
                     .tint(
                         usageProgressColor(
                             for: percent,
@@ -144,7 +147,7 @@ struct ModernWidgetView: View {
                         )
                     )
                     .controlSize(.mini)
-                    .accessibilityLabel(limit.label)
+                    .accessibilityLabel(Text(LocalizedStringKey(limit.label)))
                     .accessibilityValue(limit.displayText)
             }
         }

@@ -1,8 +1,8 @@
 # dejavu productization status
 
-기준 버전: `0.9.5` (2026-10-07)
+기준 버전: `0.9.6` (2026-10-13)
 
-이번 릴리스는 Windows 설정·테마·사용량 표시 개선을 포함합니다. 다만 아래 P0 항목이 해결되기 전에는 공인 서명되거나 신뢰된 설치 프로그램으로 표시하지 않습니다.
+이번 릴리스는 macOS 연결·인증 위치 선택·네이티브 화면 개선과 Windows 수집·테마 오류 수정을 포함합니다. macOS Claude 이전 로그인 재사용 후 사용량 수신은 사용자가 확인했습니다. 아래 P0 항목이 해결되기 전에는 공인 서명되거나 Apple 공증된 설치 프로그램으로 표시하지 않습니다.
 
 ## Release priorities
 
@@ -32,6 +32,9 @@
 
 ## Implemented in this release
 
+- macOS menu-bar-first native settings/details, official login flows, explicit previous Claude sign-in reuse and independent extended-access consent.
+- macOS cancellation-safe identity switching, bounded refresh recovery, consent-revoking local reset and observed updater availability.
+- Windows authoritative Codex bucket parsing, malformed-Claude-credential Desktop fallback, timeout-bounded Codex cancellation drain, corrected theme resources and consistent accent defaults.
 - Six-destination native Windows Settings: Display, Appearance, Connections, Behavior, Updates and Privacy.
 - Retro Night bitmap lettering, stepped pixel frames/rings and square-cell widget/detail gauges.
 - Orbit ordering from Venus to Saturn, preserving separate widget systems and combined solar details.

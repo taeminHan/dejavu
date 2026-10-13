@@ -29,3 +29,50 @@ public enum AutomaticUpdatePolicy {
         return trimmed.isEmpty ? nil : trimmed
     }
 }
+
+/// Keeps a discovered release until the feed definitively says it is current.
+/// A transient failure or a new check must not withdraw a usable update.
+public struct UpdateCheckState: Equatable, Sendable {
+    public enum Presentation: Equatable, Sendable {
+        case ready
+        case checking
+        case available(version: String)
+        case current
+        case failed
+    }
+
+    public enum Outcome: Equatable, Sendable {
+        case completed
+        case noUpdate
+        case failed
+    }
+
+    public private(set) var availableVersion: String?
+    public private(set) var presentation: Presentation = .ready
+
+    public init() {}
+
+    public mutating func beginCheck(manual: Bool) {
+        if manual { presentation = .checking }
+    }
+
+    public mutating func foundUpdate(version: String) {
+        let version = version.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !version.isEmpty else { return }
+        availableVersion = version
+        presentation = .available(version: version)
+    }
+
+    public mutating func finish(outcome: Outcome, manual: Bool) {
+        if outcome == .noUpdate {
+            availableVersion = nil
+            presentation = manual ? .current : .ready
+        } else if let availableVersion {
+            presentation = .available(version: availableVersion)
+        } else if outcome == .failed {
+            presentation = manual ? .failed : .ready
+        } else {
+            presentation = manual ? .current : .ready
+        }
+    }
+}

@@ -59,7 +59,7 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
     )
     private var canCheckObservation: NSKeyValueObservation?
     private var automaticCheckTask: Task<Void, Never>?
-    private var availableVersion: String?
+    private var checkState = UpdateCheckState()
     private var lastNotifiedVersion: String?
     private var nextAutomaticCheckAt: Date?
     private var automaticChecksEnabled = false
@@ -111,10 +111,13 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
             object: nil
         )
         canCheckForUpdates = updaterController.updater.canCheckForUpdates
-        canCheckObservation = updaterController.updater.observe(\.canCheckForUpdates) {
-            [weak self] _, change in
-            Task { @MainActor in
-                self?.canCheckForUpdates = change.newValue ?? false
+        canCheckObservation = updaterController.updater.observe(\.canCheckForUpdates, options: [.new]) {
+            [weak self] _, _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                // Re-read after the actor hop: rapid Sparkle changes must not apply
+                // an older queued observation after its actual state has changed.
+                self.canCheckForUpdates = self.updaterController.updater.canCheckForUpdates
             }
         }
         scheduleAutomaticChecks(includeStartupCheck: true)
@@ -138,8 +141,8 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
     func checkForUpdates() {
         guard isStarted, canCheckForUpdates else { return }
         isManualCycle = true
-        availableVersion = nil
-        status = .checking
+        checkState.beginCheck(manual: true)
+        applyCheckPresentation()
         NSApp.activate()
         updaterController.checkForUpdates(nil)
     }
@@ -165,8 +168,8 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
     func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
         guard isManualCycle || automaticChecksEnabled else { return }
         let version = item.displayVersionString
-        availableVersion = version
-        status = .available(version: version)
+        checkState.foundUpdate(version: version)
+        applyCheckPresentation()
 
         guard automaticChecksEnabled,
               !isManualCycle,
@@ -181,8 +184,8 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: any Error) {
-        availableVersion = nil
-        status = isManualCycle ? .current : .ready
+        checkState.finish(outcome: .noUpdate, manual: isManualCycle)
+        applyCheckPresentation()
     }
 
     func updater(
@@ -195,17 +198,11 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
         if let error {
             let cocoaError = error as NSError
             let isNoUpdate = cocoaError.domain == SUSparkleErrorDomain && cocoaError.code == 1001
-            if isManualCycle {
-                status = isNoUpdate ? .current : .failed
-            } else if !isNoUpdate {
-                // Automatic failures stay silent, matching the Windows app.
-                status = .ready
-            }
-        } else if let availableVersion {
-            status = .available(version: availableVersion)
+            checkState.finish(outcome: isNoUpdate ? .noUpdate : .failed, manual: isManualCycle)
         } else {
-            status = isManualCycle ? .current : .ready
+            checkState.finish(outcome: .completed, manual: isManualCycle)
         }
+        applyCheckPresentation()
     }
 
     private func scheduleAutomaticChecks(includeStartupCheck: Bool) {
@@ -244,8 +241,18 @@ final class UpdateCoordinator: NSObject, ObservableObject, SPUUpdaterDelegate {
     private func performBackgroundCheckIfPossible() {
         guard automaticChecksEnabled, updaterController.updater.canCheckForUpdates else { return }
         isManualCycle = false
-        availableVersion = nil
+        checkState.beginCheck(manual: false)
         updaterController.updater.checkForUpdatesInBackground()
+    }
+
+    private func applyCheckPresentation() {
+        switch checkState.presentation {
+        case .ready: status = .ready
+        case .checking: status = .checking
+        case let .available(version): status = .available(version: version)
+        case .current: status = .current
+        case .failed: status = .failed
+        }
     }
 
     @objc private func systemClockOrWakeDidChange(_ notification: Notification) {

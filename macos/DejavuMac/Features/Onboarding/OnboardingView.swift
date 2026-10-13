@@ -1,18 +1,29 @@
+import DejavuDomain
 import SwiftUI
 
 struct OnboardingView: View {
+    @ObservedObject var model: AppModel
     let onFinish: () -> Void
 
     @State private var page = 0
 
     private let pages = OnboardingPage.all
 
+    init(model: AppModel, onFinish: @escaping () -> Void, initialPage: Int = 0) {
+        self.model = model
+        self.onFinish = onFinish
+        _page = State(initialValue: min(2, max(0, initialPage)))
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            onboardingContent
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 48)
-                .padding(.vertical, 30)
+            ScrollView {
+                onboardingContent
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 48)
+                    .padding(.vertical, 30)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             Divider()
 
@@ -37,7 +48,7 @@ struct OnboardingView: View {
                     }
                 }
 
-                Button(page == pages.count - 1 ? "Done" : "Continue") {
+                Button(LocalizedStringKey(page == pages.count - 1 ? "Done" : "Continue")) {
                     if page == pages.count - 1 {
                         onFinish()
                     } else {
@@ -50,7 +61,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
         }
-        .frame(minWidth: 600, minHeight: 420)
+        .frame(minWidth: 600, minHeight: 520)
         .background(Color(nsColor: .windowBackgroundColor))
     }
 
@@ -94,12 +105,12 @@ struct OnboardingView: View {
                 OnboardingItem(
                     symbol: "cursorarrow.click",
                     title: "One-click access",
-                    detail: "Click the menu bar item to open the standard Dejavu menu."
+                    detail: "Click the menu bar item to open details and controls."
                 )
                 OnboardingItem(
                     symbol: "rectangle.on.rectangle",
-                    title: "Two optional widgets",
-                    detail: "Use the floating overlay or add Dejavu from the macOS widget gallery."
+                    title: "Optional overlay",
+                    detail: "Use the menu bar on its own, or enable the floating overlay in Settings."
                 )
             }
 
@@ -124,19 +135,60 @@ struct OnboardingView: View {
 
         default:
             VStack(alignment: .leading, spacing: 16) {
-                OnboardingProviderItem(
-                    provider: .claude,
-                    detail: "Choose the 5h, weekly, Fable, or hidden menu bar metric in Settings."
-                )
-                OnboardingProviderItem(
-                    provider: .codex,
-                    detail: "Show Codex usage in the menu bar, or hide it."
-                )
+                providerSetup(.claude)
+                providerSetup(.codex)
                 Label("You can change these choices later in Settings.", systemImage: "gearshape")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.top, 2)
             }
+        }
+    }
+
+    private func providerSetup(_ provider: ProviderBrand) -> some View {
+        let status = provider == .claude ? model.claudeStatus : model.codexStatus
+        let message = provider == .claude ? model.domainState.claudeMessage : model.domainState.codexMessage
+        let issue = provider == .claude ? model.domainState.claudeIssue : model.domainState.codexIssue
+        return GroupBox {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    ProviderBrandLabel(provider: provider, iconSize: 18)
+                    Spacer()
+                    Text(LocalizedStringKey(status.displayName)).foregroundStyle(.secondary)
+                }
+                Text(LocalizedStringKey(message)).font(.callout).foregroundStyle(.secondary)
+                if provider == .claude, status != .ready {
+                    HStack {
+                        if model.claudeConnectionState != .connected {
+                            Button("Connect Claude Status Line…") { model.connectClaudeStatusLine() }
+                                .disabled(model.claudeConnectionState.isBusy)
+                        }
+                        if status == .loginRequired || (status == .error && issue == nil) || model.claudeLoginPending {
+                            Button(LocalizedStringKey(model.claudeLoginPending ? "Sign-in in progress…" : "Sign In…")) { model.loginClaude() }
+                                .disabled(model.claudeLoginPending)
+                        }
+                    }
+                    Text("Usage arrives after Claude Code receives its first API response. Connecting does not send a model request.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else if provider == .codex, status == .loginRequired || (status == .error && issue == nil) || model.codexLoginPending {
+                    HStack {
+                        Button(LocalizedStringKey(model.codexLoginPending ? "Reopen Browser…" : "Sign In…")) { model.loginCodex() }
+                        if model.codexLoginPending {
+                            Button("Cancel") { model.cancelCodexLogin() }
+                        }
+                    }
+                }
+                if status == .unavailable || status == .error {
+                    Link("Installation Guide…", destination: URL(string: provider == .claude
+                        ? "https://docs.anthropic.com/en/docs/claude-code/getting-started"
+                        : "https://help.openai.com/en/articles/11096431")!)
+                }
+                if let loginMessage = provider == .claude ? model.claudeLoginMessage : model.codexLoginMessage {
+                    Text(LocalizedStringKey(loginMessage)).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(4)
         }
     }
 }

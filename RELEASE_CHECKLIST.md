@@ -1,6 +1,18 @@
 # Public release checklist
 
-`0.9.5`는 제품 소유자의 릴리스 요청에 따라 아래 신뢰·호환성 검토가 완료되기 전에 공개됩니다. 특히 SignPath 연동 전 설치 파일은 미서명 상태이며 SmartScreen 경고가 표시될 수 있습니다.
+`0.9.6`는 제품 소유자의 명시적 요청에 따라 Windows 오류 수정과 macOS 개선을 함께 배포합니다. 무료 배포 방침을 유지하며 Windows 공인 코드 서명·macOS Developer ID/공증을 받은 제품이라고 표시하지 않습니다. 아래 수동 검증과 신뢰 배포의 미완료 항목은 그대로 남깁니다.
+
+## 0.9.6 release validation scope — 2026-10-13
+
+- Windows: Codex 다중 버킷 처리, 손상된 Claude 인증의 Desktop 대체 수집, Codex 취소/완료 배수, 테마 리소스 14곳, 기본 강조색 일치 수정.
+- macOS: 공식 로그인 흐름, 이전 Claude 로그인의 명시적 재사용 선택, 네이티브 설정/상세/시작 안내, 갱신·초기화·업데이트 상태·아이콘 개선. 사용자가 이전 로그인 선택 후 실제 Claude 사용량 표시를 확인했다.
+- 기존 사용자 설정과 플로팅/WidgetKit 구현을 보존한다. 인증 정보를 복사·삭제하지 않고, 합성 검사에서 실제 계정·공급자 API·모델 요청을 사용하지 않는다.
+- [x] macOS 핵심 211 tests, AppModel 65 checks, UpdateCoordinator 10 checks 및 네이티브 UI 474 states 로컬 검사(0.9.6 최종 재검사 로그는 `docs/MACOS_DEVELOPMENT.md`).
+- [ ] Windows CI에서 Release 빌드, XAML XML, 기존 전체 위젯/작업표시줄/Orbit/Retro, 설정 144/업데이트 48, Claude 파서 20 검사.
+- [ ] 새 Windows provider 72 checks 및 실제 WPF 테마 36 states/강조색 5 checks 검사.
+- [ ] 태그 대상 커밋, 공통 0.9.6 버전, macOS 빌드 번호가 이전 공개 빌드 42보다 높은지 확인.
+- [ ] Windows·macOS 검증 후 단일 정식 Release 공개, 설치 파일/업데이트 피드/전체 체크섬 확인.
+- 개발 기기에서는 WPF를 실행하지 않는다. Windows 설치형 업그레이드·실제 물리 DPI·키보드·다중 모니터와 macOS 설치형 Sparkle/App Group은 CI/합성 검사와 별도 수락 범위다.
 
 ## 0.9.5 release validation scope — 2026-10-07
 

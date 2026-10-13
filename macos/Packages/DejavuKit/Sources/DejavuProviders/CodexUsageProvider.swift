@@ -12,6 +12,7 @@ public actor CodexUsageProvider: UsageProviding {
 
     private var activeClient: CodexAppServerClient?
     private var isShutDown = false
+    private var loginRequiredWasUnauthorized: Bool?
 
     public init(
         locator: CodexExecutableLocator = CodexExecutableLocator(),
@@ -52,6 +53,7 @@ public actor CodexUsageProvider: UsageProviding {
 
         do {
             let snapshot = try await client.fetchUsage()
+            loginRequiredWasUnauthorized = nil
             clearActiveClient(client)
             guard !isShutDown else { throw CancellationError() }
             return snapshot
@@ -61,7 +63,17 @@ public actor CodexUsageProvider: UsageProviding {
         } catch {
             clearActiveClient(client)
             guard !isShutDown else { throw CancellationError() }
-            throw Self.providerFailure(for: error)
+            let failure = Self.providerFailure(for: error)
+            if failure == .loginRequired {
+                loginRequiredWasUnauthorized = (error as? CodexAppServerError) == .unauthorized
+            } else if let wasUnauthorized = loginRequiredWasUnauthorized {
+                if (error as? CodexAppServerError) == .backendFailed, !wasUnauthorized {
+                    loginRequiredWasUnauthorized = nil
+                } else {
+                    throw UsageProviderFailure.loginRequired
+                }
+            }
+            throw failure
         }
     }
 
@@ -74,6 +86,10 @@ public actor CodexUsageProvider: UsageProviding {
         clearActiveClient(activeClient)
     }
 
+    /// A successful explicit login permits the follow-up read to settle the
+    /// new state rather than carrying an earlier login-required failure.
+    public func authenticationCompleted() { loginRequiredWasUnauthorized = nil }
+
     private func clearActiveClient(_ client: CodexAppServerClient) {
         if let activeClient, activeClient === client {
             self.activeClient = nil
@@ -83,9 +99,9 @@ public actor CodexUsageProvider: UsageProviding {
     private static func providerFailure(for error: Error) -> UsageProviderFailure {
         guard let error = error as? CodexAppServerError else { return .failed }
         switch error {
-        case .loginRequired:
+        case .loginRequired, .unauthorized:
             return .loginRequired
-        case .launchFailed, .serverExited, .shutDown:
+        case .launchFailed, .shutDown:
             return .unavailable
         case .timedOut:
             return .offline
@@ -97,7 +113,11 @@ public actor CodexUsageProvider: UsageProviding {
              .accountReadRejected,
              .invalidAccountResponse,
              .rateLimitsRejected,
-             .invalidRateLimitsResponse:
+             .invalidRateLimitsResponse,
+             .serverExited,
+             .backendFailed,
+             .loginRejected,
+             .invalidLoginResponse:
             return .failed
         }
     }

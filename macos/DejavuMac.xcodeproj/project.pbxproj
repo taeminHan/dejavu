@@ -42,6 +42,7 @@
 		A10000000000000000000121 /* UsageColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001C /* UsageColor.swift */; };
 		A10000000000000000000122 /* UpdateCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001D /* UpdateCoordinator.swift */; };
 		A10000000000000000000123 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000090A /* Sparkle */; };
+		A10000000000000000000124 /* Dejavu.icns in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000001E /* Dejavu.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +117,7 @@
 		A1000000000000000000001B /* ProviderBrand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderBrand.swift; sourceTree = "<group>"; };
 		A1000000000000000000001C /* UsageColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageColor.swift; sourceTree = "<group>"; };
 		A1000000000000000000001D /* UpdateCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCoordinator.swift; sourceTree = "<group>"; };
+		A1000000000000000000001E /* Dejavu.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Dejavu.icns; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -284,6 +286,7 @@
 		A10000000000000000000310 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				A1000000000000000000001E /* Dejavu.icns */,
 				A1000000000000000000001A /* BrandAssets.xcassets */,
 				A10000000000000000000010 /* Localizable.xcstrings */,
 			);
@@ -461,6 +464,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000000000000000000124 /* Dejavu.icns in Resources */,
 				A1000000000000000000011C /* BrandAssets.xcassets in Resources */,
 				A1000000000000000000010C /* Localizable.xcstrings in Resources */,
 			);
@@ -655,7 +659,7 @@
 				CODE_SIGN_ENTITLEMENTS = DejavuMac/Config/DejavuMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 43;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -667,7 +671,7 @@
 				);
 				LM_FILTER_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.6;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu;
 				PRODUCT_NAME = Dejavu;
 				SDKROOT = macosx;
@@ -688,7 +692,7 @@
 				CODE_SIGN_ENTITLEMENTS = DejavuMac/Config/DejavuMac.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 43;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = NO;
@@ -700,7 +704,7 @@
 				);
 				LM_FILTER_WARNINGS = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.6;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu;
 				PRODUCT_NAME = Dejavu;
 				SDKROOT = macosx;
@@ -748,7 +752,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = DejavuUsageWidget/Config/DejavuUsageWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 43;
 				DEAD_CODE_STRIPPING = YES;
 				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
 				ENABLE_APP_SANDBOX = YES;
@@ -762,7 +766,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.6;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu.widget;
 				PRODUCT_NAME = DejavuUsageWidget;
 				SDKROOT = macosx;
@@ -781,7 +785,7 @@
 				ARCHS = arm64;
 				CODE_SIGN_ENTITLEMENTS = DejavuUsageWidget/Config/DejavuUsageWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 43;
 				DEAD_CODE_STRIPPING = YES;
 				DEJAVU_APP_GROUP_IDENTIFIER = group.dev.taemtaem.dejavu;
 				ENABLE_APP_SANDBOX = YES;
@@ -795,7 +799,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.9.4;
+				MARKETING_VERSION = 0.9.6;
 				PRODUCT_BUNDLE_IDENTIFIER = dev.taemtaem.dejavu.widget;
 				PRODUCT_NAME = DejavuUsageWidget;
 				SDKROOT = macosx;

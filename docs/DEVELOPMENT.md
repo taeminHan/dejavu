@@ -151,6 +151,16 @@ Expected: `Claude usage parser: 20 checked, 0 failures`. It uses synthetic JSON 
 
 ### Codex
 
+0.9.6의 인증/수집 회귀 검사는 실제 공급자 소스를 연결한 별도 실행 파일로 수행한다. 임시 합성 인증 자료와 이 테스트가 시작한 가짜 app-server만 사용하며 실제 CLI·키체인·계정·사용자 설정·네트워크를 사용하지 않는다.
+
+```powershell
+dotnet run --project .\tools\WindowsProviderProbe\WindowsProviderProbe.csproj -c Release
+```
+
+예상: `Windows provider regression: 72 checked, 0 failures`. 다중 버킷의 우선순위, malformed 인증의 Desktop fallback, 취소 전 자식 미실행, 진행 중 요청의 완료 표식 보존, 원래 호출자 취소 전달과 실제 15초 timeout을 검사한다. 이전 연결 토큰 패턴이 pending pipe를 즉시 취소하는지는 실행 환경별 결과를 별도로 출력하며, 관찰되지 않은 실패를 재현했다고 주장하지 않는다.
+
+기본 WPF layout probe에는 `Windows theme resource matrix: 36 checked, 0 failures`와 `Windows accent defaults: 5 checked`도 포함된다. 사용자 설정 저장 없이 실제 WPF 상세·시작 안내·업데이트 화면의 배경색과 새 기본값/이전 저장색/기본값 복원을 검사한다.
+
 1. Native CLI path and Desktop bundled path: verify `account/rateLimits/read` returns the same displayed structure.
 2. Logged-out state: verify the user-triggered browser login and post-login forced refresh.
 3. Missing executable: verify the official installation link and no orphan child process.

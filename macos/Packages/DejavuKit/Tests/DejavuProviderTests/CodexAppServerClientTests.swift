@@ -1,6 +1,7 @@
 import Darwin
 import Foundation
 import XCTest
+import DejavuApplication
 import DejavuDomain
 @testable import DejavuProviders
 
@@ -33,7 +34,7 @@ final class CodexAppServerClientTests: XCTestCase {
         let client = CodexAppServerClient(
             executableURL: executable,
             configuration: CodexAppServerConfiguration(
-                requestTimeout: .milliseconds(500),
+                requestTimeout: .seconds(2),
                 shutdownGracePeriod: .seconds(1)
             )
         )
@@ -162,7 +163,7 @@ final class CodexAppServerClientTests: XCTestCase {
 
     func testCancellationStopsOwnedTransportAndRethrowsCancellation() async throws {
         let transport = ScriptedCodexTransport(responses: [])
-        let client = makeClient(transport: transport)
+        let client = makeClient(transport: transport, configuration: CodexAppServerConfiguration(requestTimeout: .milliseconds(60)))
         let request = Task { try await client.fetchUsage() }
         try await Task.sleep(for: .milliseconds(20))
         request.cancel()
@@ -189,10 +190,20 @@ final class CodexAppServerClientTests: XCTestCase {
         let executable = directory.appendingPathComponent("synthetic-codex")
         let script = #"""
         #!/bin/sh
+        # Reproduce startup slower than the old 150 ms test-only timeout.
+        /bin/sleep 0.25
         printf '%s\n' "$$" > "${0}.pid"
         IFS= read -r initialize || exit 20
-        trap '' TERM
-        while :; do :; done
+        printf '%s\n' '{"id":1,"result":{}}'
+        IFS= read -r initialized || exit 21
+        IFS= read -r account || exit 22
+        printf '%s\n' '{"id":2,"result":{"account":{"type":"chatgpt"},"requiresOpenaiAuth":true}}'
+        IFS= read -r limits || exit 23
+        printf '%s\n' 'ready' > "${0}.ready"
+        while [ ! -f "${0}.release" ]; do /bin/sleep 0.01; done
+        printf '%s\n' 'done' > "${0}.rotation-complete"
+        printf '%s\n' '{"id":3,"result":{"rateLimits":{"secondary":{"usedPercent":34,"windowDurationMins":10080}}}}'
+        while IFS= read -r ignored; do :; done
         """#
         try Data(script.utf8).write(to: executable)
         try FileManager.default.setAttributes(
@@ -203,24 +214,34 @@ final class CodexAppServerClientTests: XCTestCase {
         let client = CodexAppServerClient(
             executableURL: executable,
             configuration: CodexAppServerConfiguration(
-                requestTimeout: .seconds(5),
-                shutdownGracePeriod: .milliseconds(10)
+                // Cancellation must be tested after the request is pending,
+                // not by racing cold process startup against an early timeout.
+                requestTimeout: .seconds(15),
+                shutdownGracePeriod: .milliseconds(100)
             )
         )
         let request = Task { try await client.fetchUsage() }
         let pidURL = URL(fileURLWithPath: executable.path + ".pid")
-        let startupDeadline = ContinuousClock.now.advanced(by: .seconds(2))
-        while !FileManager.default.fileExists(atPath: pidURL.path),
+        let readyURL = URL(fileURLWithPath: executable.path + ".ready")
+        let releaseURL = URL(fileURLWithPath: executable.path + ".release")
+        let rotationURL = URL(fileURLWithPath: executable.path + ".rotation-complete")
+        let startupDeadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while !FileManager.default.fileExists(atPath: readyURL.path),
               ContinuousClock.now < startupDeadline {
             try await Task.sleep(for: .milliseconds(10))
         }
-        guard FileManager.default.fileExists(atPath: pidURL.path) else {
+        guard FileManager.default.fileExists(atPath: readyURL.path) else {
             request.cancel()
+            try Data().write(to: releaseURL)
             await client.shutdown()
-            XCTFail("Synthetic app-server did not start")
+            XCTFail("Synthetic app-server did not reach the pending-read handshake")
             return
         }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: rotationURL.path))
         request.cancel()
+        // Let the synthetic official client persist its in-band work and send
+        // the response. The cancelled caller must discard it, then reap child.
+        try Data().write(to: releaseURL)
 
         do {
             _ = try await request.value
@@ -228,6 +249,7 @@ final class CodexAppServerClientTests: XCTestCase {
         } catch is CancellationError {
             // Expected. The blocking pipe read must have been unblocked.
         }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: rotationURL.path))
 
         let pidText = try String(
             contentsOf: pidURL,
@@ -255,7 +277,7 @@ final class CodexAppServerClientTests: XCTestCase {
 
     func testShutdownDuringRequestStopsTransportAndCancelsResult() async throws {
         let transport = ScriptedCodexTransport(responses: [])
-        let client = makeClient(transport: transport)
+        let client = makeClient(transport: transport, configuration: CodexAppServerConfiguration(requestTimeout: .milliseconds(60)))
         let request = Task { try await client.fetchUsage() }
         try await Task.sleep(for: .milliseconds(20))
 
@@ -271,6 +293,261 @@ final class CodexAppServerClientTests: XCTestCase {
         }
         let stopCount = await transport.stopCount()
         XCTAssertEqual(stopCount, 1)
+    }
+
+    func testBrowserLoginUsesOfficialFlowAndMatchingCompletion() async throws {
+        let transport = ScriptedCodexTransport(responses: [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"type":"chatgpt","loginId":"synthetic-login","authUrl":"https://auth.openai.com/authorize?synthetic=1"}}"#.utf8),
+            Data(#"{"method":"account/login/completed","params":{"loginId":"unrelated","success":false}}"#.utf8),
+            Data(#"{"method":"account/login/completed","params":{"loginId":"synthetic-login","success":true,"error":null}}"#.utf8)
+        ])
+        let recorder = BrowserRecorder()
+        try await makeClient(transport: transport).authenticate { await recorder.open($0) }
+        let opened = await recorder.urls()
+        XCTAssertEqual(opened.count, 1)
+        XCTAssertEqual(opened.first?.host, "auth.openai.com")
+        let messages = await transport.sentMessages()
+        try assertRequest(messages[2], method: "account/login/start", id: 2)
+        let request = try XCTUnwrap(JSONSerialization.jsonObject(with: messages[2]) as? [String: Any])
+        XCTAssertEqual((request["params"] as? [String: Any])?["type"] as? String, "chatgpt")
+        let stopped = await transport.stopCount()
+        XCTAssertEqual(stopped, 1)
+    }
+
+    func testBrowserLoginRejectsUntrustedURLWithoutOpeningBrowser() async throws {
+        for url in ["https://example.com/signin", "file:///tmp/auth", "https://auth.openai.com.evil.example/", "https://user@auth.openai.com/"] {
+            let response = try JSONSerialization.data(withJSONObject: ["id": 2, "result": ["type": "chatgpt", "loginId": "synthetic", "authUrl": url]])
+            let transport = ScriptedCodexTransport(responses: [Data(#"{"id":1,"result":{}}"#.utf8), response])
+            let recorder = BrowserRecorder()
+            do {
+                try await makeClient(transport: transport).authenticate { await recorder.open($0) }
+                XCTFail("Expected invalid authentication URL")
+            } catch {
+                XCTAssertEqual(error as? CodexAppServerError, .invalidLoginResponse)
+            }
+            let opened = await recorder.urls()
+            XCTAssertTrue(opened.isEmpty)
+        }
+    }
+
+    func testLoginFailureDoesNotExposeProviderError() async throws {
+        let transport = ScriptedCodexTransport(responses: [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"type":"chatgpt","loginId":"synthetic","authUrl":"https://auth.openai.com/authorize"}}"#.utf8),
+            Data(#"{"method":"account/login/completed","params":{"loginId":"synthetic","success":false,"error":"private provider detail"}}"#.utf8)
+        ])
+        do {
+            try await makeClient(transport: transport).authenticate { _ in }
+            XCTFail("Expected login rejection")
+        } catch { XCTAssertEqual(error as? CodexAppServerError, .loginRejected) }
+    }
+
+    func testRPCAuthBackendAndProtocolErrorsAreDistinct() async throws {
+        let cases: [(Int, String, CodexAppServerError)] = [
+            (-32600, "ChatGPT auth required", .loginRequired),
+            (-32603, "backend 401 Unauthorized", .unauthorized),
+            (-32603, "network unavailable", .backendFailed),
+            (-32600, "Invalid request: auth protocol unsupported", .accountReadRejected)
+        ]
+        for (code, message, expected) in cases {
+            let response = try JSONSerialization.data(withJSONObject: ["id": 2, "error": ["code": code, "message": message]])
+            let transport = ScriptedCodexTransport(responses: [Data(#"{"id":1,"result":{}}"#.utf8), response])
+            do {
+                _ = try await makeClient(transport: transport).fetchUsage()
+                XCTFail("Expected rejection")
+            } catch { XCTAssertEqual(error as? CodexAppServerError, expected) }
+        }
+    }
+
+    func testCancellationAllowsPendingReadToFinishBeforeTransportStops() async throws {
+        let transport = ScriptedCodexTransport(responses: [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"account":{"type":"chatgpt"},"requiresOpenaiAuth":true}}"#.utf8)
+        ])
+        let client = makeClient(transport: transport)
+        let request = Task { try await client.fetchUsage() }
+        while await transport.sentMessages().count < 4 { try await Task.sleep(for: .milliseconds(5)) }
+        request.cancel()
+        try await Task.sleep(for: .milliseconds(25))
+        let stopsBeforeResponse = await transport.stopCount()
+        XCTAssertEqual(stopsBeforeResponse, 0, "Do not interrupt an official token rotation")
+        await transport.enqueue(try rateLimitsResponse(id: 3))
+        do { _ = try await request.value; XCTFail("Cancelled read must publish no state") }
+        catch is CancellationError { }
+        let stopsAfterResponse = await transport.stopCount()
+        XCTAssertEqual(stopsAfterResponse, 1)
+    }
+
+    func testLoginServiceReopensSameURLWithoutSecondServerAndClearsIt() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("dejavu-auth-service-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let executable = directory.appendingPathComponent("codex")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let completedStopBarrier = SyntheticStopBarrier()
+        let transport = ScriptedCodexTransport(responses: [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"type":"chatgpt","loginId":"synthetic","authUrl":"https://auth.openai.com/authorize"}}"#.utf8)
+        ], stopBarrier: completedStopBarrier)
+        let service = CodexAuthenticationService(
+            locator: CodexExecutableLocator(environment: ["CODEX_CLI_PATH": executable.path], homeDirectory: directory, systemBinaryDirectories: [], applicationDirectories: []),
+            clientFactory: { url, config in CodexAppServerClient(executableURL: url, configuration: config, transportFactory: { _ in transport }) }
+        )
+        let recorder = BrowserRecorder()
+        let first = Task { try await service.login { await recorder.open($0) } }
+        while await recorder.urls().isEmpty { try await Task.sleep(for: .milliseconds(5)) }
+        let second = Task { try await service.login { await recorder.open($0) } }
+        while await recorder.urls().count < 2 { try await Task.sleep(for: .milliseconds(5)) }
+        await transport.enqueue(Data(#"{"method":"account/login/completed","params":{"loginId":"synthetic","success":true}}"#.utf8))
+        while await transport.stopCount() == 0 { try await Task.sleep(for: .milliseconds(5)) }
+        _ = try await service.reopenBrowserIfPending { await recorder.open($0) }
+        let openedAfterCompletion = await recorder.urls()
+        XCTAssertEqual(openedAfterCompletion.count, 2, "A spent URL must be cleared before child cleanup completes")
+        await completedStopBarrier.release()
+        try await first.value
+        try await second.value
+        let starts = await transport.startCount()
+        let active = await service.isAuthenticating
+        XCTAssertEqual(starts, 1)
+        XCTAssertFalse(active)
+    }
+
+    func testLoginTimeoutAndCancellationStopOwnedTransport() async throws {
+        let responses = [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"type":"chatgpt","loginId":"synthetic","authUrl":"https://auth.openai.com/authorize"}}"#.utf8)
+        ]
+        let timedOut = ScriptedCodexTransport(responses: responses)
+        let timeoutClient = makeClient(transport: timedOut, configuration: CodexAppServerConfiguration(loginTimeout: .milliseconds(40)))
+        do { try await timeoutClient.authenticate { _ in }; XCTFail("Expected login timeout") }
+        catch { XCTAssertEqual(error as? CodexAppServerError, .timedOut) }
+        let timeoutStops = await timedOut.stopCount()
+        XCTAssertEqual(timeoutStops, 1)
+
+        let cancelled = ScriptedCodexTransport(responses: responses)
+        let client = makeClient(transport: cancelled)
+        let recorder = BrowserRecorder()
+        let login = Task { try await client.authenticate { await recorder.open($0) } }
+        while await recorder.urls().isEmpty { try await Task.sleep(for: .milliseconds(5)) }
+        login.cancel()
+        do { try await login.value; XCTFail("Expected login cancellation") }
+        catch is CancellationError { }
+        let cancellationStops = await cancelled.stopCount()
+        XCTAssertEqual(cancellationStops, 1)
+    }
+
+    func testServiceCancelThenNewLoginWaitsForOldChildAndKeepsNewOperation() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("dejavu-auth-cancel-timeline-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let executable = directory.appendingPathComponent("codex")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let stopBarrier = SyntheticStopBarrier()
+        let firstTransport = ScriptedCodexTransport(responses: [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"type":"chatgpt","loginId":"first","authUrl":"https://auth.openai.com/authorize?attempt=first"}}"#.utf8)
+        ], stopBarrier: stopBarrier)
+        let nextTransport = ScriptedCodexTransport(responses: [
+            Data(#"{"id":1,"result":{}}"#.utf8),
+            Data(#"{"id":2,"result":{"type":"chatgpt","loginId":"next","authUrl":"https://auth.openai.com/authorize?attempt=next"}}"#.utf8)
+        ])
+        let queue = ScriptedTransportQueue([firstTransport, nextTransport])
+        let service = CodexAuthenticationService(
+            locator: CodexExecutableLocator(environment: ["CODEX_CLI_PATH": executable.path], homeDirectory: directory, systemBinaryDirectories: [], applicationDirectories: []),
+            clientFactory: { url, config in
+                let transport = queue.next()
+                return CodexAppServerClient(executableURL: url, configuration: config, transportFactory: { _ in transport })
+            }
+        )
+        let recorder = BrowserRecorder()
+        let first = Task { try await service.login { await recorder.open($0) } }
+        while await recorder.urls().isEmpty { try await Task.sleep(for: .milliseconds(5)) }
+        let cancel = Task { await service.cancel() }
+        while await firstTransport.stopCount() == 0 { try await Task.sleep(for: .milliseconds(5)) }
+        let next = Task { try await service.login { await recorder.open($0) } }
+        try await Task.sleep(for: .milliseconds(30))
+        let startsBeforeCleanup = await nextTransport.startCount()
+        XCTAssertEqual(startsBeforeCleanup, 0, "A new login must await cancellation of the owned old child")
+        let reopenedWhileCancelling = try await service.reopenBrowserIfPending { await recorder.open($0) }
+        XCTAssertFalse(reopenedWhileCancelling, "A cancelled URL must not be reopened")
+        await stopBarrier.release()
+        await cancel.value
+        do { try await first.value; XCTFail("Old login must remain cancelled") }
+        catch is CancellationError { }
+        while await recorder.urls().count < 2 { try await Task.sleep(for: .milliseconds(5)) }
+        let stillAuthenticating = await service.isAuthenticating
+        XCTAssertTrue(stillAuthenticating, "Old cleanup must never clear the new operation")
+        let reopenedNext = try await service.reopenBrowserIfPending { await recorder.open($0) }
+        XCTAssertTrue(reopenedNext)
+        let opened = await recorder.urls()
+        XCTAssertEqual(opened.count, 3)
+        XCTAssertEqual(opened[1], opened[2])
+        XCTAssertNotEqual(opened[0], opened[1])
+        await nextTransport.enqueue(Data(#"{"method":"account/login/completed","params":{"loginId":"next","success":true}}"#.utf8))
+        try await next.value
+        let active = await service.isAuthenticating
+        XCTAssertFalse(active)
+    }
+
+    func testServiceShutdownRejectsLaterLoginAndNeverReopensSpentURL() async throws {
+        let service = CodexAuthenticationService()
+        await service.shutdown()
+        let recorder = BrowserRecorder()
+        do { try await service.login { await recorder.open($0) }; XCTFail("Shutdown is permanent") }
+        catch { XCTAssertEqual(error as? CodexAppServerError, .shutDown) }
+        let reopened = try await service.reopenBrowserIfPending { await recorder.open($0) }
+        let opened = await recorder.urls()
+        XCTAssertFalse(reopened)
+        XCTAssertTrue(opened.isEmpty)
+    }
+
+    func testProviderKeepsLoginRequiredOnTransientFailureButBackendAuthEvidenceClearsMissingAccount() async throws {
+        let missingAccount = Data(#"{"id":2,"result":{"account":null,"requiresOpenaiAuth":true}}"#.utf8)
+        let protocolFailure = Data(#"{"id":2,"error":{"code":-32600,"message":"Invalid request protocol"}}"#.utf8)
+        let backend = Data(#"{"id":2,"error":{"code":-32603,"message":"Backend connection failed"}}"#.utf8)
+        let (provider, directory) = try makeProvider(accountResponses: [missingAccount, protocolFailure, backend])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for expected: UsageProviderFailure in [.loginRequired, .loginRequired, .failed] {
+            do { _ = try await provider.fetchUsage(); XCTFail("Expected provider failure") }
+            catch { XCTAssertEqual(error as? UsageProviderFailure, expected) }
+        }
+    }
+
+    func testProviderUnauthorizedRemainsStickyUntilExplicitLoginCompletion() async throws {
+        let unauthorized = Data(#"{"id":2,"error":{"code":-32603,"message":"Backend 401 Unauthorized"}}"#.utf8)
+        let backend = Data(#"{"id":2,"error":{"code":-32603,"message":"Backend connection failed"}}"#.utf8)
+        let (provider, directory) = try makeProvider(accountResponses: [unauthorized, backend, backend])
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for _ in 0..<2 {
+            do { _ = try await provider.fetchUsage(); XCTFail("Expected login-required") }
+            catch { XCTAssertEqual(error as? UsageProviderFailure, .loginRequired) }
+        }
+        await provider.authenticationCompleted()
+        do { _ = try await provider.fetchUsage(); XCTFail("Expected transient backend failure") }
+        catch { XCTAssertEqual(error as? UsageProviderFailure, .failed) }
+    }
+
+    private func makeProvider(accountResponses: [Data]) throws -> (CodexUsageProvider, URL) {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("dejavu-provider-state-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let executable = directory.appendingPathComponent("codex")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let queue = ScriptedTransportQueue(accountResponses.map {
+            ScriptedCodexTransport(responses: [Data(#"{"id":1,"result":{}}"#.utf8), $0])
+        })
+        let provider = CodexUsageProvider(
+            locator: CodexExecutableLocator(environment: ["CODEX_CLI_PATH": executable.path], homeDirectory: directory, systemBinaryDirectories: [], applicationDirectories: []),
+            configuration: CodexAppServerConfiguration(requestTimeout: .milliseconds(80)),
+            clientFactory: { url, configuration in
+                let transport = queue.next()
+                return CodexAppServerClient(executableURL: url, configuration: configuration, transportFactory: { _ in transport })
+            }
+        )
+        return (provider, directory)
     }
 
     private func makeClient(
@@ -337,9 +614,11 @@ private actor ScriptedCodexTransport: CodexAppServerTransport {
     private var starts = 0
     private var stops = 0
     private var stopped = false
+    private let stopBarrier: SyntheticStopBarrier?
 
-    init(responses: [Data]) {
+    init(responses: [Data], stopBarrier: SyntheticStopBarrier? = nil) {
         self.responses = responses
+        self.stopBarrier = stopBarrier
     }
 
     func start() {
@@ -356,18 +635,52 @@ private actor ScriptedCodexTransport: CodexAppServerTransport {
         }
 
         while !stopped {
+            if !responses.isEmpty { return responses.removeFirst() }
             try await Task.sleep(for: .milliseconds(5))
         }
         throw CodexAppServerTransportError.endOfFile
     }
 
-    func stop(gracePeriod: Duration) {
+    func stop(gracePeriod: Duration) async {
         guard !stopped else { return }
         stopped = true
         stops += 1
+        if let stopBarrier { await stopBarrier.wait() }
     }
 
     func sentMessages() -> [Data] { sent }
     func startCount() -> Int { starts }
     func stopCount() -> Int { stops }
+    func enqueue(_ data: Data) { responses.append(data) }
+}
+
+private actor SyntheticStopBarrier {
+    private var released = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    func wait() async {
+        if released { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+    func release() {
+        released = true
+        let pending = waiters
+        waiters.removeAll()
+        for waiter in pending { waiter.resume() }
+    }
+}
+
+private actor BrowserRecorder {
+    private var opened: [URL] = []
+    func open(_ url: URL) { opened.append(url) }
+    func urls() -> [URL] { opened }
+}
+
+private final class ScriptedTransportQueue: @unchecked Sendable {
+    private let lock = NSLock()
+    private var transports: [ScriptedCodexTransport]
+    init(_ transports: [ScriptedCodexTransport]) { self.transports = transports }
+    func next() -> ScriptedCodexTransport {
+        lock.lock(); defer { lock.unlock() }
+        return transports.removeFirst()
+    }
 }

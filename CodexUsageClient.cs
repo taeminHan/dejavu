@@ -41,6 +41,18 @@ internal sealed class CodexUsageClient
 {
     private const string WindowsAppDownloadUrl =
         "https://get.microsoft.com/installer/download/9PLM9XGG6VKS?cid=website_cta_psi";
+    private readonly Func<string?> _findExecutable;
+    private readonly Action<ProcessStartInfo>? _configureStartInfo;
+
+    public CodexUsageClient() : this(FindExecutable) { }
+
+    // The probe supplies only its own executable and child environment; production discovery and
+    // process arguments remain unchanged, with no public test-mode or provider override added.
+    internal CodexUsageClient(Func<string?> findExecutable, Action<ProcessStartInfo>? configureStartInfo = null)
+    {
+        _findExecutable = findExecutable;
+        _configureStartInfo = configureStartInfo;
+    }
 
     public static bool IsDesktopInstalled
     {
@@ -99,9 +111,10 @@ internal sealed class CodexUsageClient
 
     public async Task<CodexUsageSnapshot> GetUsageAsync(CancellationToken cancellationToken = default)
     {
-        var executable = FindExecutable() ?? throw new CodexCliUnavailableException();
+        cancellationToken.ThrowIfCancellationRequested();
+        var executable = _findExecutable() ?? throw new CodexCliUnavailableException();
+        cancellationToken.ThrowIfCancellationRequested();
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
 
         using var process = StartAppServer(executable);
         // A pending read on a redirected pipe may not observe the token on Windows. Only the 15 s
@@ -112,16 +125,19 @@ internal sealed class CodexUsageClient
         using var killOnTimeout = timeout.Token.Register(() => KillChild(process));
         try
         {
-            await InitializeAsync(process, linked.Token);
-            await WriteAsync(process, new { method = "account/rateLimits/read", id = 1 }, linked.Token);
+            // Once this child starts, caller cancellation discards the result but must not interrupt
+            // its request (which can rotate and save OAuth credentials). Only the bounded timeout
+            // cancels pipe I/O and kills the child. Never pass the caller token to a pending read.
+            await InitializeAsync(process, timeout.Token);
+            await WriteAsync(process, new { method = "account/rateLimits/read", id = 1 }, timeout.Token);
 
             while (true)
             {
-                var line = await process.StandardOutput.ReadLineAsync(linked.Token);
+                var line = await process.StandardOutput.ReadLineAsync(timeout.Token);
                 if (line is null)
                 {
                     // The timeout kill closes stdout too; only an unprompted exit is a read failure.
-                    if (linked.IsCancellationRequested) throw new OperationCanceledException(linked.Token);
+                    if (timeout.IsCancellationRequested) throw new OperationCanceledException(timeout.Token);
                     throw new CodexReadFailedException();
                 }
 
@@ -135,6 +151,7 @@ internal sealed class CodexUsageClient
                     if (root.ValueKind != JsonValueKind.Object || root.TryGetProperty("method", out _) ||
                         !root.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.Number ||
                         !id.TryGetInt32(out var requestId) || requestId != 1) continue;
+                    cancellationToken.ThrowIfCancellationRequested();
                     // Never log or display the error message: it can carry backend or account details.
                     if (root.TryGetProperty("error", out var error)) throw ClassifyRateLimitError(error);
                     if (!root.TryGetProperty("result", out var result) || result.ValueKind != JsonValueKind.Object)
@@ -150,7 +167,11 @@ internal sealed class CodexUsageClient
             // caller asked for cancellation and must see it.
             throw new OperationCanceledException(cancellationToken);
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(cancellationToken);
+        }
+        catch (OperationCanceledException)
         {
             throw new CodexTimeoutException();
         }
@@ -168,7 +189,7 @@ internal sealed class CodexUsageClient
     // request can reopen the same pending flow. The URL is never logged or displayed.
     public async Task LoginAsync(CancellationToken cancellationToken = default, Action<string>? onBrowserOpened = null)
     {
-        var executable = FindExecutable() ?? throw new CodexCliUnavailableException();
+        var executable = _findExecutable() ?? throw new CodexCliUnavailableException();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(5));
         using var process = StartAppServer(executable);
@@ -246,7 +267,7 @@ internal sealed class CodexUsageClient
         await process.StandardInput.FlushAsync(cancellationToken);
     }
 
-    private static Process StartAppServer(string executable)
+    private Process StartAppServer(string executable)
     {
         var startInfo = new ProcessStartInfo(executable)
         {
@@ -257,6 +278,7 @@ internal sealed class CodexUsageClient
             CreateNoWindow = true
         };
         startInfo.ArgumentList.Add("app-server");
+        _configureStartInfo?.Invoke(startInfo);
         var process = Process.Start(startInfo) ?? throw new CodexCliUnavailableException();
         // Drain stderr so verbose app-server logging (for example RUST_LOG) cannot fill the pipe
         // and stall the child. Its content may include account details and is discarded, never logged.
@@ -331,18 +353,19 @@ internal sealed class CodexUsageClient
         message.StartsWith("Server is draining", StringComparison.Ordinal) ||
         message.Contains("requires experimentalApi capability", StringComparison.Ordinal);
 
-    private static CodexUsageSnapshot Parse(JsonElement result)
+    internal static CodexUsageSnapshot Parse(JsonElement result)
     {
         var windows = new List<(UsageLimit Limit, int Minutes)>();
         string? planType = null;
 
         // Read only the "codex" bucket. The multi-bucket map is a Rust HashMap upstream, so its
         // order changes per app-server process; `rateLimits` is upstream's single view of the same
-        // bucket (or of the first bucket when none is named "codex").
-        if (result.TryGetProperty("rateLimitsByLimitId", out var byId) && byId.ValueKind == JsonValueKind.Object &&
-            byId.TryGetProperty("codex", out var codex) && codex.ValueKind == JsonValueKind.Object)
+        // bucket (or of an unrelated first bucket when none is named "codex"). A supplied map is
+        // authoritative: missing/malformed Codex data must not borrow another product's allowance.
+        if (result.TryGetProperty("rateLimitsByLimitId", out var byId) && byId.ValueKind != JsonValueKind.Null)
         {
-            ReadBucket(codex, windows, ref planType);
+            if (byId.ValueKind == JsonValueKind.Object && byId.TryGetProperty("codex", out var codex) &&
+                codex.ValueKind == JsonValueKind.Object) ReadBucket(codex, windows, ref planType);
         }
         else if (result.TryGetProperty("rateLimits", out var single) && single.ValueKind == JsonValueKind.Object)
         {

@@ -15,6 +15,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private var observations = Set<AnyCancellable>()
 
+    var statusButton: NSStatusBarButton? { statusItem?.button }
+
     init(model: AppModel, updateCoordinator: UpdateCoordinator) {
         self.model = model
         self.updateCoordinator = updateCoordinator
@@ -32,11 +34,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         guard let button = item.button else { return }
         button.image = NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: "Dejavu")
         button.imagePosition = .imageLeading
-        button.toolTip = "Dejavu usage"
-        button.setAccessibilityLabel("Dejavu usage")
+        button.toolTip = NSLocalizedString("Dejavu usage", comment: "Status item tooltip")
+        button.setAccessibilityLabel(NSLocalizedString("Dejavu usage", comment: "Status item accessible name"))
+        button.target = self
+        button.action = #selector(statusItemClicked(_:))
+        button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         updateStatusButton()
         rebuildMenu()
-        item.menu = menu
 
         Publishers.CombineLatest3(
             model.$domainState,
@@ -65,6 +69,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         rebuildMenu()
+    }
+
+    @objc private func statusItemClicked(_ sender: Any?) {
+        guard let statusItem else { return }
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            // Keep secondary actions in a native context menu. The primary
+            // action always opens the attached usage view.
+            statusItem.menu = menu
+            statusItem.button?.performClick(nil)
+            statusItem.menu = nil
+        } else {
+            onShowDetails()
+        }
     }
 
     @objc private func showDetails(_ sender: Any?) {
@@ -103,7 +120,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
 
         let updated = model.state.updatedAt?.formatted(date: .omitted, time: .shortened) ?? "--"
-        appendSummary(title: "Updated \(updated)")
+        appendSummary(title: String(format: NSLocalizedString("Updated %@", comment: "Last usage check time"), updated))
         menu.addItem(.separator())
         menu.addItem(item(title: "Usage Details", action: #selector(showDetails(_:))))
 
@@ -146,11 +163,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     private func updateStatusButton(summary: MenuBarSummary) {
         guard let button = statusItem?.button else { return }
+        button.image = summary.items.isEmpty
+            ? NSImage(systemSymbolName: "clock.arrow.circlepath", accessibilityDescription: "Dejavu")
+            : nil
         button.title = ""
         button.attributedTitle = makeStatusTitle(summary: summary)
         button.setAccessibilityValue(
             summary.accessibilityTitle.isEmpty
-                ? "No usage metric shown"
+                ? NSLocalizedString("No usage metric shown", comment: "Empty status item")
                 : summary.accessibilityTitle
         )
     }
@@ -188,28 +208,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             } else {
                 result.append(NSAttributedString(string: "  ", attributes: textAttributes))
             }
-            var attributes = textAttributes
-            switch UsageColorLevel.level(for: item.displayPercent) {
-            case .normal:
-                break
-            case .warning:
-                attributes[.foregroundColor] = NSColor.systemOrange
-            case .danger:
-                attributes[.foregroundColor] = NSColor.systemRed
-            }
-            result.append(NSAttributedString(string: item.value, attributes: attributes))
+            result.append(NSAttributedString(string: item.value, attributes: textAttributes))
         }
         return result
     }
 
     private func appendSummary(title: String) {
-        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: NSLocalizedString(title, comment: "Status menu summary"), action: nil, keyEquivalent: "")
         item.isEnabled = false
         menu.addItem(item)
     }
 
     private func appendProviderSummary(provider: ProviderBrand, limits: [UsageLimitViewState]) {
-        let title = limits.map { "\($0.label) \($0.displayText)" }.joined(separator: "  ")
+        let title = limits.map { "\(NSLocalizedString($0.label, comment: "Usage metric")) \($0.displayText)" }.joined(separator: "  ")
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
         if let image = NSImage(named: provider.assetName) {
             image.isTemplate = true
@@ -222,18 +233,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             if index > 0 {
                 attributedTitle.append(NSAttributedString(string: "  "))
             }
-            var attributes = [NSAttributedString.Key: Any]()
-            switch UsageColorLevel.level(for: limit.displayPercent) {
-            case .normal:
-                break
-            case .warning:
-                attributes[.foregroundColor] = NSColor.systemOrange
-            case .danger:
-                attributes[.foregroundColor] = NSColor.systemRed
-            }
             attributedTitle.append(NSAttributedString(
-                string: "\(limit.label) \(limit.displayText)",
-                attributes: attributes
+                string: "\(NSLocalizedString(limit.label, comment: "Usage metric")) \(limit.displayText)",
+                attributes: [.foregroundColor: NSColor.labelColor]
             ))
         }
         item.attributedTitle = attributedTitle
@@ -243,7 +245,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     private func item(title: String, action: Selector, key: String = "") -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+        let item = NSMenuItem(title: NSLocalizedString(title, comment: "Status menu action"), action: action, keyEquivalent: key)
         item.target = self
         return item
     }

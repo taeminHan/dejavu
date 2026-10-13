@@ -13,6 +13,13 @@ public enum MenuBarMetric: String, Codable, CaseIterable, Sendable {
     case hidden
 }
 
+/// Explicit local credential location for Claude's opt-in extended usage.
+/// Neither choice permits automatic fallback to another identity.
+public enum ClaudeCredentialIdentity: String, Codable, CaseIterable, Sendable {
+    case standard
+    case previousDejavuDefault
+}
+
 public enum UsageColorLevel: String, Codable, CaseIterable, Sendable {
     case normal
     case warning
@@ -103,6 +110,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
     public var showProgress: Bool
     public var showsWidget: Bool
     public var extendedFableAccessEnabled: Bool
+    public var claudeCredentialIdentity: ClaudeCredentialIdentity
     public var widgetOpacity: Double
     public var customPosition: WidgetPosition?
     public var backgroundColor: String
@@ -131,6 +139,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         showProgress: Bool = true,
         showsWidget: Bool = true,
         extendedFableAccessEnabled: Bool = false,
+        claudeCredentialIdentity: ClaudeCredentialIdentity = .standard,
         widgetOpacity: Double = 0.9,
         customPosition: WidgetPosition? = nil,
         backgroundColor: String = "#1E1E20",
@@ -160,6 +169,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.showProgress = showProgress
         self.showsWidget = showsWidget
         self.extendedFableAccessEnabled = extendedFableAccessEnabled
+        self.claudeCredentialIdentity = claudeCredentialIdentity
         self.widgetOpacity = widgetOpacity
         self.customPosition = customPosition
         self.backgroundColor = backgroundColor
@@ -229,6 +239,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         case showProgress
         case showsWidget
         case extendedFableAccessEnabled
+        case claudeCredentialIdentity
         case widgetOpacity
         case customPosition
         case backgroundColor
@@ -268,6 +279,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         extendedFableAccessEnabled = (
             try? container.decode(Bool.self, forKey: .extendedFableAccessEnabled)
         ) ?? defaults.extendedFableAccessEnabled
+        claudeCredentialIdentity = Self.decodeEnum(ClaudeCredentialIdentity.self, from: container, key: .claudeCredentialIdentity)
+            ?? defaults.claudeCredentialIdentity
         widgetOpacity = (try? container.decode(Double.self, forKey: .widgetOpacity)) ?? defaults.widgetOpacity
         customPosition = try? container.decode(WidgetPosition.self, forKey: .customPosition)
         backgroundColor = (try? container.decode(String.self, forKey: .backgroundColor))

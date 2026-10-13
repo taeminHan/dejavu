@@ -10,6 +10,7 @@ public struct ClaudeStatusLineConnectionConfiguration: Sendable, Equatable {
     public let applicationSupportDirectoryURL: URL
     public let bridgeExecutableURL: URL
     public let snapshotURL: URL
+    public let preflightSettings: [ClaudePreflightSettingsFile]
 
     public var metadataURL: URL {
         applicationSupportDirectoryURL.appendingPathComponent(Self.metadataFileName)
@@ -25,7 +26,8 @@ public struct ClaudeStatusLineConnectionConfiguration: Sendable, Equatable {
         settingsURL: URL,
         applicationSupportDirectoryURL: URL,
         bridgeExecutableURL: URL,
-        snapshotURL: URL? = nil
+        snapshotURL: URL? = nil,
+        preflightSettings: [ClaudePreflightSettingsFile] = []
     ) {
         self.settingsURL = settingsURL.standardizedFileURL
         self.applicationSupportDirectoryURL = applicationSupportDirectoryURL.standardizedFileURL
@@ -33,8 +35,24 @@ public struct ClaudeStatusLineConnectionConfiguration: Sendable, Equatable {
         self.snapshotURL = (snapshotURL ?? applicationSupportDirectoryURL.appendingPathComponent(
             "claude-status.json"
         )).standardizedFileURL
+        self.preflightSettings = preflightSettings
     }
 }
+
+public struct ClaudePreflightSettingsFile: Sendable, Equatable {
+    public enum Scope: Sendable, Equatable { case managed, project }
+    public let url: URL
+    public let scope: Scope
+    public init(url: URL, scope: Scope) { self.url = url; self.scope = scope }
+}
+
+public enum ClaudeConnectionPreflightWarning: Sendable, Equatable {
+    case managedStatusLine
+    case projectStatusLine
+    case hooksDisabled
+}
+
+public enum ClaudeBridgeUpgradeResult: Sendable, Equatable { case notConnected, current, updated }
 
 public enum ClaudeStatusLineConnectResult: Sendable, Equatable {
     case connected
@@ -60,6 +78,7 @@ public enum ClaudeStatusLineConnectionError: Error, Sendable, Equatable {
     case metadataMalformed
     case unsupportedExistingCommand
     case conflict
+    case managedSettingsOverride
     case fileSystemFailure
 }
 
@@ -84,6 +103,9 @@ public actor ClaudeStatusLineConnectionManager {
     @discardableResult
     public func connect() throws -> ClaudeStatusLineConnectResult {
         try validateConfiguration()
+        if try preflight().contains(.managedStatusLine) {
+            throw ClaudeStatusLineConnectionError.managedSettingsOverride
+        }
 
         if let metadata = try loadMetadataIfPresent() {
             var settings = try loadSettings()
@@ -123,7 +145,8 @@ public actor ClaudeStatusLineConnectionManager {
             settingsFileExisted: settings.fileExisted,
             hadOriginalStatusLine: hadOriginalStatusLine,
             originalStatusLine: originalData,
-            managedStatusLine: managedData
+            managedStatusLine: managedData,
+            settingsFilePath: configuration.settingsURL.path
         )
         let metadataData = try encodeMetadata(metadata)
         let settingsData = try encodeRoot(updatedRoot)
@@ -138,6 +161,60 @@ public actor ClaudeStatusLineConnectionManager {
         }
 
         return .connected
+    }
+
+    /// Explicit connection-time check only. Paths come from the chosen
+    /// profile/project; no home scan or project discovery is performed.
+    public func preflight() throws -> [ClaudeConnectionPreflightWarning] {
+        try validateConfiguration()
+        var warnings: [ClaudeConnectionPreflightWarning] = []
+        var files = configuration.preflightSettings
+        files.append(ClaudePreflightSettingsFile(url: configuration.settingsURL, scope: .project))
+        for file in files {
+            guard file.url.isFileURL, file.url.path.hasPrefix("/"), file.url.path != "/" else {
+                throw ClaudeStatusLineConnectionError.invalidConfiguration
+            }
+            guard try fileNode(at: file.url) != .missing else { continue }
+            let data: Data
+            do {
+                data = try readBoundedRegularFile(at: file.url, maximumBytes: Self.maximumSettingsBytes)
+            } catch SecureReadError.tooLarge {
+                throw ClaudeStatusLineConnectionError.settingsTooLarge
+            } catch { throw ClaudeStatusLineConnectionError.settingsUnsafe }
+            guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw ClaudeStatusLineConnectionError.settingsMalformed
+            }
+            if file.url.standardizedFileURL != configuration.settingsURL,
+               let value = root[Self.statusLineKey], !(value is NSNull) {
+                let warning: ClaudeConnectionPreflightWarning = file.scope == .managed ? .managedStatusLine : .projectStatusLine
+                if !warnings.contains(warning) { warnings.append(warning) }
+            }
+            if root["disableAllHooks"] as? Bool == true, !warnings.contains(.hooksDisabled) {
+                warnings.append(.hooksDisabled)
+            }
+        }
+        return warnings
+    }
+
+    /// Refreshes only the Dejavu-owned installed executable after an earlier
+    /// explicit connection. It deliberately never opens/writes Claude settings.
+    @discardableResult
+    public func upgradeInstalledBridgeIfOwned() throws -> ClaudeBridgeUpgradeResult {
+        try validateConfiguration()
+        guard let metadata = try loadMetadataIfPresent(requiresMatchingProfile: false) else { return .notConnected }
+        let original = try metadata.originalStatusLine.map(decodeFragment)
+        let expected = try canonicalFragment(makeManagedStatusLine(from: original))
+        guard try canonicalFragment(from: metadata.managedStatusLine) == expected else {
+            throw ClaudeStatusLineConnectionError.conflict
+        }
+        try validateBridgeExecutable()
+        let bundled = try readBoundedRegularFile(at: configuration.bridgeExecutableURL, maximumBytes: 16 * 1_024 * 1_024)
+        if let installed = try? readBoundedRegularFile(at: configuration.installedBridgeURL, maximumBytes: 16 * 1_024 * 1_024),
+           installed == bundled, Darwin.access(configuration.installedBridgeURL.path, X_OK) == 0 {
+            return .current
+        }
+        try installBridge()
+        return .updated
     }
 
     @discardableResult
@@ -308,7 +385,7 @@ public actor ClaudeStatusLineConnectionManager {
         }
     }
 
-    private func loadMetadataIfPresent() throws -> ConnectionMetadata? {
+    private func loadMetadataIfPresent(requiresMatchingProfile: Bool = true) throws -> ConnectionMetadata? {
         let data: Data
         do {
             switch try fileNode(at: configuration.applicationSupportDirectoryURL) {
@@ -346,6 +423,15 @@ public actor ClaudeStatusLineConnectionManager {
             guard metadata.schemaVersion == ConnectionMetadata.currentSchemaVersion,
                   metadata.hadOriginalStatusLine == (metadata.originalStatusLine != nil) else {
                 throw ClaudeStatusLineConnectionError.metadataMalformed
+            }
+            if requiresMatchingProfile {
+                // Older metadata was created when only the default profile
+                // existed. Do not restore its saved command into a newly
+                // selected custom profile just because its settings are empty.
+                let originalPath = metadata.settingsFilePath ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/settings.json").standardizedFileURL.path
+                guard originalPath == configuration.settingsURL.path else {
+                    throw ClaudeStatusLineConnectionError.conflict
+                }
             }
 
             _ = try decodeManagedStatusLine(metadata.managedStatusLine)
@@ -564,9 +650,10 @@ private struct ConnectionMetadata: Codable, Sendable, Equatable {
     let hadOriginalStatusLine: Bool
     let originalStatusLine: Data?
     let managedStatusLine: Data
+    let settingsFilePath: String?
 }
 
-private enum FileNode {
+private enum FileNode: Equatable {
     case missing
     case regular
     case directory

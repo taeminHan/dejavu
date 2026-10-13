@@ -36,6 +36,23 @@ internal sealed class ClaudeUsageClient
     // third-party integration contract. Keep the dependency isolated here.
     private const string UsageUrl = "https://api.anthropic.com/api/oauth/usage";
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
+    private readonly Func<string?> _findCredentialPath;
+    private readonly Func<UsageSnapshot?> _readDesktopSnapshot;
+    private readonly Func<bool> _hasDesktopHistory;
+
+    public ClaudeUsageClient() : this(
+        ClaudeEnvironmentDetector.FindCredentialPath,
+        static () => ClaudeDesktopUsageReader.TryReadRecent(out var snapshot) ? snapshot : null,
+        static () => ClaudeDesktopUsageReader.HasHistoryFile) { }
+
+    // Internal seams keep synthetic regression checks away from the user's credential/history paths.
+    internal ClaudeUsageClient(Func<string?> findCredentialPath, Func<UsageSnapshot?> readDesktopSnapshot,
+        Func<bool> hasDesktopHistory)
+    {
+        _findCredentialPath = findCredentialPath;
+        _readDesktopSnapshot = readDesktopSnapshot;
+        _hasDesktopHistory = hasDesktopHistory;
+    }
 
     public static bool HasCredentialFile() => ClaudeEnvironmentDetector.FindCredentialPath() is not null;
     public static bool HasLocalUsageSource() => HasCredentialFile() || ClaudeDesktopUsageReader.HasRecentUsage();
@@ -48,9 +65,10 @@ internal sealed class ClaudeUsageClient
         }
         catch (Exception exception) when (exception is ClaudeLoginRequiredException or ClaudeTokenExpiredException)
         {
-            if (ClaudeDesktopUsageReader.TryReadRecent(out var desktopSnapshot)) return desktopSnapshot;
-            if (exception is ClaudeLoginRequiredException && !HasCredentialFile() &&
-                ClaudeDesktopUsageReader.HasHistoryFile)
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_readDesktopSnapshot() is { } desktopSnapshot) return desktopSnapshot;
+            if (exception is ClaudeLoginRequiredException && _findCredentialPath() is null &&
+                _hasDesktopHistory())
                 throw new ClaudeDesktopHistoryStaleException();
             throw;
         }
@@ -58,7 +76,8 @@ internal sealed class ClaudeUsageClient
 
     private async Task<UsageSnapshot> GetClaudeCodeUsageAsync(CancellationToken cancellationToken)
     {
-        var credentialPath = ClaudeEnvironmentDetector.FindCredentialPath();
+        cancellationToken.ThrowIfCancellationRequested();
+        var credentialPath = _findCredentialPath();
         if (credentialPath is null) throw new ClaudeLoginRequiredException();
 
         byte[] credentialPayload;
@@ -72,24 +91,11 @@ internal sealed class ClaudeUsageClient
         }
 
         // Do not hold Claude's credential file open while parsing or making the network request.
-        using var credentialDocument = JsonDocument.Parse(credentialPayload);
-        if (!credentialDocument.RootElement.TryGetProperty("claudeAiOauth", out var oauth) ||
-            !oauth.TryGetProperty("accessToken", out var tokenNode) ||
-            string.IsNullOrWhiteSpace(tokenNode.GetString()))
-        {
-            throw new ClaudeLoginRequiredException();
-        }
-
-        if (oauth.TryGetProperty("expiresAt", out var expiresNode) &&
-            expiresNode.TryGetInt64(out var expiresAt) &&
-            DateTimeOffset.FromUnixTimeMilliseconds(expiresAt) <= DateTimeOffset.UtcNow.AddSeconds(15))
-        {
-            // Only the presence of a refresh token is checked; its value is never used or kept.
-            throw HasUsableRefreshToken(oauth) ? new ClaudeTokenExpiredException() : new ClaudeLoginRequiredException();
-        }
+        var accessToken = ParseCredential(credentialPayload);
+        cancellationToken.ThrowIfCancellationRequested();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, UsageUrl);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokenNode.GetString());
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Headers.TryAddWithoutValidation("anthropic-beta", "oauth-2025-04-20");
         request.Headers.UserAgent.ParseAdd("claude-code/2.1.215");
 
@@ -113,6 +119,36 @@ internal sealed class ClaudeUsageClient
         await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var usageDocument = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
         return ParseUsage(usageDocument.RootElement);
+    }
+
+    private static string ParseCredential(ReadOnlyMemory<byte> payload)
+    {
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            if (document.RootElement.ValueKind != JsonValueKind.Object ||
+                !document.RootElement.TryGetProperty("claudeAiOauth", out var oauth) ||
+                oauth.ValueKind != JsonValueKind.Object ||
+                !oauth.TryGetProperty("accessToken", out var token) || token.ValueKind != JsonValueKind.String ||
+                string.IsNullOrWhiteSpace(token.GetString())) throw new ClaudeLoginRequiredException();
+
+            if (oauth.TryGetProperty("expiresAt", out var expires))
+            {
+                if (expires.ValueKind != JsonValueKind.Number || !expires.TryGetInt64(out var milliseconds))
+                    throw new ClaudeLoginRequiredException();
+                if (DateTimeOffset.FromUnixTimeMilliseconds(milliseconds) <= DateTimeOffset.UtcNow.AddSeconds(15))
+                    throw HasUsableRefreshToken(oauth)
+                        ? new ClaudeTokenExpiredException() : new ClaudeLoginRequiredException();
+            }
+
+            return token.GetString()!;
+        }
+        catch (Exception exception) when (exception is JsonException or ArgumentOutOfRangeException)
+        {
+            // Only malformed authentication data becomes a login problem/Desktop fallback. File I/O
+            // and usage-response errors stay outside this boundary and retain their transient status.
+            throw new ClaudeLoginRequiredException();
+        }
     }
 
     // Pure response parsing: regression tests do not need credentials or HTTP requests.

@@ -7,19 +7,31 @@ public struct ProviderDiagnostics: Codable, Hashable, Sendable {
     public let weeklyPercent: Double?
     public let capturedAt: Date?
     public let sourceAvailable: Bool
+    public let fablePercent: Double?
+    public let fiveHourResetsAt: Date?
+    public let weeklyResetsAt: Date?
+    public let fableResetsAt: Date?
 
     public init(
         status: UsageStatus,
         fiveHourPercent: Double?,
         weeklyPercent: Double?,
         capturedAt: Date?,
-        sourceAvailable: Bool
+        sourceAvailable: Bool,
+        fablePercent: Double? = nil,
+        fiveHourResetsAt: Date? = nil,
+        weeklyResetsAt: Date? = nil,
+        fableResetsAt: Date? = nil
     ) {
         self.status = status
         self.fiveHourPercent = Self.safePercent(fiveHourPercent)
         self.weeklyPercent = Self.safePercent(weeklyPercent)
         self.capturedAt = capturedAt
         self.sourceAvailable = sourceAvailable
+        self.fablePercent = Self.safePercent(fablePercent)
+        self.fiveHourResetsAt = fiveHourResetsAt
+        self.weeklyResetsAt = weeklyResetsAt
+        self.fableResetsAt = fableResetsAt
     }
 
     private static func safePercent(_ value: Double?) -> Double? {
@@ -120,7 +132,11 @@ public struct DiagnosticsSnapshot: Codable, Hashable, Sendable {
                 fiveHourPercent: state.claudeSnapshot?.fiveHour?.displayPercent,
                 weeklyPercent: state.claudeSnapshot?.weekly?.displayPercent,
                 capturedAt: state.claudeSnapshot?.capturedAt,
-                sourceAvailable: claudeSourceAvailable ?? (state.claudeSnapshot != nil)
+                sourceAvailable: claudeSourceAvailable ?? (state.claudeSnapshot != nil),
+                fablePercent: state.claudeSnapshot?.fable?.displayPercent,
+                fiveHourResetsAt: state.claudeSnapshot?.fiveHour?.resetsAt,
+                weeklyResetsAt: state.claudeSnapshot?.weekly?.resetsAt,
+                fableResetsAt: state.claudeSnapshot?.fable?.resetsAt
             ),
             codex: ProviderDiagnostics(
                 status: state.codexStatus,
@@ -130,7 +146,8 @@ public struct DiagnosticsSnapshot: Codable, Hashable, Sendable {
                 fiveHourPercent: nil,
                 weeklyPercent: state.codexSnapshot?.weekly?.displayPercent,
                 capturedAt: nil,
-                sourceAvailable: codexSourceAvailable ?? (state.codexSnapshot != nil)
+                sourceAvailable: codexSourceAvailable ?? (state.codexSnapshot != nil),
+                weeklyResetsAt: state.codexSnapshot?.weekly?.resetsAt
             ),
             codexResetCredits: state.codexSnapshot?.resetCredits,
             widget: widget

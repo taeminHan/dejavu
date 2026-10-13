@@ -38,6 +38,7 @@ public struct UsageFreshnessPolicy: Hashable, Sendable {
 
     public func freshLimit(_ limit: UsageLimit?, capturedAt: Date, now: Date = Date()) -> UsageLimit? {
         guard let limit else { return nil }
+        guard capturedAt <= now.addingTimeInterval(maximumFutureClockSkew) else { return nil }
         if let resetsAt = limit.resetsAt {
             return resetsAt > now ? limit : nil
         }

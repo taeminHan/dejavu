@@ -11,7 +11,10 @@ public partial class OnboardingWindow : Window
     private bool _codexLoginPending;
     private ApplicationState? _applicationState;
 
-    internal OnboardingWindow(TraySettings settings)
+    internal OnboardingWindow(TraySettings settings) : this(settings, detectCredentials: true) { }
+
+    // Native tree probes skip provider discovery and local history reads.
+    internal OnboardingWindow(TraySettings settings, bool detectCredentials)
     {
         InitializeComponent();
         _settings = settings;
@@ -38,7 +41,7 @@ public partial class OnboardingWindow : Window
         PlacementCombo.SelectedItem = placements.FirstOrDefault(choice => choice.Value == settings.WidgetPlacement)
                                       ?? placements[0];
         ApplyTheme(settings.WidgetTheme);
-        UpdateCredentialState();
+        if (detectCredentials) UpdateCredentialState();
     }
 
     internal event EventHandler? Completed;
@@ -85,8 +88,8 @@ public partial class OnboardingWindow : Window
             case WidgetVisualTheme.FluentGlass:
                 OnboardingContent.Width = 520;
                 OnboardingHeroBadge.Width = OnboardingHeroBadge.Height = 64;
-                ConfigureCard(ClaudeCredentialCard, new Thickness(17), new Thickness(0, 20, 0, 0), new CornerRadius(16), new Thickness(1), "RaisedSurfaceBrush");
-                ConfigureCard(CodexCredentialCard, new Thickness(17), new Thickness(0, 12, 0, 0), new CornerRadius(16), new Thickness(1), "RaisedSurfaceBrush");
+                ConfigureCard(ClaudeCredentialCard, new Thickness(17), new Thickness(0, 20, 0, 0), new CornerRadius(16), new Thickness(1), "SurfaceRaisedBrush");
+                ConfigureCard(CodexCredentialCard, new Thickness(17), new Thickness(0, 12, 0, 0), new CornerRadius(16), new Thickness(1), "SurfaceRaisedBrush");
                 break;
             case WidgetVisualTheme.TerminalMono:
                 OnboardingRoot.Margin = new Thickness(24, 20, 24, 20);
@@ -98,15 +101,15 @@ public partial class OnboardingWindow : Window
                 OnboardingHeroBadge.Width = 68;
                 OnboardingHeroBadge.Height = 42;
                 OnboardingHeroBadge.CornerRadius = new CornerRadius(0);
-                ConfigureCard(ClaudeCredentialCard, new Thickness(12), new Thickness(0, 14, 0, 0), new CornerRadius(0), new Thickness(1), "RaisedSurfaceBrush");
-                ConfigureCard(CodexCredentialCard, new Thickness(12), new Thickness(0, 7, 0, 0), new CornerRadius(0), new Thickness(1), "RaisedSurfaceBrush");
+                ConfigureCard(ClaudeCredentialCard, new Thickness(12), new Thickness(0, 14, 0, 0), new CornerRadius(0), new Thickness(1), "SurfaceRaisedBrush");
+                ConfigureCard(CodexCredentialCard, new Thickness(12), new Thickness(0, 7, 0, 0), new CornerRadius(0), new Thickness(1), "SurfaceRaisedBrush");
                 break;
             case WidgetVisualTheme.Orbit:
                 OnboardingContent.Width = 522;
                 OnboardingHeroBadge.Width = OnboardingHeroBadge.Height = 68;
                 OnboardingHeroBadge.CornerRadius = new CornerRadius(34);
-                ConfigureCard(ClaudeCredentialCard, new Thickness(18), new Thickness(0, 20, 0, 0), new CornerRadius(20), new Thickness(1), "RaisedSurfaceBrush");
-                ConfigureCard(CodexCredentialCard, new Thickness(18), new Thickness(0, 12, 0, 0), new CornerRadius(20), new Thickness(1), "RaisedSurfaceBrush");
+                ConfigureCard(ClaudeCredentialCard, new Thickness(18), new Thickness(0, 20, 0, 0), new CornerRadius(20), new Thickness(1), "SurfaceRaisedBrush");
+                ConfigureCard(CodexCredentialCard, new Thickness(18), new Thickness(0, 12, 0, 0), new CornerRadius(20), new Thickness(1), "SurfaceRaisedBrush");
                 ServiceOptionRow.Margin = new Thickness(12, 20, 12, 0);
                 PlacementOptionRow.Margin = new Thickness(12, 16, 12, 0);
                 break;

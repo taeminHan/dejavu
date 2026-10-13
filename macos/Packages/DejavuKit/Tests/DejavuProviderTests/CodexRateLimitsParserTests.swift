@@ -62,6 +62,20 @@ final class CodexRateLimitsParserTests: XCTestCase {
         XCTAssertNil(snapshot.weekly)
     }
 
+    func testMalformedOptionalPrimaryDoesNotDiscardWeeklyOrCredits() throws {
+        for primary in [#"{"usedPercent":null,"windowDurationMins":300}"#, #"{"usedPercent":12}"#, #"{"usedPercent":"changed","windowDurationMins":300}"#] {
+            let json = #"{"id":3,"result":{"rateLimits":{"primary":PRIMARY,"secondary":{"usedPercent":42,"windowDurationMins":10080}},"rateLimitResetCredits":{"availableCount":2}}}"#.replacingOccurrences(of: "PRIMARY", with: primary)
+            let snapshot = try parser.parseResponse(Data(json.utf8))
+            XCTAssertEqual(snapshot.weekly?.percent, 42)
+            XCTAssertEqual(snapshot.resetCredits, 2)
+        }
+    }
+
+    func testNullUnrelatedBucketDoesNotDiscardExactCodexBucket() throws {
+        let data = Data(#"{"result":{"rateLimitsByLimitId":{"other":null,"codex":{"secondary":{"usedPercent":37,"windowDurationMins":10080}}}}}"#.utf8)
+        XCTAssertEqual(try parser.parseResponse(data).weekly?.percent, 37)
+    }
+
     func testRejectsResponseErrorAndMissingResult() {
         XCTAssertThrowsError(
             try parser.parseResponse(Data(#"{"id":6,"error":{}}"#.utf8))

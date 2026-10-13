@@ -7,6 +7,7 @@ public struct CodexAppServerConfiguration: Sendable {
     public let clientTitle: String
     public let clientVersion: String
     public let requestTimeout: Duration
+    public let loginTimeout: Duration
     public let shutdownGracePeriod: Duration
     public let maximumLineBytes: Int
 
@@ -15,6 +16,7 @@ public struct CodexAppServerConfiguration: Sendable {
         clientTitle: String = "Dejavu",
         clientVersion: String = "0.1.0",
         requestTimeout: Duration = .seconds(15),
+        loginTimeout: Duration = .seconds(300),
         shutdownGracePeriod: Duration = .seconds(1),
         maximumLineBytes: Int = 1_048_576
     ) {
@@ -22,6 +24,7 @@ public struct CodexAppServerConfiguration: Sendable {
         self.clientTitle = clientTitle
         self.clientVersion = clientVersion
         self.requestTimeout = requestTimeout
+        self.loginTimeout = loginTimeout
         self.shutdownGracePeriod = shutdownGracePeriod
         self.maximumLineBytes = min(8_388_608, max(1_024, maximumLineBytes))
     }
@@ -48,6 +51,10 @@ public enum CodexAppServerError: Error, Equatable, Sendable {
     case accountReadRejected
     case invalidAccountResponse
     case loginRequired
+    case unauthorized
+    case backendFailed
+    case loginRejected
+    case invalidLoginResponse
     case rateLimitsRejected
     case invalidRateLimitsResponse
     case timedOut
@@ -76,6 +83,7 @@ public actor CodexAppServerClient {
     private let parser = CodexRateLimitsParser()
 
     private var activeTransport: (any CodexAppServerTransport)?
+    private var activeRead: Task<CodexUsageSnapshot, Error>?
     private var isShutDown = false
 
     public init(
@@ -98,6 +106,23 @@ public actor CodexAppServerClient {
     }
 
     public func fetchUsage() async throws -> CodexUsageSnapshot {
+        try Task.checkCancellation()
+        guard !isShutDown else { throw CodexAppServerError.shutDown }
+        guard activeRead == nil, activeTransport == nil else {
+            throw CodexAppServerError.requestInProgress
+        }
+        // A cancelled refresh must not interrupt the official child's in-band
+        // token rotation. Finish the bounded read (or its 15 s timeout) first,
+        // then discard its result for the cancelled caller.
+        let operation = Task.detached { try await self.performFetchUsage() }
+        activeRead = operation
+        let result = await operation.result
+        activeRead = nil
+        try Task.checkCancellation()
+        return try result.get()
+    }
+
+    private func performFetchUsage() async throws -> CodexUsageSnapshot {
         guard !isShutDown else { throw CodexAppServerError.shutDown }
         guard activeTransport == nil else { throw CodexAppServerError.requestInProgress }
 
@@ -184,14 +209,77 @@ public actor CodexAppServerClient {
     /// Permanently prevents new requests and waits for the owned child to exit.
     public func shutdown() async {
         isShutDown = true
+        if let activeRead {
+            _ = await activeRead.result
+            return
+        }
         guard let activeTransport else { return }
         await finish(activeTransport)
+    }
+
+    /// User-initiated browser authentication. No credentials or account fields
+    /// are retained. The URL lives only until the completion notification.
+    public func authenticate(
+        onCompletion: @escaping @Sendable () async -> Void = {},
+        openBrowser: @escaping @Sendable (URL) async throws -> Void
+    ) async throws {
+        guard !isShutDown else { throw CodexAppServerError.shutDown }
+        guard activeTransport == nil, activeRead == nil else {
+            throw CodexAppServerError.requestInProgress
+        }
+        let transport = transportFactory(executableURL)
+        activeTransport = transport
+        do {
+            try await transport.start()
+            let requestDeadline = ContinuousClock.now.advanced(by: configuration.requestTimeout)
+            try await sendInitialize(to: transport)
+            _ = try await readResponse(id: 1, kind: .initialize, deadline: requestDeadline, transport: transport)
+            try await transport.sendMessage(try encode(InitializedNotification()))
+            try await transport.sendMessage(try encode(LoginStartRequest()))
+            let data = try await readResponse(id: 2, kind: .login, deadline: requestDeadline, transport: transport)
+            guard let response = try? JSONDecoder().decode(LoginStartResponse.self, from: data),
+                  response.result.type == "chatgpt",
+                  !response.result.loginId.isEmpty,
+                  let url = URL(string: response.result.authUrl),
+                  Self.isOfficialAuthenticationURL(url) else {
+                throw CodexAppServerError.invalidLoginResponse
+            }
+            try await openBrowser(url)
+            let deadline = ContinuousClock.now.advanced(by: configuration.loginTimeout)
+            while true {
+                try Task.checkCancellation()
+                let line = try await receiveLine(deadline: deadline, transport: transport)
+                guard let notification = try? JSONDecoder().decode(LoginCompletedNotification.self, from: line) else {
+                    continue
+                }
+                guard notification.method == "account/login/completed",
+                      notification.params.loginId == response.result.loginId else { continue }
+                guard notification.params.success else { throw CodexAppServerError.loginRejected }
+                break
+            }
+            await onCompletion()
+            await finish(transport)
+            guard !isShutDown else { throw CancellationError() }
+        } catch {
+            await onCompletion()
+            await finish(transport)
+            if isShutDown || Task.isCancelled { throw CancellationError() }
+            if let error = error as? CodexAppServerError { throw error }
+            throw CodexAppServerError.transportFailure
+        }
+    }
+
+    private static func isOfficialAuthenticationURL(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https", url.user == nil, url.password == nil,
+              url.port == nil || url.port == 443, let host = url.host?.lowercased() else { return false }
+        return host == "auth.openai.com" || host == "chatgpt.com" || host == "auth.chatgpt.com"
     }
 
     private enum ResponseKind {
         case initialize
         case account
         case rateLimits
+        case login
     }
 
     private func sendInitialize(to transport: any CodexAppServerTransport) async throws {
@@ -232,6 +320,19 @@ public actor CodexAppServerClient {
 
             guard metadata.id == id else { continue }
             if metadata.hasError {
+                if kind != .initialize, let rejection = metadata.rejection {
+                    if rejection.code == -32603 {
+                        throw rejection.message.lowercased().contains("401 unauthorized")
+                            ? CodexAppServerError.unauthorized : CodexAppServerError.backendFailed
+                    }
+                    if rejection.code == -32600 {
+                        let message = rejection.message.lowercased()
+                        let protocolRejection = ["invalid request", "not initialized", "already initialized", "server is draining", "experimentalapi"].contains { message.contains($0) }
+                        if !protocolRejection, ["auth", "chatgpt", "log in", "login", "sign in"].contains(where: { message.contains($0) }) {
+                            throw CodexAppServerError.loginRequired
+                        }
+                    }
+                }
                 switch kind {
                 case .initialize:
                     throw CodexAppServerError.initializationRejected
@@ -239,6 +340,8 @@ public actor CodexAppServerClient {
                     throw CodexAppServerError.accountReadRejected
                 case .rateLimits:
                     throw CodexAppServerError.rateLimitsRejected
+                case .login:
+                    throw CodexAppServerError.loginRejected
                 }
             }
             guard metadata.hasResult else {
@@ -497,6 +600,7 @@ private struct ResponseMetadata: Decodable {
     let id: Int?
     let hasResult: Bool
     let hasError: Bool
+    let rejection: RPCRejection?
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -507,6 +611,7 @@ private struct ResponseMetadata: Decodable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(Int.self, forKey: .id)
+        rejection = try? container.decodeIfPresent(RPCRejection.self, forKey: .error)
         if container.contains(.result) {
             hasResult = !(try container.decodeNil(forKey: .result))
         } else {
@@ -518,4 +623,31 @@ private struct ResponseMetadata: Decodable {
             hasError = false
         }
     }
+}
+
+private struct RPCRejection: Decodable {
+    let code: Int
+    let message: String
+}
+
+private struct LoginStartRequest: Encodable {
+    let method = "account/login/start"
+    let id = 2
+    let params = LoginStartParameters()
+}
+
+private struct LoginStartParameters: Encodable { let type = "chatgpt" }
+private struct LoginStartResponse: Decodable { let result: LoginStartResult }
+private struct LoginStartResult: Decodable {
+    let type: String
+    let loginId: String
+    let authUrl: String
+}
+private struct LoginCompletedNotification: Decodable {
+    let method: String
+    let params: LoginCompletion
+}
+private struct LoginCompletion: Decodable {
+    let loginId: String?
+    let success: Bool
 }

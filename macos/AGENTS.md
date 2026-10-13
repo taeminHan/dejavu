@@ -1,12 +1,26 @@
 # Dejavu macOS handoff instructions
 
-Updated: 2026-10-02. Applies here and below, in addition to the repository instructions.
+Updated: 2026-10-13. Applies here and below, in addition to the repository instructions.
 
-## Current phase: deferred
+## Current phase: resumed on Mac for implementation and local validation
 
-The user is developing Windows now and will resume Mac implementation separately on a Mac. Preserve existing Swift/Xcode source and tests. This file does not authorize current Mac development, deletion, scaffolding, builds, signing or releases. Requested documentation-only scope updates are allowed.
+2026-10-13 release follow-up: the user explicitly authorized the four Windows fixes, Codex cancellation validation and combined Windows/macOS 0.9.6 testing and publication, including the scoped commits/push/tag needed by the existing release workflow. This supersedes the no-publication boundary of the earlier local-only phase below, not the credential/privacy or paid-provisioning restrictions. The user confirmed live Claude usage after selecting the previous Dejavu sign-in. Record Windows CI evidence separately from local Mac validation; do not imply installed update, physical DPI, VoiceOver or App Group acceptance.
 
-Approved redesign: menu-bar first, theme-free, macOS 27 direction. Existing floating/WidgetKit/status-menu implementations are historical foundations, not proof of redesign completion or permission to remove them. Windows completion must not depend on this deferred phase.
+On 2026-10-13 the user explicitly resumed missing-feature implementation, prioritized bug fixes and local build/testing on this Mac. Parallel delegation and ad-hoc signing of isolated local test apps were approved. This does not authorize commits, pushes, tags, published releases, replacement of release artifacts, real-account authentication or paid provisioning. Preserve existing Swift/Xcode source, settings and tests.
+
+Approved redesign: menu-bar first, theme-free, macOS 27 direction. Native sidebar settings and attached transient details are now implemented. Existing optional floating/WidgetKit implementations and their saved preferences remain compatible foundations, not permission to remove them. Legacy floating customization is isolated in Advanced settings; it is not applied to the new menu-bar/details design. Minimum deployment remains macOS 14.
+
+## Current runtime and validation ownership
+
+- `AppModel` owns preference loading/saving, bounded refresh scheduling, consent, onboarding completion and auth action state. Reset is a consent-revoking transaction: reject reentrant preference edits and connection/auth actions while it is running.
+- `UsageRefreshCoordinator` serializes provider reads, preserves independent statuses and expires carried limits without inventing a new capture time. `UsageRefreshSchedule` uses monotonic deadlines; lifecycle nudges cannot postpone an earlier retry.
+- `CodexAuthenticationService` owns official app-server login, completion, cancellation and browser URL lifetime. Stop only Dejavu-owned children. Claude login runs the official `auth login` command in Terminal; no clipboard command handoff or model request.
+- Claude configuration paths honor `CLAUDE_CONFIG_DIR`. Connect/disconnect and explicit project preflight are consented reads; startup upgrades only an already-owned bridge. Custom-profile Fable access fails closed rather than guessing a Keychain item.
+- `AppSettings.claudeCredentialIdentity` is a user-selected standard/previous-Dejavu-default identity, never credential data. Each reads one exact official service/account with no fallback, enumeration or credential mutation. Selecting a location does not grant extended access. When extended access is enabled, do not fall back to an unscoped status-line snapshot on an identity error.
+- An identity change clears Claude values immediately, drains/invalidate older refreshes and resets the OAuth generation/backoff before the new Claude-only read. Preserve settled Codex state and any deferred official-login follow-up. Preferences reset must not redirect a Claude login that is already in progress.
+- `AppCoordinator` owns native windows/popover and the synthetic `--validate-ui` route. That route bypasses real settings/providers, login-item mutation, App Group publication and Sparkle startup.
+- `tools/RunMacAppModelProbe.sh` compiles the actual app model with injected temporary stores/providers. `tools/RunMacUpdateProbe.sh` checks the actual update coordinator with a synthetic Sparkle transport; it does not prove downloaded-update installation.
+- Use isolated scratch/derived-data directories. Record commands, counts, native captures and remaining device/account acceptance checks in `docs/MACOS_DEVELOPMENT.md`; never describe fixture checks as real-account acceptance.
 
 ## When explicitly resumed on a Mac
 

@@ -1,6 +1,411 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Claude sign-in location" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "인증 위치" } }
+      }
+    },
+    "Standard Claude sign-in" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "기본 Claude 로그인" } }
+      }
+    },
+    "Previous Dejavu sign-in" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이전 Dejavu 로그인" } }
+      }
+    },
+    "Previous Dejavu sign-in is available only for the default Claude profile." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이전 Dejavu 로그인은 기본 Claude 프로필에서만 사용할 수 있습니다." } }
+      }
+    },
+    "Choosing a sign-in location does not enable Fable access. Keychain is read only after you enable Fable usage." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "인증 위치를 선택해도 Fable 접근은 켜지지 않습니다. Fable 사용량을 활성화한 뒤에만 키체인을 읽습니다." } }
+      }
+    },
+    "Reuses the login created by earlier Dejavu versions. Credentials are not copied or deleted." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "이전 Dejavu 버전에서 생성한 로그인을 재사용합니다. 인증 정보를 복사하거나 삭제하지 않습니다." } }
+      }
+    },
+    "Dejavu accesses Claude settings only after your explicit action. Connect and Disconnect may change settings; Check Project Settings only reads them. Existing commands are preserved. Usage arrives after Claude Code receives its first API response." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용자가 명시적으로 요청한 경우에만 Claude 설정에 접근합니다. 연결과 해제는 설정을 변경할 수 있고, 프로젝트 설정 확인은 읽기만 합니다. 기존 명령은 보존됩니다. 사용량은 Claude Code가 첫 API 응답을 받은 후 표시됩니다." } }
+      }
+    },
+    "Review Connection Settings…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결 설정 확인…" } }
+      }
+    },
+    "Review Update Settings…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "업데이트 설정 확인…" } }
+      }
+    },
+    "Open Claude Code once to refresh its session, then retry." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code를 실행하여 세션을 갱신한 후 다시 시도해 주세요." } }
+      }
+    },
+    "Claude server is unavailable; retrying automatically" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 서버 오류 · 자동 재시도" } }
+      }
+    },
+    "Codex server is unavailable; retrying automatically" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 서버 오류 · 자동 재시도" } }
+      }
+    },
+    "Claude usage response changed; check for an app update" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 사용량 응답 변경 · 앱 업데이트를 확인해 주세요" } }
+      }
+    },
+    "Codex usage response changed; check for an app update" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 사용량 응답 변경 · 앱 업데이트를 확인해 주세요" } }
+      }
+    },
+    "Claude credential access was denied; review macOS permissions" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 인증 정보 접근 거부 · macOS 권한을 확인해 주세요" } }
+      }
+    },
+    "Codex credential access was denied; review macOS permissions" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 인증 정보 접근 거부 · macOS 권한을 확인해 주세요" } }
+      }
+    },
+    "Fable Keychain access is unavailable for custom Claude profiles. Status-line usage still works." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용자 지정 Claude 프로필에서는 Fable 키체인 조회를 지원하지 않습니다. 상태 줄 사용량은 계속 사용할 수 있습니다." } }
+      }
+    },
+    "Check Project Settings…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로젝트 설정 확인…" } }
+      }
+    },
+    "No conflicting project settings found." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "충돌하는 프로젝트 설정이 없습니다." } }
+      }
+    },
+    "Project or managed settings may override collection. Review Claude settings." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프로젝트 또는 관리자 설정이 수집 설정보다 우선할 수 있습니다. Claude 설정을 확인해 주세요." } }
+      }
+    },
+    "Claude settings could not be checked safely." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 설정을 안전하게 확인하지 못했습니다." } }
+      }
+    },
+    "Complete sign-in in your browser." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "브라우저에서 로그인을 완료해 주세요." } }
+      }
+    },
+    "Signed in. Checking usage…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 완료 · 사용량 확인 중…" } }
+      }
+    },
+    "Sign-in could not finish. Check that the CLI is installed and try again." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인을 완료하지 못했습니다. CLI 설치를 확인한 후 다시 시도해 주세요." } }
+      }
+    },
+    "Complete Claude sign-in in Terminal." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "터미널에서 Claude 로그인을 완료해 주세요." } }
+      }
+    },
+    "Signed in. Start a Claude Code session to receive usage." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인했습니다. Claude Code 세션에서 응답을 받으면 사용량이 표시됩니다." } }
+      }
+    },
+    "Claude sign-in did not finish. Try again." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 로그인이 완료되지 않았습니다. 다시 시도해 주세요." } }
+      }
+    },
+    "Sign-in timed out. Try again." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 대기 시간이 지났습니다. 다시 시도해 주세요." } }
+      }
+    },
+    "Install Claude Code or check Terminal, then try again." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code 설치와 터미널을 확인한 후 다시 시도해 주세요." } }
+      }
+    },
+    "Connected. Start a Claude Code session to receive usage." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결했습니다. Claude Code 세션에서 응답을 받으면 사용량이 표시됩니다." } }
+      }
+    },
+    "Connected. Review project or hook settings if usage does not arrive." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결했습니다. 사용량이 표시되지 않으면 프로젝트와 훅 설정을 확인해 주세요." } }
+      }
+    },
+    "Behavior" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "동작" } }
+      }
+    },
+    "Connections" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결" } }
+      }
+    },
+    "Display" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "표시" } }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "설정" } }
+      }
+    },
+    "Usage Details" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "사용량 상세" } }
+      }
+    },
+    "Refreshing…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "새로고침 중…" } }
+      }
+    },
+    "Advanced overlay options" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고급 오버레이 옵션" } }
+      }
+    },
+    "Advanced overlay options…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "고급 오버레이 옵션…" } }
+      }
+    },
+    "Optional overlay" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "선택적 오버레이" } }
+      }
+    },
+    "Choose the usage metrics shown in the menu bar." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대에 표시할 사용량 지표를 선택하세요." } }
+      }
+    },
+    "The menu bar remains available when the overlay is off. Existing overlay and system widget preferences are preserved." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "오버레이를 꺼도 메뉴 막대는 유지됩니다. 기존 오버레이와 시스템 위젯 설정도 보존됩니다." } }
+      }
+    },
+    "System appearance follows this Mac. The menu bar uses monochrome symbols and text." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "시스템 모양은 이 Mac의 설정을 따릅니다. 메뉴 막대에는 단색 아이콘과 글자를 사용합니다." } }
+      }
+    },
+    "Sign In…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인…" } }
+      }
+    },
+    "Sign-in in progress…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로그인 진행 중…" } }
+      }
+    },
+    "Reopen Browser…" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "브라우저 다시 열기…" } }
+      }
+    },
+    "Dejavu reads or changes the active Claude configuration only after you choose Connect. An existing command is preserved and chained. Usage arrives after Claude Code receives its first API response." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "연결을 선택한 경우에만 현재 Claude 설정을 읽거나 변경합니다. 기존 명령은 보존하여 함께 실행합니다. 사용량은 Claude Code가 첫 API 응답을 받은 후 표시됩니다." } }
+      }
+    },
+    "Sign-in is performed by the official local client. Claude uses Terminal; Codex opens the official browser sign-in. Dejavu never stores credentials." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공식 로컬 클라이언트에서 인증합니다. Claude는 터미널을 사용하고 Codex는 공식 브라우저 로그인 화면을 엽니다. Dejavu는 인증 정보를 저장하지 않습니다." } }
+      }
+    },
+    "Usage arrives after Claude Code receives its first API response. Connecting does not send a model request." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude Code가 첫 API 응답을 받은 후 사용량이 표시됩니다. 연결만으로 모델 요청을 보내지는 않습니다." } }
+      }
+    },
+    "Use the menu bar on its own, or enable the floating overlay in Settings." : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "메뉴 막대만 사용하거나 설정에서 플로팅 오버레이를 켤 수 있습니다." } }
+      }
+    },
+    "Retry Now" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "지금 다시 시도" } }
+      }
+    },
+    "Automatic retry at %@" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@에 자동 재시도" } }
+      }
+    },
+    "Refresh local usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "로컬 사용량 새로고침" } }
+      }
+    },
+    "Provider note" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "공급자 안내" } }
+      }
+    },
+    "Dejavu Settings" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 설정" } }
+      }
+    },
+    "Welcome to Dejavu" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 시작하기" } }
+      }
+    },
+    "Dejavu usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Dejavu 사용량" } }
+      }
+    },
+    "No usage metric shown" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "표시 중인 사용량 지표 없음" } }
+      }
+    },
+    "Updated %@" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 확인 %@" } }
+      }
+    },
+    "Updated" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "마지막 확인" } }
+      }
+    },
+    "Resets %@" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@에 초기화" } }
+      }
+    },
+    "Expires %@" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@에 만료" } }
+      }
+    },
+    "Claude usage is current" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 사용량이 최신 상태입니다" } }
+      }
+    },
+    "Codex usage is current" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 사용량이 최신 상태입니다" } }
+      }
+    },
+    "Claude sign-in is required" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 로그인이 필요합니다" } }
+      }
+    },
+    "Codex sign-in is required" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 로그인이 필요합니다" } }
+      }
+    },
+    "Claude is temporarily rate limited" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 요청 제한으로 자동 재시도를 기다립니다" } }
+      }
+    },
+    "Codex is temporarily rate limited" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 요청 제한으로 자동 재시도를 기다립니다" } }
+      }
+    },
+    "Claude is offline" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude에 연결할 수 없습니다" } }
+      }
+    },
+    "Codex is offline" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex에 연결할 수 없습니다" } }
+      }
+    },
+    "Claude is unavailable" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude를 연결해 주세요" } }
+      }
+    },
+    "Codex is unavailable" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex를 연결해 주세요" } }
+      }
+    },
+    "Claude usage could not be read" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 사용량 확인 실패 · 자동 재시도" } }
+      }
+    },
+    "Codex usage could not be read" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 사용량 확인 실패 · 자동 재시도" } }
+      }
+    },
+    "Claude is waiting for usage data" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 사용량 수신 대기 중" } }
+      }
+    },
+    "Codex is waiting for usage data" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 사용량 수신 대기 중" } }
+      }
+    },
+    "Claude token refresh is pending; open Claude Code" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 토큰 갱신 대기 · Claude Code를 실행해 주세요" } }
+      }
+    },
+    "Checking Claude usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 사용량 확인 중" } }
+      }
+    },
+    "Checking Codex usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 사용량 확인 중" } }
+      }
+    },
+    "Refreshing Claude usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Claude 사용량 새로고침 중" } }
+      }
+    },
+    "Refreshing Codex usage" : {
+      "localizations" : {
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "Codex 사용량 새로고침 중" } }
+      }
+    },
     "120 seconds" : {
       "localizations" : {
         "ko" : { "stringUnit" : { "state" : "translated", "value" : "120초" } }

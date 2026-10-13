@@ -194,7 +194,7 @@
                             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Margin="0,0,20,0"><TextBlock Style="{StaticResource SettingTitle}" Text="강조 색상"/><TextBlock Style="{StaticResource SettingDescription}" Text="진행률과 활성 상태에 사용할 색상입니다"/></StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <RadioButton x:Name="BlueAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"
-                                                 Background="#6D8EFF" Tag="#6D8EFF" ToolTip="블루" AutomationProperties.Name="강조 색상 블루" Checked="OnAccentChanged" />
+                                                 Background="#3A96F6" Tag="#3A96F6" ToolTip="블루" AutomationProperties.Name="강조 색상 블루" Checked="OnAccentChanged" />
                                     <RadioButton x:Name="PurpleAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"
                                                  Background="#8B7CF6" Tag="#8B7CF6" ToolTip="퍼플" AutomationProperties.Name="강조 색상 퍼플" Checked="OnAccentChanged" />
                                     <RadioButton x:Name="CoralAccent" Style="{StaticResource ColorSwatchButton}" GroupName="AccentColors"

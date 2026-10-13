@@ -88,8 +88,8 @@ final class UsageModelsTests: XCTestCase {
         let loading = ready.loading()
 
         XCTAssertEqual(loading.combinedStatus, .loading)
-        XCTAssertEqual(loading.claudeStatus, .loading)
-        XCTAssertEqual(loading.codexStatus, .loading)
+        XCTAssertEqual(loading.claudeStatus, .ready)
+        XCTAssertEqual(loading.codexStatus, .ready)
         XCTAssertEqual(loading.claudeSnapshot, claude)
         XCTAssertEqual(loading.codexSnapshot, codex)
         XCTAssertEqual(loading.updatedAt, capturedAt)

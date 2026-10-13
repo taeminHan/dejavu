@@ -737,9 +737,18 @@ public partial class SettingsWindow : Window
 
     private void OnRestoreDefaults(object sender, RoutedEventArgs e)
     {
+        RestoreDefaultsInMemory();
+        SaveAndNotify(applyTheme: true);
+        LoadValues();
+        PositionResetRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    // Keep the reset values testable without writing the user's settings file.
+    private void RestoreDefaultsInMemory()
+    {
         _settings.WidgetOpacity = 0.9;
         _settings.BackgroundColor = "#1E1E20";
-        _settings.AccentColor = "#6D8EFF";
+        _settings.AccentColor = new TraySettings().AccentColor;
         _settings.TextColor = "#AEAEB4";
         _settings.UseThresholdColors = true;
         _settings.ShowProgressBars = true;
@@ -754,9 +763,6 @@ public partial class SettingsWindow : Window
         _settings.AutomaticUpdateChecksEnabled = true;
         _settings.WidgetLeft = null;
         _settings.WidgetTop = null;
-        SaveAndNotify(applyTheme: true);
-        LoadValues();
-        PositionResetRequested?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnOpenDiagnostics(object sender, RoutedEventArgs e)

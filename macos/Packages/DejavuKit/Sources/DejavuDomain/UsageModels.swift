@@ -113,6 +113,10 @@ public struct CodexUsageSnapshot: Codable, Hashable, Sendable {
     }
 }
 
+public enum UsageIssue: String, Codable, Hashable, Sendable {
+    case waitingForData, tokenRefreshPending, permissionDenied, serverError, responseChanged
+}
+
 public struct ApplicationState: Codable, Hashable, Sendable {
     public let combinedStatus: UsageStatus
     public let claudeStatus: UsageStatus
@@ -123,6 +127,8 @@ public struct ApplicationState: Codable, Hashable, Sendable {
     public let codexSnapshot: CodexUsageSnapshot?
     public let updatedAt: Date?
     public let retryAt: Date?
+    public let claudeIssue: UsageIssue?
+    public let codexIssue: UsageIssue?
 
     public init(
         combinedStatus: UsageStatus? = nil,
@@ -133,7 +139,9 @@ public struct ApplicationState: Codable, Hashable, Sendable {
         codexMessage: String = "",
         codexSnapshot: CodexUsageSnapshot? = nil,
         updatedAt: Date? = nil,
-        retryAt: Date? = nil
+        retryAt: Date? = nil,
+        claudeIssue: UsageIssue? = nil,
+        codexIssue: UsageIssue? = nil
     ) {
         self.combinedStatus = combinedStatus ?? .combined(claude: claudeStatus, codex: codexStatus)
         self.claudeStatus = claudeStatus
@@ -144,6 +152,8 @@ public struct ApplicationState: Codable, Hashable, Sendable {
         self.codexSnapshot = codexSnapshot
         self.updatedAt = updatedAt
         self.retryAt = retryAt
+        self.claudeIssue = claudeIssue
+        self.codexIssue = codexIssue
     }
 
     public static let initial = ApplicationState(
@@ -157,13 +167,16 @@ public struct ApplicationState: Codable, Hashable, Sendable {
     public func loading() -> Self {
         Self(
             combinedStatus: .loading,
-            claudeStatus: .loading,
-            claudeMessage: claudeSnapshot == nil ? "Checking Claude usage" : "Refreshing Claude usage",
+            claudeStatus: claudeStatus,
+            claudeMessage: claudeMessage,
             claudeSnapshot: claudeSnapshot,
-            codexStatus: .loading,
-            codexMessage: codexSnapshot == nil ? "Checking Codex usage" : "Refreshing Codex usage",
+            codexStatus: codexStatus,
+            codexMessage: codexMessage,
             codexSnapshot: codexSnapshot,
-            updatedAt: updatedAt
+            updatedAt: updatedAt,
+            retryAt: retryAt,
+            claudeIssue: claudeIssue,
+            codexIssue: codexIssue
         )
     }
 }

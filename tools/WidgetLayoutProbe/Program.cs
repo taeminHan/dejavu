@@ -570,7 +570,8 @@ internal static partial class Program
         Console.WriteLine($"Codex window variants: {codexVariantCount} checked, {codexVariantFailures.Count} mismatched");
         var orbitFailures = RunOrbitProbe(assembly, stateFactory);
         var retroFailures = RunRetroProbe(assembly, stateFactory);
-        return retroFailures == 0 && orbitFailures == 0 && clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
+        var themeRegressionFailures = RunWindowsThemeRegressionProbe(assembly, stateFactory);
+        return themeRegressionFailures == 0 && retroFailures == 0 && orbitFailures == 0 && clippingFailures.Count == 0 && layoutFailures.Count == 0 && frameFailures.Count == 0 &&
                taskbarClipping.Count == 0 && taskbarOverBand.Count == 0 && taskbarMismatches.Count == 0 &&
                tracker.Failures.Count == 0 && codexVariantFailures.Count == 0
             ? 0

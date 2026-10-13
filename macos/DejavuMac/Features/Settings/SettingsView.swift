@@ -7,16 +7,31 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
     case general = "General"
     case providers = "Providers"
     case widget = "Widget"
+    case appearance = "Appearance"
     case updates = "Updates"
     case privacy = "Privacy"
 
     var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .general: "Behavior"
+        case .providers: "Connections"
+        case .widget: "Display"
+        case .appearance: "Appearance"
+        case .updates: "Updates"
+        case .privacy: "Privacy"
+        }
+    }
+
+    static let sidebarOrder: [Self] = [.widget, .appearance, .providers, .general, .updates, .privacy]
 
     var symbolName: String {
         switch self {
         case .general: "gearshape"
         case .providers: "link"
         case .widget: "rectangle.on.rectangle"
+        case .appearance: "circle.lefthalf.filled"
         case .updates: "arrow.triangle.2.circlepath"
         case .privacy: "hand.raised"
         }
@@ -27,53 +42,69 @@ struct SettingsView: View {
     @ObservedObject var model: AppModel
     @ObservedObject var updateCoordinator: UpdateCoordinator
     let onShowOnboarding: () -> Void
+    var previewPane: String? = nil
+    var previewScrollTarget: String? = nil
 
     @StateObject private var loginItem = LoginItemController()
     @State private var confirmsSettingsReset = false
     @State private var confirmsLocalDataReset = false
-    @State private var providerActionMessage: String?
+    @State private var showsLegacyOverlayOptions = false
     @State private var dataActionMessage: String?
     @State private var isDataActionRunning = false
 
     @AppStorage("selectedSettingsPane")
-    private var selection = SettingsPane.general
+    private var selection = SettingsPane.widget
+
+    private var selectedPane: SettingsPane {
+        previewPane.flatMap(SettingsPane.init(rawValue:)) ?? selection
+    }
 
     var body: some View {
-        TabView(selection: $selection) {
-            generalSettings
-                .tabItem {
-                    Label("General", systemImage: SettingsPane.general.symbolName)
+        NavigationSplitView {
+            List(SettingsPane.sidebarOrder, selection: Binding<SettingsPane?>(
+                get: { selectedPane },
+                set: { if let pane = $0 { selection = pane } }
+            )) { pane in
+                Label(LocalizedStringKey(pane.title), systemImage: pane.symbolName)
+                    .tag(pane)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 170, ideal: 190, max: 230)
+            .toolbar(removing: .sidebarToggle)
+        } detail: {
+            Group {
+                switch selectedPane {
+                case .general: generalSettings
+                case .providers: providerSettings
+                case .widget: displaySettings
+                case .appearance: appearanceSettings
+                case .updates: updateSettings
+                case .privacy: privacySettings
                 }
-                .tag(SettingsPane.general)
-
-            providerSettings
-                .tabItem {
-                    Label("Providers", systemImage: SettingsPane.providers.symbolName)
-                }
-                .tag(SettingsPane.providers)
-
-            widgetSettings
-                .tabItem {
-                    Label("Widget", systemImage: SettingsPane.widget.symbolName)
-                }
-                .tag(SettingsPane.widget)
-
-            updateSettings
-                .tabItem {
-                    Label("Updates", systemImage: SettingsPane.updates.symbolName)
-                }
-                .tag(SettingsPane.updates)
-
-            privacySettings
-                .tabItem {
-                    Label("Privacy", systemImage: SettingsPane.privacy.symbolName)
-                }
-                .tag(SettingsPane.privacy)
+            }
+            .navigationTitle(LocalizedStringKey(selectedPane.title))
         }
-        .tabViewStyle(.automatic)
-        .frame(minWidth: 640, idealWidth: 680, minHeight: 430, idealHeight: 470)
+        .frame(minWidth: 700, minHeight: 500)
+        .disabled(model.isResettingLocalData)
         .onAppear {
             loginItem.refresh()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            loginItem.refresh()
+        }
+        .sheet(isPresented: $showsLegacyOverlayOptions) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Advanced overlay options").font(.headline)
+                    Spacer()
+                    Button("Done") { showsLegacyOverlayOptions = false }
+                        .keyboardShortcut(.cancelAction)
+                }
+                .padding()
+                Divider()
+                legacyWidgetSettings
+            }
+            .frame(width: 600, height: 600)
         }
         .alert("Reset all settings?", isPresented: $confirmsSettingsReset) {
             Button("Cancel", role: .cancel) {}
@@ -103,12 +134,13 @@ struct SettingsView: View {
                         set: { loginItem.setEnabled($0) }
                     )
                 )
-                .disabled(loginItem.isChanging || loginItem.isUnavailable)
+                .disabled(model.usesSyntheticData || loginItem.isChanging || loginItem.isUnavailable)
 
                 if loginItem.requiresApproval {
                     Button("Open Login Items Settings…") {
                         loginItem.openSystemSettings()
                     }
+                    .disabled(model.usesSyntheticData)
                 }
 
                 if let message = loginItem.message {
@@ -132,11 +164,6 @@ struct SettingsView: View {
                     }
                 }
 
-                Picker("Appearance", selection: $model.appearance) {
-                    ForEach(ThemePreference.allCases, id: \.rawValue) { appearance in
-                        Text(LocalizedStringKey(appearance.displayName)).tag(appearance)
-                    }
-                }
             } header: {
                 Text("Application")
             } footer: {
@@ -151,11 +178,59 @@ struct SettingsView: View {
                 Button("Reset All Settings…", role: .destructive) {
                     confirmsSettingsReset = true
                 }
-                .disabled(!model.settingsAreLoaded)
+                .disabled(!model.settingsAreLoaded || model.claudeLoginPending)
             } header: {
                 Text("Welcome")
             } footer: {
                 Text("Review how Dejavu shows local usage and protects provider data.")
+            }
+        }
+    }
+
+    private var displaySettings: some View {
+        settingsForm {
+            ProviderSettingsSection(
+                provider: .claude,
+                status: model.claudeStatus.displayName,
+                description: "Choose the usage metrics shown in the menu bar.",
+                metricOptions: [
+                    MenuBarMetricOption(metric: .fiveHour, title: "5h"),
+                    MenuBarMetricOption(metric: .weekly, title: "Weekly"),
+                    MenuBarMetricOption(metric: .fable, title: "Fable")
+                ],
+                selectedMetrics: $model.claudeMenuBarMetrics
+            )
+            ProviderSettingsSection(
+                provider: .codex,
+                status: model.codexStatus.displayName,
+                description: "Show Codex usage in the menu bar, or hide it.",
+                metricOptions: [MenuBarMetricOption(metric: .weekly, title: "Usage")],
+                selectedMetrics: Binding(
+                    get: { model.showsCodexInMenuBar ? [.weekly] : [] },
+                    set: { model.showsCodexInMenuBar = $0.contains(.weekly) }
+                )
+            )
+            Section {
+                Toggle("Show Floating Overlay", isOn: $model.showsWidget)
+                Button("Advanced overlay options…") { showsLegacyOverlayOptions = true }
+            } header: {
+                Text("Optional overlay")
+            } footer: {
+                Text("The menu bar remains available when the overlay is off. Existing overlay and system widget preferences are preserved.")
+            }
+        }
+    }
+
+    private var appearanceSettings: some View {
+        settingsForm {
+            Section {
+                Picker("Appearance", selection: $model.appearance) {
+                    ForEach(ThemePreference.allCases, id: \.rawValue) { appearance in
+                        Text(LocalizedStringKey(appearance.displayName)).tag(appearance)
+                    }
+                }
+            } footer: {
+                Text("System appearance follows this Mac. The menu bar uses monochrome symbols and text.")
             }
         }
     }
@@ -171,7 +246,8 @@ struct SettingsView: View {
                     MenuBarMetricOption(metric: .weekly, title: "Weekly"),
                     MenuBarMetricOption(metric: .fable, title: "Fable")
                 ],
-                selectedMetrics: $model.claudeMenuBarMetrics
+                selectedMetrics: $model.claudeMenuBarMetrics,
+                showsMetricSelection: false
             )
 
             Section {
@@ -185,28 +261,61 @@ struct SettingsView: View {
                         model.connectClaudeStatusLine()
                     }
                     .disabled(model.claudeConnectionState.isBusy)
-
+                }
+                HStack {
                     Button("Disconnect") {
                         model.disconnectClaudeStatusLine()
                     }
                     .disabled(model.claudeConnectionState.isBusy)
 
-                    Button("Sign In in Terminal…") {
-                        prepareLoginCommand("claude", providerName: "Claude Code")
+                    Button(LocalizedStringKey(model.claudeLoginPending ? "Sign-in in progress…" : "Sign In…")) {
+                        model.loginClaude()
                     }
+                    .disabled(model.claudeLoginPending)
 
                     Link(
                         "Installation Guide…",
                         destination: URL(string: "https://docs.anthropic.com/en/docs/claude-code/getting-started")!
                     )
                 }
+                if let message = model.claudeLoginMessage {
+                    Text(LocalizedStringKey(message)).font(.caption).foregroundStyle(.secondary)
+                }
+                if !model.domainState.claudeMessage.isEmpty {
+                    Text(LocalizedStringKey(model.domainState.claudeMessage)).font(.caption).foregroundStyle(.secondary)
+                }
+                Button("Check Project Settings…") { model.checkClaudeProjectSettings() }
+                if let message = model.claudeConnectionMessage {
+                    Text(LocalizedStringKey(message)).font(.caption).foregroundStyle(.secondary)
+                }
             } header: {
                 Text("Claude Code status line")
             } footer: {
-                Text("Dejavu reads or changes ~/.claude/settings.json only after you choose Connect. An existing command is preserved and chained.")
+                Text("Dejavu accesses Claude settings only after your explicit action. Connect and Disconnect may change settings; Check Project Settings only reads them. Existing commands are preserved. Usage arrives after Claude Code receives its first API response.")
             }
 
             Section {
+                Picker("Claude sign-in location", selection: $model.claudeCredentialIdentity) {
+                    Text("Standard Claude sign-in")
+                        .tag(ClaudeCredentialIdentity.standard)
+                    Text("Previous Dejavu sign-in")
+                        .tag(ClaudeCredentialIdentity.previousDejavuDefault)
+                }
+                .disabled(
+                    !model.customProfileSupportsFable
+                        || model.claudeLoginPending
+                        || !model.settingsAreLoaded
+                        || model.isChangingClaudeIdentity
+                )
+                .id("claude-sign-in-location")
+                Text("Choosing a sign-in location does not enable Fable access. Keychain is read only after you enable Fable usage.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if model.claudeCredentialIdentity == .previousDejavuDefault {
+                    Text("Reuses the login created by earlier Dejavu versions. Credentials are not copied or deleted.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Toggle(isOn: $model.extendedFableAccessEnabled) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Enable Fable usage")
@@ -216,6 +325,11 @@ struct SettingsView: View {
                     }
                 }
                 .toggleStyle(.switch)
+                .disabled(!model.customProfileSupportsFable && !model.extendedFableAccessEnabled)
+                if !model.customProfileSupportsFable {
+                    Text("Fable Keychain access is unavailable for custom Claude profiles. Status-line usage still works.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             } header: {
                 Text("Extended Claude access")
             } footer: {
@@ -232,13 +346,17 @@ struct SettingsView: View {
                 selectedMetrics: Binding(
                     get: { model.showsCodexInMenuBar ? [.weekly] : [] },
                     set: { model.showsCodexInMenuBar = $0.contains(.weekly) }
-                )
+                ),
+                showsMetricSelection: false
             )
 
             Section {
                 HStack {
-                    Button("Sign In in Terminal…") {
-                        prepareLoginCommand("codex --login", providerName: "Codex")
+                    Button(LocalizedStringKey(model.codexLoginPending ? "Reopen Browser…" : "Sign In…")) {
+                        model.loginCodex()
+                    }
+                    if model.codexLoginPending {
+                        Button("Cancel") { model.cancelCodexLogin() }
                     }
 
                     Link(
@@ -247,20 +365,23 @@ struct SettingsView: View {
                     )
                 }
 
-                if let providerActionMessage {
-                    Text(providerActionMessage)
+                if let message = model.codexLoginMessage {
+                    Text(LocalizedStringKey(message))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                if !model.domainState.codexMessage.isEmpty {
+                    Text(LocalizedStringKey(model.domainState.codexMessage)).font(.caption).foregroundStyle(.secondary)
                 }
             } header: {
                 Text("Provider sign-in")
             } footer: {
-                Text("Dejavu copies the official login command and opens Terminal. You decide whether to run it; Dejavu never receives the resulting credentials.")
+                Text("Sign-in is performed by the official local client. Claude uses Terminal; Codex opens the official browser sign-in. Dejavu never stores credentials.")
             }
         }
     }
 
-    private var widgetSettings: some View {
+    private var legacyWidgetSettings: some View {
         settingsForm {
             Section {
                 Toggle(isOn: $model.showsWidget) {
@@ -454,43 +575,24 @@ struct SettingsView: View {
     }
 
     private func settingsForm<Content: View>(
-        @ViewBuilder content: () -> Content
+        @ViewBuilder content: @escaping () -> Content
     ) -> some View {
-        Form {
-            content()
+        ScrollViewReader { proxy in
+            Form {
+                content()
+            }
+            .formStyle(.grouped)
+            .controlSize(.regular)
+            .padding(.horizontal, 8)
+            .padding(.bottom, 8)
+            .task(id: previewScrollTarget) {
+                guard let previewScrollTarget else { return }
+                // Only synthetic validation supplies a target. Wait for the
+                // native Form to lay out its rows before scrolling to it.
+                await Task.yield()
+                proxy.scrollTo(previewScrollTarget, anchor: .center)
+            }
         }
-        .formStyle(.grouped)
-        .controlSize(.regular)
-        .padding(.horizontal, 8)
-        .padding(.bottom, 8)
-    }
-
-    private func prepareLoginCommand(_ command: String, providerName: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        guard pasteboard.setString(command, forType: .string) else {
-            providerActionMessage = NSLocalizedString(
-                "The login command could not be copied.",
-                comment: "Provider login clipboard failure"
-            )
-            return
-        }
-
-        let terminalURL = URL(fileURLWithPath: "/System/Applications/Utilities/Terminal.app")
-        guard NSWorkspace.shared.open(terminalURL) else {
-            providerActionMessage = NSLocalizedString(
-                "The login command was copied, but Terminal could not be opened.",
-                comment: "Provider login Terminal failure"
-            )
-            return
-        }
-        providerActionMessage = String(
-            format: NSLocalizedString(
-                "The %@ login command was copied. Paste it in Terminal and press Return.",
-                comment: "Provider login command ready; argument is provider name"
-            ),
-            providerName
-        )
     }
 
     private func colorSelection(
@@ -667,6 +769,7 @@ private struct ProviderSettingsSection: View {
     let description: String
     let metricOptions: [MenuBarMetricOption]
     @Binding var selectedMetrics: [MenuBarMetric]
+    var showsMetricSelection = true
 
     var body: some View {
         Section {
@@ -681,7 +784,8 @@ private struct ProviderSettingsSection: View {
                 Text("Status")
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            if showsMetricSelection {
+              VStack(alignment: .leading, spacing: 8) {
                 Text("Menu bar metrics")
                 HStack(spacing: 16) {
                     ForEach(metricOptions) { option in
@@ -692,6 +796,7 @@ private struct ProviderSettingsSection: View {
                         .toggleStyle(.checkbox)
                     }
                 }
+              }
             }
         } header: {
             ProviderBrandLabel(provider: provider, iconSize: 14)

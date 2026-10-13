@@ -5,6 +5,17 @@ import DejavuDomain
 @testable import DejavuProviders
 
 final class ClaudeCombinedUsageProviderTests: XCTestCase {
+    func testCancelledOldConfigurationCannotChangeCurrentAccessPolicy() async {
+        let policy = ClaudeExtendedAccessPolicy(enabled: true)
+        let oldConfiguration = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            await policy.setEnabled(false)
+        }
+        await oldConfiguration.value
+        let isEnabled = await policy.isEnabled()
+        XCTAssertTrue(isEnabled)
+    }
+
     func testDisabledPolicyNeverTouchesExtendedProvider() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -53,7 +64,7 @@ final class ClaudeCombinedUsageProviderTests: XCTestCase {
         XCTAssertEqual(callCount, 1)
     }
 
-    func testExtendedFailureFallsBackToOfficialStatusLine() async throws {
+    func testEnabledPolicyFailureNeverFallsBackToUnattributedStatusLine() async throws {
         let directory = try makeTemporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
         let snapshotURL = directory.appendingPathComponent("claude-status.json")
@@ -70,10 +81,42 @@ final class ClaudeCombinedUsageProviderTests: XCTestCase {
             accessPolicy: ClaudeExtendedAccessPolicy(enabled: true)
         )
 
-        let snapshot = try await provider.fetchUsage()
+        do { _ = try await provider.fetchUsage(); XCTFail("Expected selected identity's failure") }
+        catch { XCTAssertEqual(error as? UsageProviderFailure, .permissionDenied) }
+    }
 
-        XCTAssertEqual(snapshot.source, .statusLine)
-        XCTAssertNil(snapshot.fable)
+    func testMissingFirstSnapshotWaitsForDataRatherThanRequestingLogin() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let provider = ClaudeCombinedUsageProvider(
+            statusLineProvider: ClaudeStatusSnapshotProvider(snapshotURL: directory.appendingPathComponent("missing.json")),
+            extendedProvider: ExtendedUsageStub(result: .failure(UnexpectedCall.called)),
+            accessPolicy: ClaudeExtendedAccessPolicy(enabled: false)
+        )
+        do { _ = try await provider.fetchUsage(); XCTFail("Expected first data wait") }
+        catch { XCTAssertEqual(error as? UsageProviderFailure, .waitingForData) }
+    }
+
+    func testSelectedIdentityPreservesOriginalExtendedFailureAndRetryDate() async throws {
+        let directory = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let retryAt = Date(timeIntervalSince1970: 2_000)
+        let cases: [(ClaudeExtendedUsageError, UsageProviderFailure)] = [
+            (.offline, .offline), (.unauthorized, .loginRequired),
+            (.accessDenied, .permissionDenied), (.tokenRefreshPending, .tokenRefreshPending),
+            (.serverError, .serverFailed), (.invalidResponse, .responseChanged),
+            (.responseTooLarge, .responseChanged),
+            (.rateLimited(retryAt: retryAt), .rateLimited(retryAt: retryAt))
+        ]
+        for (failure, expected) in cases {
+            let provider = ClaudeCombinedUsageProvider(
+                statusLineProvider: ClaudeStatusSnapshotProvider(snapshotURL: directory.appendingPathComponent("missing.json")),
+                extendedProvider: ExtendedUsageStub(result: .failure(failure)),
+                accessPolicy: ClaudeExtendedAccessPolicy(enabled: true)
+            )
+            do { _ = try await provider.fetchUsage(); XCTFail("Expected original failure") }
+            catch { XCTAssertEqual(error as? UsageProviderFailure, expected) }
+        }
     }
 
     private func makeTemporaryDirectory() throws -> URL {

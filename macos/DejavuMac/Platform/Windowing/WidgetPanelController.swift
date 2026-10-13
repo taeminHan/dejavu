@@ -147,6 +147,7 @@ final class WidgetPanelController: NSObject, NSWindowDelegate {
 
         lastPlacement = model.widgetPlacement
         lastCustomPosition = model.customWidgetPosition
+        model.widgetFrame = panel.frame
     }
 
     private func applyConfiguredPlacement() {
@@ -245,9 +246,10 @@ final class WidgetPanelController: NSObject, NSWindowDelegate {
         isApplyingPlacement = true
         panel.setFrameOrigin(origin)
         isApplyingPlacement = false
+        model.widgetFrame = panel.frame
     }
 
-    private static func layout(for model: AppModel) -> WidgetLayoutMetrics {
+    static func layout(for model: AppModel) -> WidgetLayoutMetrics {
         let providers = model.visibleProviders
         let claude = providers.first { $0.kind == .claude }
         let hasFableValue = claude?.limits.first {

@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory = $true)][string]$ReleaseDirectory,
     [Parameter(Mandatory = $true)][string]$OutputDirectory,
-    [Parameter(Mandatory = $true)][string]$Version
+    [Parameter(Mandatory = $true)][string]$Version,
+    [string]$ExistingInstallation = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,20 +20,27 @@ if (-not $evidenceRoot.StartsWith($runnerRoot, [StringComparison]::OrdinalIgnore
     throw 'Installation evidence must be written below RUNNER_TEMP.'
 }
 New-Item -ItemType Directory -Path $evidenceRoot -Force | Out-Null
-$installationRoot = Join-Path $env:RUNNER_TEMP ('dejavu-installed-' + [Guid]::NewGuid().ToString('N'))
-if (Test-Path -LiteralPath $installationRoot) { throw 'The installation target must be new.' }
 $shortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) 'dejavu.lnk'
-if (Test-Path -LiteralPath $shortcutPath) {
-    throw 'A Dejavu Start Menu shortcut already exists. Refusing to overwrite another installation.'
+if ([string]::IsNullOrWhiteSpace($ExistingInstallation)) {
+    $installationRoot = Join-Path $env:RUNNER_TEMP ('dejavu-installed-' + [Guid]::NewGuid().ToString('N'))
+    if (Test-Path -LiteralPath $installationRoot) { throw 'The installation target must be new.' }
+    if (Test-Path -LiteralPath $shortcutPath) {
+        throw 'A Dejavu Start Menu shortcut already exists. Refusing to overwrite another installation.'
+    }
+    $setupPath = Join-Path $releaseRoot 'dejavu-Setup.exe'
+    $installer = Start-Process -FilePath $setupPath -ArgumentList @('--silent', '--installto', ('"' + $installationRoot + '"')) -PassThru
+    if (-not $installer.WaitForExit(120000)) {
+        $installer.Kill($true)
+        throw 'The isolated setup exceeded its two-minute timeout.'
+    }
+    if ($installer.ExitCode -ne 0) { throw "The isolated setup failed with exit code $($installer.ExitCode)." }
+} else {
+    $installationRoot = [System.IO.Path]::GetFullPath($ExistingInstallation)
+    if (-not $installationRoot.StartsWith($runnerRoot, [StringComparison]::OrdinalIgnoreCase) -or
+        -not (Test-Path -LiteralPath (Join-Path $installationRoot 'current\sq.version'))) {
+        throw 'An existing installation must be a real isolated runner-temp installation.'
+    }
 }
-
-$setupPath = Join-Path $releaseRoot 'dejavu-Setup.exe'
-$installer = Start-Process -FilePath $setupPath -ArgumentList @('--silent', '--installto', ('"' + $installationRoot + '"')) -PassThru
-if (-not $installer.WaitForExit(120000)) {
-    $installer.Kill($true)
-    throw 'The isolated setup exceeded its two-minute timeout.'
-}
-if ($installer.ExitCode -ne 0) { throw "The isolated setup failed with exit code $($installer.ExitCode)." }
 if (-not (Test-Path -LiteralPath $shortcutPath)) { throw 'The real installer did not create its Start Menu shortcut.' }
 
 $shell = New-Object -ComObject WScript.Shell
@@ -82,6 +90,7 @@ try {
         workingDirectory = [string]$shortcut.WorkingDirectory
         launcher = 'Velopack 1.2.0 stable current/dejavu.exe path'
         automaticApplicationStart = $false
+        acceptanceMode = $(if ([string]::IsNullOrWhiteSpace($ExistingInstallation)) { 'fresh-install' } else { 'existing-installation-after-package-apply' })
     }
     $shortcutReport | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $evidenceRoot 'installed-shortcut.json') -Encoding utf8NoBOM
 } finally {

@@ -334,3 +334,41 @@ jobs:
           if ($draft -ne 'true') { throw "Release was exposed before final artifact review." }
           Write-Host 'Verified assets and installation evidence are ready in a DRAFT release.'
           Write-Host 'Publication requires explicit final review of the downloaded files and native PNG evidence.'
+
+  windows-upgrade:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - name: Check out exact tagged source
+        uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.401"
+      - name: Download actual draft release files for isolated upgrade acceptance
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $draft = gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" --json isDraft --jq '.isDraft'
+          if ($LASTEXITCODE -ne 0 -or $draft -ne 'true') { throw 'Upgrade acceptance requires an unpublished draft.' }
+          $candidate = Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-candidate'
+          New-Item -ItemType Directory -Path $candidate | Out-Null
+          gh release download "${{ github.ref_name }}" --repo "${{ github.repository }}" --dir $candidate
+          if ($LASTEXITCODE -ne 0) { throw 'The actual draft release assets could not be downloaded.' }
+      - name: Verify actual uploaded package upgrades the public 0.9.6 installation
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./tools/TestWindowsUpgrade.ps1 `
+            -ReleaseDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-candidate') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-evidence') `
+            -Version ("${{ github.ref_name }}".TrimStart('v'))
+      - name: Save actual draft package upgrade evidence before publication
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-upgrade-acceptance
+          path: ${{ runner.temp }}/dejavu-upgrade-evidence/
+          if-no-files-found: error
+          retention-days: 30

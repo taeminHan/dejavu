@@ -257,7 +257,8 @@ internal sealed class DesktopApplicationController : IDisposable
     private void ConfigureTray()
     {
         _trayIcon.Text = "dejavu · 사용량 확인 중";
-        _generatedIcon = CreateMarkIcon();
+        _generatedIcon = _settings.TrayIconStyle == TrayIconStyle.Percentage
+            ? CreatePercentageIcon(null) : CreateMarkIcon();
         _trayIcon.Icon = _generatedIcon;
         _trayIcon.Visible = _settings.TrayIconStyle != TrayIconStyle.Hidden;
 

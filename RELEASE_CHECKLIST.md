@@ -10,6 +10,7 @@
 - [ ] 전체 Windows 빌드/XAML/504 위젯/1512 작업표시줄/166 전이/Orbit/Retro/설정/수집 회귀 검사.
 - [ ] 승인된 SVG와 production SVG 일치, manifest의 ICO 27개 frame/해시, 실제 full/portable/설치 EXE/stub의 PE icon 리소스 일치 검사.
 - [ ] 격리된 Windows runner의 실제 무인 설치, 생성된 Start Menu 바로가기 target/IconLocation 및 Apps & Features DisplayIcon 검증.
+- [ ] 독립 runner에 공개 0.9.6을 실제 설치하고 구형 아이콘을 확인한 뒤, 새 실제 패키지의 Update.exe apply --norestart 실행. 기존 바로가기와 앱/stub/updater가 모두 새 로고로 바뀌는지 확인. 태그 workflow도 초안에서 재다운로드한 실제 파일로 이 검사를 수행한다.
 - [ ] 설치된 실제 EXE의 controller-free `--validate-brand` 실행: 48개 창·단색 트레이 크기/밝기·고정 브랜드색과 runtime PNG/JSON 검증. 실제 사용자 인증·공급자·설정 저장은 사용하지 않는다.
 - [ ] 성공한 사전 CI의 패키지/원본 및 shell-selected 아이콘 PNG를 내려받아 육안 확인.
 - [ ] 태그 workflow는 초안만 작성. 실제 업로드 파일을 다시 내려받아 PE icon/체크섬/버전/설치 증거와 검사한 패키지 hash 일치를 확인한 뒤 별도 최종 공개.
@@ -19,7 +20,7 @@
 
 - 위 항목은 소스 및 배포 아이콘의 실제 누락이며 이번 패치에서 수정한다. 일반 Windows icon cache가 원인이라고 가정하지 않는다. 기존에 고정한 taskbar 아이콘/캐시까지 OS가 즉시 다시 그린다는 보장은 하지 않는다.
 - 별도 미완료 계획: Studio/Arcade/Prism/Console의 전면 테마 구조 이관 및 상세 열기 모션. 0.9.7 로고 통일이 그 구현 완료를 뜻하지 않는다.
-- 별도 수동 수락: 실제 Windows 11의 100/125/150/200% 물리 DPI, 대화형 Explorer 트레이/고정 바로가기, 키보드·스크린리더, 이전 설치본의 앱 내 다운로드·적용·재시작. CI 설치 결과와 합성 WPF PNG로 이 항목을 통과했다고 주장하지 않는다.
+- 별도 수동 수락: 실제 Windows 11의 100/125/150/200% 물리 DPI, 대화형 Explorer 트레이/고정 바로가기, 키보드·스크린리더, 이전 설치본의 앱 내 GUI 다운로드·적용·재시작. 격리된 실제 updater package apply는 추가하지만 전체 GUI 자동 업데이트 수락과 같지 않다. CI 설치 결과와 합성 WPF PNG로 이 항목을 통과했다고 주장하지 않는다.
 - 공인 서명/Apple 공증/App Group 등 외부 등록 항목도 아래와 같이 미완료 상태를 유지한다.
 
 ## 0.9.6 release validation scope — 2026-10-13

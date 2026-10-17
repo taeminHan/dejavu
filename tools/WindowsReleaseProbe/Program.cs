@@ -22,6 +22,22 @@ internal static class Program
             var root = Path.GetFullPath(Required(options, "source-root"));
             var output = Path.GetFullPath(Required(options, "output"));
             Directory.CreateDirectory(output);
+            if (options.TryGetValue("legacy-installed-root", out var legacyRoot))
+            {
+                var legacyIcon = File.ReadAllBytes(Required(options, "legacy-icon"));
+                Require(Sha(legacyIcon) == LegacyIconSha256, "The upgrade baseline ICO is not the public 0.9.6 logo.");
+                var legacyFrames = ReadIco(legacyIcon);
+                Require(legacyFrames.Select(frame => frame.Size).SequenceEqual(RequiredSizes), "The legacy upgrade baseline is missing a required icon frame.");
+                foreach (var relative in new[] { "dejavu.exe", "Update.exe", "current/dejavu.exe" })
+                    VerifyPe("legacy-installed/" + relative, File.ReadAllBytes(Path.Combine(legacyRoot, relative)), legacyFrames, testRejection: false);
+                File.WriteAllText(Path.Combine(output, "legacy-upgrade-precondition.json"), JsonSerializer.Serialize(new
+                {
+                    schemaVersion = 1, success = true, baselineVersion = "0.9.6", legacyIconSha256 = LegacyIconSha256,
+                    scope = "All three actually installed 0.9.6 executables contain every old logo frame before upgrade", checks = Results
+                }, new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine("Windows upgrade baseline: 3 actual installed executables match every public 0.9.6 legacy logo frame.");
+                return 0;
+            }
             options.TryGetValue("generated-assets", out var generatedAssets);
             if (generatedAssets is not null && new[] { "release-dir", "publish-dir", "installed-root" }.Any(options.ContainsKey))
                 throw new ArgumentException("A generator smoke output must not be substituted for packaged release assets.");

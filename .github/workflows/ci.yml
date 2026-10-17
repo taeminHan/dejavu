@@ -90,6 +90,38 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  windows-upgrade:
+    needs: app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Download exact verified Windows candidate
+        uses: actions/download-artifact@v7
+        with:
+          name: windows-release-candidate
+          path: ${{ runner.temp }}/dejavu-upgrade-candidate
+      - name: Verify existing 0.9.6 installation migrates every logo
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $version = ([xml](Get-Content ./ClaudeUsageTray.csproj -Raw)).Project.PropertyGroup.Version
+          ./tools/TestWindowsUpgrade.ps1 `
+            -ReleaseDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-candidate') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-evidence') `
+            -Version $version
+      - name: Save real Windows upgrade logo evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-upgrade-acceptance
+          path: ${{ runner.temp }}/dejavu-upgrade-evidence/
+          if-no-files-found: error
+          retention-days: 7
+
   macos:
     runs-on: macos-latest
     env:

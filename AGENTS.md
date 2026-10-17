@@ -1,6 +1,6 @@
 # Dejavu contributor instructions
 
-Updated: 2026-10-02. Current implementation phase: **Windows only**.
+Updated: 2026-10-17. Current implementation phase: **Windows only**.
 
 These instructions apply to the entire repository. Dejavu is a public Windows 11 WPF product, not a developer-only tray utility. Preserve existing user settings, local-only data handling, and the always-visible widget behavior.
 

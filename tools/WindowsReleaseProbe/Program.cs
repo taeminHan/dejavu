@@ -121,7 +121,9 @@ internal static class Program
             var sourceBytes = File.ReadAllBytes(Path.Combine(root, source.GetProperty("path").GetString()!));
             var approvedBytes = File.ReadAllBytes(Path.Combine(root, source.GetProperty("approvedReference").GetString()!));
             Require(Sha(sourceBytes) == source.GetProperty("sha256").GetString() && Sha(approvedBytes) == source.GetProperty("approvedSha256").GetString()
-                && sourceBytes.SequenceEqual(approvedBytes), "Brand source provenance manifest is stale or inconsistent.");
+                && sourceBytes.SequenceEqual(approvedBytes), "Brand source provenance manifest is stale or inconsistent: " +
+                source.GetProperty("path").GetString() + " actual=" + Sha(sourceBytes) +
+                " expected=" + source.GetProperty("sha256").GetString());
         }
         var manifestIcons = manifest.RootElement.GetProperty("icons").EnumerateArray().ToList();
         Require(manifestIcons.Select(value => value.GetProperty("path").GetString()).Order().SequenceEqual(

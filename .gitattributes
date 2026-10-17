@@ -1,0 +1,8 @@
+# Brand provenance hashes cover exact SVG bytes on Windows and macOS alike.
+# Windows Git's autocrlf conversion must not change the approved source payload.
+assets/brand-mark.svg text eol=lf
+assets/brand-mark-mono.svg text eol=lf
+assets/brand-icons.json text eol=lf
+design/prototype/brand-mark.svg text eol=lf
+design/prototype/brand-exploration/frame-mono.svg text eol=lf
+assets/*.ico binary

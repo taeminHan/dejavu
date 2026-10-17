@@ -1,0 +1,162 @@
+{
+  "icons" : [
+    {
+      "frames" : [
+        {
+          "sha256" : "fd0ab615c068bb2b724c4ff8028a96890edb10d11ca021684dab77e26f5f8326",
+          "size" : 16
+        },
+        {
+          "sha256" : "ad0062065d5de3b59160605aa63a51446e8a2921f136f2aba47697178c428a7c",
+          "size" : 20
+        },
+        {
+          "sha256" : "713f5a4e5e63a0df4787800637df354f946248f9affba6841583ad04bfa6e103",
+          "size" : 24
+        },
+        {
+          "sha256" : "9f151d338fa277c676a85fe75d13e4a32c729f2ff0108c965ef26c151a6fc577",
+          "size" : 32
+        },
+        {
+          "sha256" : "e4bcc2fee19ac8fe0eebdc8a95623d9b3c0802748d127e8c3b631be8fd176e7e",
+          "size" : 40
+        },
+        {
+          "sha256" : "3a69ad24bec93fdb836f8e2f2acff00cde5d1bddb46be0f1fe86202ad98fea16",
+          "size" : 48
+        },
+        {
+          "sha256" : "57c5454651ce34a17a96fc6f1e1cceb64be62214b2634d564bb7ba0727f304d2",
+          "size" : 64
+        },
+        {
+          "sha256" : "d0a80d905e726c6df3fe6a95c7041f3df5716cee8a7f68e1b58d5ee492b64a9f",
+          "size" : 128
+        },
+        {
+          "sha256" : "344f865e0c0324da14bb206b80d175d4c9653b4c9cf24cdef4f99b5c717d6936",
+          "size" : 256
+        }
+      ],
+      "ink" : null,
+      "path" : "assets/dejavu.ico",
+      "sha256" : "e6205273f9c67a1aff337655a750d9e3ae5bb0661225f94afb3e9f7450e01b88",
+      "source" : "assets/brand-mark.svg"
+    },
+    {
+      "frames" : [
+        {
+          "sha256" : "46ebd952bf59927d564278da9a86e8eb677806df99c43151c53e0b0da1203461",
+          "size" : 16
+        },
+        {
+          "sha256" : "4ec17aee8f2484e2ea178f7c5fd5c37530e9dd4943a652465e052b0d4e9ad2e7",
+          "size" : 20
+        },
+        {
+          "sha256" : "6fdf6a992e1e18baa0a79efae71af826aff88419fa71721f77899f5200427edd",
+          "size" : 24
+        },
+        {
+          "sha256" : "8afee891116eaf9257495f3ceaf9985f125e364ca95ee139e20702442d550cd1",
+          "size" : 32
+        },
+        {
+          "sha256" : "1bc4e8ffb796becc44ca4e1525741a430ee28b7583280834e7c808a27455a29e",
+          "size" : 40
+        },
+        {
+          "sha256" : "1ab18b2fbde8d34cf518ceb8b445ebcfcf9218402795729ddb6b3c31d602c8c8",
+          "size" : 48
+        },
+        {
+          "sha256" : "a8a4922f1ad67e4577d97992f17a33fd3f899e8ca414a78d8ffebacf2752b034",
+          "size" : 64
+        },
+        {
+          "sha256" : "51b2e142bc975edbf351c0a797dedbef0347ea5a1c56ffb66ce507f661a4f489",
+          "size" : 128
+        },
+        {
+          "sha256" : "1fdc63860b3457b41c2f4837518ab12ce1b024d95ab8915e40add5c08bb17885",
+          "size" : 256
+        }
+      ],
+      "ink" : "#171C17",
+      "path" : "assets/dejavu-tray-dark.ico",
+      "sha256" : "accade9994c46601d8de05c11137dfd2e313249f9b27a1dce050a35efb800e86",
+      "source" : "assets/brand-mark-mono.svg"
+    },
+    {
+      "frames" : [
+        {
+          "sha256" : "0a55011588036b934eb0df2cf1b7233fca17663d4abddd0cb8e77e4147659f9e",
+          "size" : 16
+        },
+        {
+          "sha256" : "f00a706564cf694dbc39c75caeb0609f8b19a14b66e6297236678b13cf977c9b",
+          "size" : 20
+        },
+        {
+          "sha256" : "25fcb507378e88d6799d5ff800ab3680065c32635ad8e7fdc2718cc0b9a7046e",
+          "size" : 24
+        },
+        {
+          "sha256" : "8593c0263ee78bb0cb9075f65f939d549af70dd0a90dcc0b122e794d6929e90e",
+          "size" : 32
+        },
+        {
+          "sha256" : "186ad7e32be078ee8f4994f8324f5e48770939fcba6011f1b00dad09002ea083",
+          "size" : 40
+        },
+        {
+          "sha256" : "758c78a23b21cd8f848dce1a7f3480c67051c7611712cce2bc60e7a518f33d9d",
+          "size" : 48
+        },
+        {
+          "sha256" : "9b5a90af1498144b19d60c0ba7319602ed56771a7ec74e8a4656d40ac91273c8",
+          "size" : 64
+        },
+        {
+          "sha256" : "fc8791026d1f05218d3f3f86dfea07ce887f511caa6e0dbcf231a780c73ef303",
+          "size" : 128
+        },
+        {
+          "sha256" : "059fc642f8e0423e66421c3efc593190dbcf5615185f087b670ffb1d12071443",
+          "size" : 256
+        }
+      ],
+      "ink" : "#FFFFFF",
+      "path" : "assets/dejavu-tray-light.ico",
+      "sha256" : "552bff7c55ade4c02129acd58b2184e43af7b23104d585f5db1d7340023199e2",
+      "source" : "assets/brand-mark-mono.svg"
+    }
+  ],
+  "schemaVersion" : 1,
+  "sizes" : [
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    128,
+    256
+  ],
+  "sources" : [
+    {
+      "approvedReference" : "design/prototype/brand-mark.svg",
+      "approvedSha256" : "153830304a1e5156ef914646e5663f48e8d184f4cbf4ca60f7cdba7843c6485f",
+      "path" : "assets/brand-mark.svg",
+      "sha256" : "153830304a1e5156ef914646e5663f48e8d184f4cbf4ca60f7cdba7843c6485f"
+    },
+    {
+      "approvedReference" : "design/prototype/brand-exploration/frame-mono.svg",
+      "approvedSha256" : "eebf20e709b1c70b06ad89a5e2a07d75a5832348e746b689a0cc99570944fbc5",
+      "path" : "assets/brand-mark-mono.svg",
+      "sha256" : "eebf20e709b1c70b06ad89a5e2a07d75a5832348e746b689a0cc99570944fbc5"
+    }
+  ]
+}

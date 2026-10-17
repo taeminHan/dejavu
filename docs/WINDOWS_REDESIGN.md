@@ -1,6 +1,6 @@
 # Windows redesign implementation
 
-Updated: 2026-10-07. Windows only. The user explicitly requested an app release after the source push; completed work is prepared for 0.9.5. This record does not authorize future releases or the unfinished milestones below. See `RELEASE_CHECKLIST.md` for the release validation scope; browser previews and automated tree probes are not installed-app acceptance.
+Updated: 2026-10-17. Windows implementation. The user explicitly authorized the 0.9.7 brand migration, omission audit and publication after actual packaged-asset verification. This does not authorize implementation of unrelated remaining theme/motion milestones. See `RELEASE_CHECKLIST.md` for validation scope; browser previews and automated tree probes are not installed-app acceptance.
 
 ## Milestone 1: native Settings shell and identity
 
@@ -41,6 +41,13 @@ Orbit follow-up (2026-10-02): charts use selected planets in actual solar order,
 
 1. **Theme migration:** implement Studio/Arcade/Prism/Console shape and progress treatment across widgets, details, Settings and dialogs. Preserve stored enum values, taskbar-neutral geometry, Orbit and Paper Ink/Field Notes. Do not announce new presentation names before the rendering migration.
 2. **Details and motion:** migrate expanded usage hierarchy/shared action icons; implement short fill reveal on open with reduced-motion support, cancellation and no continuous animation. Preserve details-only credits and existing Orbit solar semantics.
-3. **Product acceptance:** synchronize remaining headers/packaged icon assets, run native DPI/pointer/accessibility and provider-state checks, then separately validate installed update/uninstall. Commit/release only when requested.
+3. **Product acceptance:** headers/packaged icon assets are implemented in the 0.9.7 follow-up below; complete native physical-DPI/pointer/accessibility and provider-state checks and separately validate installed automatic update/uninstall. Commit/release only when requested.
+
+## 0.9.7 brand and packaged-asset follow-up
+
+- Approved production color/mono SVGs, app/tray multires ICOs and a checked provenance manifest replace the July packaged identity. `BrandIcon` owns all window and notification mark resources; Percentage/Hidden and persisted settings stay compatible.
+- All product headers share the fixed-color frame image; the widget stays header-free. Unused old theme-brand glyph values are removed, without changing the theme renderers or geometry.
+- Package/PE icon checks and isolated Windows silent installation/Start Menu/Apps & Features checks are release gates. Installed `--validate-brand` renders actual packaged resources and synthetic WPF windows without user settings/providers. It is not proof of interactive Explorer or physical-DPI behavior.
+- The tag workflow leaves the release draft. Downloaded actual assets, installed package hashes and images must be reviewed before explicit publication. Evidence/counts belong in `RELEASE_CHECKLIST.md` and the published evidence archive, not inferred from a successful build alone.
 
 Mac implementation stays deferred to a Mac. Do not use this plan as authorization to scaffold or publish Mac changes, rewrite credentials, replace the installed app, or commit/push work without an explicit user request.

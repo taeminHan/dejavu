@@ -92,6 +92,13 @@ jobs:
       - name: Verify release source
         shell: pwsh
         run: |
+          $generated = Join-Path $env:RUNNER_TEMP 'dejavu-generated-brand-icons'
+          pwsh -NoProfile -STA -File ./tools/GenerateIcon.ps1 -IconOutputPath (Join-Path $generated 'dejavu.ico')
+          if ($LASTEXITCODE -ne 0) { throw 'Windows SVG icon generation failed.' }
+          dotnet run --project tools/WindowsReleaseProbe/WindowsReleaseProbe.csproj -c Release -- `
+            --source-root "${{ github.workspace }}" --generated-assets $generated `
+            --output (Join-Path $env:RUNNER_TEMP 'dejavu-generated-brand-evidence')
+          if ($LASTEXITCODE -ne 0) { throw 'Windows-generated SVG/ICO provenance or palette validation failed.' }
           Get-ChildItem -File -Filter *.xaml | ForEach-Object {
             [xml](Get-Content -LiteralPath $_.FullName -Raw) | Out-Null
           }
@@ -145,7 +152,27 @@ jobs:
         shell: pwsh
         run: ./tools/BuildRelease.ps1 -Version "${{ steps.version.outputs.value }}" -OutputRoot "${{ steps.paths.outputs.output_root }}"
 
-      - name: Publish GitHub release
+      - name: Verify actual Windows installation and Start Menu logo
+        shell: pwsh
+        run: |
+          ./tools/TestWindowsRelease.ps1 `
+            -ReleaseDirectory "${{ steps.paths.outputs.release_dir }}" `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-installed-evidence') `
+            -Version "${{ steps.version.outputs.value }}"
+
+      - name: Save actual packaged and installed Windows acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-release-acceptance
+          path: |
+            ${{ runner.temp }}/dejavu-generated-brand-evidence/
+            ${{ steps.paths.outputs.output_root }}/windows-icon-verification/
+            ${{ runner.temp }}/dejavu-installed-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create draft GitHub release
         shell: pwsh
         run: |
           vpk upload github `
@@ -158,6 +185,19 @@ jobs:
             --targetCommitish "${{ github.sha }}" `
             --pre "${{ steps.version.outputs.prerelease }}" `
             --publish false
+          if ($LASTEXITCODE -ne 0) { throw "The draft release could not be created." }
+
+      - name: Attach installed Windows acceptance evidence to draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP 'dejavu-installed-evidence'
+          $archive = Join-Path $env:RUNNER_TEMP 'Windows-release-verification.zip'
+          Compress-Archive -Path (Join-Path $evidence '*') -DestinationPath $archive
+          gh release upload "${{ github.ref_name }}" $archive `
+            --repo "${{ github.repository }}" --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Installed acceptance evidence could not be attached to the draft." }
 
       - name: Upload stable download alias
         shell: pwsh
@@ -168,6 +208,7 @@ jobs:
             "${{ steps.paths.outputs.release_dir }}\dejavu-Setup.exe" `
             --repo "${{ github.repository }}" `
             --clobber
+          if ($LASTEXITCODE -ne 0) { throw "The stable setup alias could not be uploaded." }
 
       - name: Download verified macOS assets
         uses: actions/download-artifact@v7
@@ -204,6 +245,25 @@ jobs:
             --dir $publishedDir
           if ($LASTEXITCODE -ne 0) {
             throw "Published release assets could not be downloaded."
+          }
+
+          # Validate the files downloaded back from the draft, not only local output.
+          dotnet run --project tools/WindowsReleaseProbe/WindowsReleaseProbe.csproj -c Release -- `
+            --source-root "${{ github.workspace }}" --release-dir $publishedDir `
+            --version "${{ steps.version.outputs.value }}" `
+            --output (Join-Path $env:RUNNER_TEMP 'dejavu-uploaded-icon-verification')
+          if ($LASTEXITCODE -ne 0) { throw "Uploaded Windows artifacts failed icon acceptance." }
+          $requiredWindowsAssets = @(
+            "dejavu-desktop-${{ steps.version.outputs.value }}-full.nupkg",
+            'dejavu-desktop-win-Portable.zip', 'dejavu-desktop-win-Setup.exe',
+            'dejavu-Setup.exe', 'RELEASES', 'releases.win.json')
+          foreach ($name in $requiredWindowsAssets) {
+            $built = Join-Path "${{ steps.paths.outputs.release_dir }}" $name
+            $uploaded = Join-Path $publishedDir $name
+            if ((Get-FileHash -LiteralPath $built -Algorithm SHA256).Hash -ne
+                (Get-FileHash -LiteralPath $uploaded -Algorithm SHA256).Hash) {
+              throw "An uploaded Windows artifact differs from the package that passed installation: $name"
+            }
           }
 
           $checksumsPath = Join-Path $publishedDir "SHA256SUMS.txt"
@@ -261,14 +321,54 @@ jobs:
             throw "The published checksum file differs from the verified local copy."
           }
 
-      - name: Publish verified release
+      - name: Keep verified release draft for final artifact and visual review
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release edit "${{ github.ref_name }}" `
-            --repo "${{ github.repository }}" `
-            --draft=false
+          $draft = gh release view "${{ github.ref_name }}" `
+            --repo "${{ github.repository }}" --json isDraft --jq '.isDraft'
           if ($LASTEXITCODE -ne 0) {
-            throw "The verified release could not be published."
+            throw "The verified draft release could not be inspected."
           }
+          if ($draft -ne 'true') { throw "Release was exposed before final artifact review." }
+          Write-Host 'Verified assets and installation evidence are ready in a DRAFT release.'
+          Write-Host 'Publication requires explicit final review of the downloaded files and native PNG evidence.'
+
+  windows-upgrade:
+    needs: release
+    runs-on: windows-latest
+    steps:
+      - name: Check out exact tagged source
+        uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.401"
+      - name: Download actual draft release files for isolated upgrade acceptance
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $draft = gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" --json isDraft --jq '.isDraft'
+          if ($LASTEXITCODE -ne 0 -or $draft -ne 'true') { throw 'Upgrade acceptance requires an unpublished draft.' }
+          $candidate = Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-candidate'
+          New-Item -ItemType Directory -Path $candidate | Out-Null
+          gh release download "${{ github.ref_name }}" --repo "${{ github.repository }}" --dir $candidate
+          if ($LASTEXITCODE -ne 0) { throw 'The actual draft release assets could not be downloaded.' }
+      - name: Verify actual uploaded package upgrades the public 0.9.6 installation
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./tools/TestWindowsUpgrade.ps1 `
+            -ReleaseDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-candidate') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-upgrade-evidence') `
+            -Version ("${{ github.ref_name }}".TrimStart('v'))
+      - name: Save actual draft package upgrade evidence before publication
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-upgrade-acceptance
+          path: ${{ runner.temp }}/dejavu-upgrade-evidence/
+          if-no-files-found: error
+          retention-days: 30

@@ -61,7 +61,8 @@
                 BorderThickness="0,0,0,1" Padding="18,0" MouseLeftButtonDown="OnTitleBarMouseLeftButtonDown">
             <Grid>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Image x:Name="SettingsMark" Width="36" Height="36" Source="{StaticResource DejavuBrandImage}" Margin="0,0,12,0" />
+                    <Image x:Name="SettingsMark" Width="36" Height="36" Source="{StaticResource DejavuBrandImage}" Margin="0,0,12,0"
+                           AutomationProperties.Name="Dejavu 로고" />
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="SettingsBrandText" Text="Dejavu" FontSize="16" FontWeight="SemiBold" />
                         <TextBlock x:Name="SettingsSubtitleText" Text="설정은 자동으로 저장됩니다" FontSize="11" Foreground="{DynamicResource MutedTextBrush}" />

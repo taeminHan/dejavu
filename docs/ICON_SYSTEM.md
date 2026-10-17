@@ -1,12 +1,12 @@
 # Dejavu identity and icon system
 
-Updated: 2026-10-02. Approved reference system; this documentation change does not replace native packaged assets.
+Updated: 2026-10-17. Windows 0.9.7 identity implementation; executed acceptance evidence belongs in RELEASE_CHECKLIST.md and the release evidence assets.
 
-Windows milestone 1 adds `DejavuBrandImage` and six original navigation geometries to `ThemeResources.xaml`, consumed by Settings. Packaged ICO/tray/shortcut assets and other window headers have not yet migrated. See [WINDOWS_REDESIGN.md](WINDOWS_REDESIGN.md).
+Windows now uses the approved mark for application/window icons, runtime tray mark mode, installer/execution stubs and shortcut icon sources. Settings, onboarding, details and update headers share `DejavuBrandImage`. Do not confuse this migration with the separate full-theme/motion milestones in [WINDOWS_REDESIGN.md](WINDOWS_REDESIGN.md).
 
 ## Separate identity, providers and actions
 
-- **Dejavu:** Familiar Paradox / 모순의 프레임. Colored tile: `design/prototype/brand-mark.svg`; untiled vector and monochrome cut-out: `brand-exploration/frame-mark.svg` and `frame-mono.svg` within the reference. Themes do not recolor the tile. Existing native icons remain until an explicit asset migration.
+- **Dejavu:** Familiar Paradox / 모순의 프레임. Production colored tile `assets/brand-mark.svg` and monochrome `assets/brand-mark-mono.svg` must match the approved prototype vectors. `assets/brand-icons.json` records SVG/ICO/frame provenance. Theme-independent WPF vectors preserve the 64 x 64 viewBox; `BrandIcon` owns frozen application images and caller-owned GDI icons. Themes do not recolor the tile.
 - **Providers:** preserve Claude Spark and OpenAI Blossom rather than drawing substitutes. The reference reuses `claude-menu.png` and `codex-menu.png`. Keep provider names or accessible labels when their meaning is not obvious.
 - **Actions:** original SVGs in one `design/prototype/icons.js` registry, not Lucide or SF Symbols. Future Windows library adoption replaces the action system coherently. Native Mac actions use actual SF Symbols/system controls when that phase resumes.
 - **OS context:** sample Finder/taskbar/traffic-light/quick-settings drawings are reference context, not product icon specification or permission to modify Explorer.
@@ -40,6 +40,8 @@ Windows milestone 1 adds `DejavuBrandImage` and six original navigation geometri
 
 ## Native boundary
 
-Windows styling stays in `ThemeResources.xaml` / `ThemeManager.cs`. ICO/shortcut/tray conversion and packaging require explicit implementation and small-size/DPI testing. Mac catalogs, SF Symbols, Retina, status-item and packaging work are deferred to the Mac phase. Selected vectors or screenshots do not prove migration completion.
+Windows styling stays in `ThemeResources.xaml` / `ThemeManager.cs`. `tools/GenerateIcon.ps1` (Windows) and `tools/GenerateWindowsIcons.swift` (asset tooling on Mac, not a Mac app change) generate 16/20/24/32/40/48/64/128/256 ICO frames from those vectors. The application/installer uses the colored tile; tray mark mode selects dark or light monochrome ink from the actual taskbar appearance and native contrast background. Persisted `TrayIconStyle.ClaudeMark`, Percentage and Hidden retain their numeric meanings. Startup, appearance and DPI changes must not flash a generic/old icon or leak handles.
+
+`WindowsReleaseProbe` checks all packaged icon frames against the approved provenance, not merely the source build. `TestWindowsRelease.ps1` performs isolated installation and resolves the actual Start Menu shortcut and Apps & Features icon. `--validate-brand=<absolute empty directory>` is a controller-free acceptance route before Velopack/settings/providers, producing runtime images and synthetic WPF evidence; it must never become an authentication or user-settings migration path. Interactive Explorer, physical DPI and installed automatic-update acceptance remain distinct from CI evidence. Mac functionality is unchanged in 0.9.7.
 
 Keep the handwriting asset and OFL license together. Preserve licenses/attribution when importing assets. See [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) and platform instructions.

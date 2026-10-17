@@ -58,6 +58,7 @@ public partial class UsageWidgetWindow : Window
     internal UsageWidgetWindow(TraySettings settings)
     {
         InitializeComponent();
+        Icon = BrandIcon.ApplicationImage;
         _settings = settings;
         IsVisibleChanged += OnWidgetIsVisibleChanged;
         ApplySettings(settings);

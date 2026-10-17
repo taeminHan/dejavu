@@ -19,12 +19,9 @@
                 <Grid>
                     <StackPanel Orientation="Horizontal" Margin="0,0,48,0">
                         <Border x:Name="DetailsThemeBadge" Width="34" Height="34" Margin="0,0,11,0"
-                                CornerRadius="{DynamicResource BadgeCornerRadius}"
-                                Background="{DynamicResource AccentSoftBrush}"
-                                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-                            <local:RetroPixelText Text="{DynamicResource ThemeMarkText}" FontSize="15" FontWeight="Bold"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                Background="Transparent" BorderThickness="0">
+                            <Image x:Name="DetailsBrandMark" Source="{StaticResource DejavuBrandImage}" Stretch="Uniform"
+                                   AutomationProperties.Name="Dejavu 로고" />
                         </Border>
                         <StackPanel VerticalAlignment="Center">
                             <local:RetroPixelText x:Name="DetailsBrandText" Text="dejavu" FontSize="17" FontWeight="SemiBold" />

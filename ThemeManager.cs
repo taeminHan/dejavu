@@ -83,7 +83,6 @@ internal static class ThemeManager
         SetValue("WindowFrameThickness", new Thickness(palette.FrameThickness));
         SetValue("CardBorderThickness", new Thickness(palette.CardBorderThickness));
         SetValue("UsageProgressHeight", palette.ProgressHeight);
-        SetValue("ThemeMarkText", palette.Mark);
         SetValue("SettingsRowPadding", settings.WidgetTheme switch
         {
             WidgetVisualTheme.RetroNight => new Thickness(10, 12, 10, 12),
@@ -186,40 +185,40 @@ internal static class ThemeManager
                 "#FF7B83", "#F2B35F", "#0C0F1C", BlendWithWhite(accent, 0.34), "#454D70",
                 "#ECE9DC", "#9BA2BB", "#191D2E", "#242A43",
                 "./Assets/Fonts/#Dejavu Pixel, Malgun Gothic, Segoe UI", "./Assets/Fonts/#Dejavu Pixel, Malgun Gothic, Segoe UI",
-                0, 0, 0, 0, 0, 2, 1, 8, "▣"),
+                0, 0, 0, 0, 0, 2, 1, 8),
             WidgetVisualTheme.FluentGlass => light
                 ? new("#F2F6FB", "#ECFFFFFF", "#DDE9F1FA", "#7C9AABBF", "#A9B7C7D8",
                     "#172033", "#657188", accent, WithOpacity(accent, 0.15), "#D9434A", "#A96716",
                     "#E8FFFFFF", accent, "#7794A9C1", "#172033", "#657188", "#C6E4EAF2", "#6A8DA5C2",
-                    "Segoe UI Variable Text", "Segoe UI Variable Text", 18, 16, 12, 12, 6, 1, 1, 6, "◌")
+                    "Segoe UI Variable Text", "Segoe UI Variable Text", 18, 16, 12, 12, 6, 1, 1, 6)
                 : new("#0C1119", "#E6151C27", "#D91F2937", "#6471889F", "#667F91A8",
                     "#F2F7FF", "#94A3B8", accent, WithOpacity(accent, 0.25), "#F07178", "#E6A756",
                     "#D9161D28", BlendWithWhite(accent, 0.18), "#718399B3", "#F2F7FF", "#94A3B8", "#B9253040", "#59758AA5",
-                    "Segoe UI Variable Text", "Segoe UI Variable Text", 18, 16, 12, 12, 6, 1, 1, 6, "◌"),
+                    "Segoe UI Variable Text", "Segoe UI Variable Text", 18, 16, 12, 12, 6, 1, 1, 6),
             WidgetVisualTheme.TerminalMono => new(
                 "#050806", "#08100B", "#0D1811", "#2B5237", "#4C7B59",
                 "#D9F5DF", "#78A785", BlendWithWhite(accent, 0.2), WithOpacity(accent, 0.22),
                 "#FF7A80", "#E8B65E", "#050A07", BlendWithWhite(accent, 0.2), "#356044",
                 "#D9F5DF", "#78A785", "#102016", "#1A3925",
-                "Cascadia Mono, Consolas", "Cascadia Mono, Consolas", 2, 0, 0, 0, 0, 1, 1, 7, ">_"),
+                "Cascadia Mono, Consolas", "Cascadia Mono, Consolas", 2, 0, 0, 0, 0, 1, 1, 7),
             WidgetVisualTheme.Orbit => light
                 ? new("#F1F6FB", "#FBFDFF", "#E6EFF7", "#B6CADD", "#91ABC5",
                     "#15243A", "#667E98", accent, WithOpacity(accent, 0.16), "#D9434A", "#A96716",
                     "#F8FCFF", BlendWithWhite(accent, 0.08), "#A8C1D8", "#15243A", "#667E98", "#DBE9F4", "#B4D3E7",
-                    "Segoe UI Variable Text", "Segoe UI Variable Text", 16, 14, 10, 10, 6, 1, 1, 8, "◎")
+                    "Segoe UI Variable Text", "Segoe UI Variable Text", 16, 14, 10, 10, 6, 1, 1, 8)
                 : new("#080E1B", "#0E182A", "#15243A", "#2F4A6B", "#476C94",
                     "#EDF5FF", "#87A0BC", BlendWithWhite(accent, 0.16), WithOpacity(accent, 0.25), "#F07178", "#E6A756",
                     "#0A1425", BlendWithWhite(accent, 0.24), "#33577B", "#EDF5FF", "#87A0BC", "#142942", "#204866",
-                    "Segoe UI Variable Text", "Segoe UI Variable Text", 16, 14, 10, 10, 6, 1, 1, 8, "◎"),
+                    "Segoe UI Variable Text", "Segoe UI Variable Text", 16, 14, 10, 10, 6, 1, 1, 8),
             WidgetVisualTheme.PaperInk => light
                 ? new("#F2EEE5", "#FBF8F0", "#EAE4D8", "#C9C0AF", "#AFA492",
                     "#2B2925", "#756F65", accent, WithOpacity(accent, 0.12), "#B84045", "#966019",
                     "#FAF7EF", accent, "#C6BDAE", "#2B2925", "#756F65", "#E5DED2", "#D3C7B7",
-                    "./Assets/Fonts/#Nanum Pen Script", "./Assets/Fonts/#Nanum Pen Script", 6, 4, 3, 3, 0, 1, 1, 5, "✎")
+                    "./Assets/Fonts/#Nanum Pen Script", "./Assets/Fonts/#Nanum Pen Script", 6, 4, 3, 3, 0, 1, 1, 5)
                 : new("#171714", "#211F1B", "#2A2721", "#4C473D", "#625C50",
                     "#EEE9DE", "#AAA295", accent, WithOpacity(accent, 0.2), "#E16A6F", "#D3A254",
                     "#1D1C18", BlendWithWhite(accent, 0.12), "#514B41", "#EEE9DE", "#AAA295", "#302C25", "#3B372F",
-                    "./Assets/Fonts/#Nanum Pen Script", "./Assets/Fonts/#Nanum Pen Script", 6, 4, 3, 3, 0, 1, 1, 5, "✎"),
+                    "./Assets/Fonts/#Nanum Pen Script", "./Assets/Fonts/#Nanum Pen Script", 6, 4, 3, 3, 0, 1, 1, 5),
             _ => new(
                 light ? "#F7F7F8" : "#101012", light ? "#FFFFFF" : "#18181B", light ? "#F1F1F3" : "#202024",
                 light ? "#DCDCE1" : "#303036", light ? "#AEB3BE" : "#3A3A42", light ? "#18181B" : "#F7F7F8",
@@ -227,7 +226,7 @@ internal static class ThemeManager
                 light ? "#A96716" : "#E6A756", light ? "#FFFFFF" : "#18181B", accent,
                 light ? "#DCDCE1" : "#303036", light ? "#18181B" : "#F7F7F8", light ? "#696974" : "#A1A1AA",
                 light ? "#F1F1F3" : "#202024", light ? "#E5E5E8" : "#29292E",
-                "Segoe UI Variable Text", "Segoe UI Variable Text", 12, 12, 8, 10, 2, 1, 1, 4, "◒")
+                "Segoe UI Variable Text", "Segoe UI Variable Text", 12, 12, 8, 10, 2, 1, 1, 4)
         };
     }
 
@@ -306,7 +305,7 @@ internal static class ThemeManager
         string WidgetBackground, string WidgetAccent, string WidgetBorder, string WidgetText,
         string WidgetMutedText, string WidgetTrack, string Grid, string AppFont, string WidgetFont,
         double WindowRadius, double CardRadius, double ControlRadius, double BadgeRadius, double ProgressRadius,
-        double FrameThickness, double CardBorderThickness, double ProgressHeight, string Mark);
+        double FrameThickness, double CardBorderThickness, double ProgressHeight);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct HIGHCONTRAST

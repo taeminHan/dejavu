@@ -9,7 +9,11 @@ public partial class UpdateWindow : Window
     private bool _busy;
     internal bool AllowClose { get; set; }
 
-    internal UpdateWindow() => InitializeComponent();
+    internal UpdateWindow()
+    {
+        InitializeComponent();
+        Icon = BrandIcon.ApplicationImage;
+    }
 
     internal event EventHandler? InstallRequested;
     // Raised by 취소, the close button or Alt+F4 while a download runs.

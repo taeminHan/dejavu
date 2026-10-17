@@ -10,6 +10,16 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
+        // This explicit, controller-free acceptance route must precede Velopack,
+        // single-instance activation, settings loading and all provider discovery.
+        var brandValidation = Environment.GetCommandLineArgs()
+            .FirstOrDefault(argument => argument.StartsWith("--validate-brand=", StringComparison.Ordinal));
+        if (brandValidation is not null)
+        {
+            Environment.ExitCode = BrandValidation.Run(brandValidation["--validate-brand=".Length..]);
+            return;
+        }
+
         try
         {
             VelopackApp.Build()

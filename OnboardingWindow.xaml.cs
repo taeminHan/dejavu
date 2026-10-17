@@ -17,6 +17,7 @@ public partial class OnboardingWindow : Window
     internal OnboardingWindow(TraySettings settings, bool detectCredentials)
     {
         InitializeComponent();
+        Icon = BrandIcon.ApplicationImage;
         _settings = settings;
         var placements = new[]
         {

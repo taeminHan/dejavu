@@ -13,6 +13,16 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+      - name: Verify Windows SVG icon generator without overwriting production assets
+        shell: pwsh
+        run: |
+          $generated = Join-Path $env:RUNNER_TEMP 'dejavu-generated-brand-icons'
+          pwsh -NoProfile -STA -File ./tools/GenerateIcon.ps1 -IconOutputPath (Join-Path $generated 'dejavu.ico')
+          if ($LASTEXITCODE -ne 0) { throw 'Windows SVG icon generation failed.' }
+          dotnet run --project tools/WindowsReleaseProbe/WindowsReleaseProbe.csproj -c Release -- `
+            --source-root "${{ github.workspace }}" --generated-assets $generated `
+            --output (Join-Path $env:RUNNER_TEMP 'dejavu-generated-brand-evidence')
+          if ($LASTEXITCODE -ne 0) { throw 'Windows-generated SVG/ICO provenance or palette validation failed.' }
       - name: Build Windows app
         run: dotnet build ClaudeUsageTray.csproj -c Release
       - name: Validate XAML
@@ -46,6 +56,39 @@ jobs:
         run: dotnet run --project tools/ClaudeUsageParserProbe/ClaudeUsageParserProbe.csproj -c Release
       - name: Verify provider parsing and Codex cancellation
         run: dotnet run --project tools/WindowsProviderProbe/WindowsProviderProbe.csproj -c Release
+      - name: Install Windows packaging tools
+        run: dotnet tool install --global vpk --version 1.2.0
+      - name: Build actual Windows release candidate
+        shell: pwsh
+        run: |
+          $outputRoot = Join-Path $env:RUNNER_TEMP 'dejavu-release-candidate'
+          ./tools/BuildRelease.ps1 -OutputRoot $outputRoot
+      - name: Verify actual Windows installation and Start Menu logo
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content ./ClaudeUsageTray.csproj -Raw)).Project.PropertyGroup.Version
+          ./tools/TestWindowsRelease.ps1 `
+            -ReleaseDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-release-candidate/dejavu-velopack-releases') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-installed-evidence') `
+            -Version $version
+      - name: Save actual Windows package and installed logo evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-release-acceptance
+          path: |
+            ${{ runner.temp }}/dejavu-generated-brand-evidence/
+            ${{ runner.temp }}/dejavu-release-candidate/windows-icon-verification/
+            ${{ runner.temp }}/dejavu-installed-evidence/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Save verified Windows release candidate
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-release-candidate
+          path: ${{ runner.temp }}/dejavu-release-candidate/dejavu-velopack-releases/*
+          if-no-files-found: error
+          retention-days: 7
 
   macos:
     runs-on: macos-latest

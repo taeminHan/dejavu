@@ -16,8 +16,9 @@
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                       Padding="0,0,8,0" Margin="0,24,0,0">
         <StackPanel x:Name="OnboardingContent" HorizontalAlignment="Center" Width="510">
-            <Border x:Name="OnboardingHeroBadge" Width="58" Height="58" CornerRadius="{DynamicResource CardCornerRadius}" Background="{DynamicResource AccentSoftBrush}" HorizontalAlignment="Center">
-                <TextBlock Text="✓" Foreground="{DynamicResource AccentBrush}" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Border x:Name="OnboardingHeroBadge" Width="58" Height="58" Background="Transparent" HorizontalAlignment="Center">
+                <Image x:Name="OnboardingBrandMark" Source="{StaticResource DejavuBrandImage}" Stretch="Uniform"
+                       AutomationProperties.Name="Dejavu 로고" />
             </Border>
             <TextBlock x:Name="TitleText" Text="사용할 서비스를 확인하고 있어요" FontSize="23" FontWeight="SemiBold"
                        HorizontalAlignment="Center" Margin="0,18,0,0" />

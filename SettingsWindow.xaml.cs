@@ -30,6 +30,7 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _loading = true;
         InitializeComponent();
+        Icon = BrandIcon.ApplicationImage;
         _defaultPlacementDescription = PlacementDescriptionText.Text;
         _defaultDensityDescription = DensityDescriptionText.Text;
         _defaultLayoutDescription = LayoutDescriptionText.Text;

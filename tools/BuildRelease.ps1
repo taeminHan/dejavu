@@ -90,6 +90,15 @@ if (-not (Test-Path -LiteralPath $velopackSetup)) {
 }
 Copy-Item -LiteralPath $velopackSetup -Destination $stableDownload -Force
 
+# Do not mistake a successful pack for a verified release. Inspect every icon
+# frame in the app, installer, updater, execution stub and both archives.
+& $dotnet run --project (Join-Path $projectRoot 'tools\WindowsReleaseProbe\WindowsReleaseProbe.csproj') -c Release -- `
+    --source-root $projectRoot --publish-dir $publishDirectory --release-dir $releaseDirectory --version $Version `
+    --output (Join-Path $outputRoot 'windows-icon-verification')
+if ($LASTEXITCODE -ne 0) {
+    throw 'The actual Windows release artifacts failed icon acceptance. They must not be published.'
+}
+
 $currentArtifactNames = @(
     "$packId-$Version-full.nupkg",
     "$packId-$Version-delta.nupkg",

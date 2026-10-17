@@ -211,9 +211,25 @@ $version = ([xml](Get-Content .\ClaudeUsageTray.csproj -Raw)).Project.PropertyGr
 .\tools\BuildRelease.ps1 -Version $version -DownloadPrevious
 ```
 
-The script publishes the self-contained app, creates Velopack packages and setup executables, copies the stable `dejavu-Setup.exe` alias and writes `SHA256SUMS.txt`. Generated `bin`, `obj`, `outputs`, publish directories, certificates and local diagnostics must not be committed.
+The script publishes the self-contained app, creates Velopack packages and setup executables, copies the stable `dejavu-Setup.exe` alias and writes `SHA256SUMS.txt`. Before reporting success it runs `tools/WindowsReleaseProbe` over actual app/installer/stub/updater/archive icon resources and rejects missing, stale or altered frames. Generated `bin`, `obj`, `outputs`, publish directories, certificates and local diagnostics must not be committed.
 
-For an actual release, update the project version, `CHANGELOG.md`, public-version references and checklist first. Tag pushes trigger `.github/workflows/release.yml`. Verify the workflow conclusion, target commit, prerelease flag, direct setup asset, update feed, delta/full packages and checksums.
+For an actual release, update the project version, `CHANGELOG.md`, public-version references and checklist first. Tag pushes trigger `.github/workflows/release.yml`, which now leaves a **draft**, not a public release. Verify the workflow conclusion, target commit, prerelease flag, downloaded setup asset, update feed, delta/full packages, installed evidence and checksums. Review actual icon PNGs and only then explicitly publish the verified draft. Never overwrite an already published version to hide a packaging error.
+
+### Packaged Windows brand and real installation acceptance
+
+`tools/GenerateIcon.ps1` is the Windows STA/WPF asset generator; `tools/GenerateWindowsIcons.swift` is the equivalent asset tool available on a Mac. Both read the approved production SVGs and record source/frame provenance. Do not regenerate into the source tree during a release: committed reviewed ICO frames are the artifact contract. A generator smoke test must use a new temporary directory.
+
+```powershell
+dotnet run --project tools/WindowsReleaseProbe/WindowsReleaseProbe.csproj -c Release -- `
+  --source-root $PWD --release-dir C:\tmp\dejavu-release\dejavu-velopack-releases `
+  --version 0.9.7 --output C:\tmp\dejavu-icon-evidence
+```
+
+The cross-platform read-only verifier compares approved SVGs, provenance hashes and all 27 source frames, then every icon group/frame in the two Setup aliases, full nupkg (app/execution stub/updater/setup ICO), portable archive and, when supplied, installed binaries. It includes a negative altered-frame fixture; a build-only or single shell-icon check is insufficient.
+
+`tools/TestWindowsRelease.ps1` deliberately refuses normal developer accounts and requires an ephemeral GitHub Windows runner. It installs the actual Setup silently into a new `RUNNER_TEMP` directory without launching the normal application, verifies the real Start Menu shortcut, shell-resolved icon pixels and Apps & Features registration, and invokes the installed executable's `--validate-brand=<absolute empty output directory>` path. That path precedes Velopack, mutex activation and the controller, uses in-memory fixtures, and never loads/saves user settings, authenticates, queries providers or starts the updater. Its 48 WPF window/11 tray/13 fixed-palette cases and generated JSON/PNGs are **synthetic native resource evidence**, not interactive Explorer or physical-DPI acceptance.
+
+CI saves `windows-release-candidate` and `windows-release-acceptance` artifacts. The tag workflow also attaches `Windows-release-verification.zip` to the draft, redownloads its actual Windows release files and verifies their resources and hashes against the package that passed installation. Final publication is a separate reviewed action. Physical Windows 11 DPI, pinned icon/cache refresh, screen-reader and installed automatic-update acceptance remain explicitly separate.
 
 ## Common failure modes
 

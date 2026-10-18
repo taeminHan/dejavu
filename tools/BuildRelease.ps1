@@ -2,7 +2,8 @@ param(
     [string]$Configuration = "Release",
     [string]$Version = "",
     [string]$OutputRoot = "",
-    [switch]$DownloadPrevious
+    [switch]$DownloadPrevious,
+    [switch]$RemovePinnedBaseline
 )
 
 $ErrorActionPreference = "Stop"
@@ -97,6 +98,36 @@ Copy-Item -LiteralPath $velopackSetup -Destination $stableDownload -Force
     --output (Join-Path $outputRoot 'windows-icon-verification')
 if ($LASTEXITCODE -ne 0) {
     throw 'The actual Windows release artifacts failed icon acceptance. They must not be published.'
+}
+
+if ($RemovePinnedBaseline) {
+    # This exact file was downloaded and checksum-verified only to generate the
+    # 0.9.6 -> 0.9.7 delta. It is not a new release asset. Never remove a user's
+    # local package or touch the existing public 0.9.6 release.
+    $runnerRoot = if ([string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) { '' } else {
+        [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\') + '\'
+    }
+    if ($Version -ne '0.9.7' -or $env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows' -or
+        [string]::IsNullOrEmpty($runnerRoot) -or -not $releaseDirectory.StartsWith($runnerRoot, [StringComparison]::OrdinalIgnoreCase)) {
+        throw 'Pinned baseline removal is restricted to the exact 0.9.7 runner-temp build.'
+    }
+    $baselineName = 'dejavu-desktop-0.9.6-full.nupkg'
+    $baselinePath = Join-Path $releaseDirectory $baselineName
+    if (-not (Test-Path -LiteralPath $baselinePath)) { throw 'The verified pinned baseline is missing before packaging cleanup.' }
+    $feedPath = Join-Path $releaseDirectory 'releases.win.json'
+    $feed = Get-Content -LiteralPath $feedPath -Raw | ConvertFrom-Json
+    $baselineEntries = @($feed.Assets | Where-Object { $_.FileName -eq $baselineName })
+    if ($baselineEntries.Count -gt 1 -or ($baselineEntries.Count -eq 1 -and
+        ($baselineEntries[0].Version -ne '0.9.6' -or $baselineEntries[0].Type -ne 'Full'))) {
+        throw 'The pinned baseline feed entry is invalid or ambiguous.'
+    }
+    $feed.Assets = @($feed.Assets | Where-Object { $_.FileName -ne $baselineName })
+    $legacyPath = Join-Path $releaseDirectory 'RELEASES'
+    $legacy = @(Get-Content -LiteralPath $legacyPath | Where-Object { $_ -notmatch ('\s' + [regex]::Escape($baselineName) + '\s') })
+    Remove-Item -LiteralPath $baselinePath -Force
+    $feed | ConvertTo-Json -Depth 20 -Compress | Set-Content -LiteralPath $feedPath -Encoding utf8NoBOM
+    Set-Content -LiteralPath $legacyPath -Value $legacy -Encoding utf8NoBOM
+    Write-Host 'Removed only the temporary 0.9.6 seed and its feed entries; the 0.9.7 full/delta and original public baseline remain unchanged.'
 }
 
 $currentArtifactNames = @(

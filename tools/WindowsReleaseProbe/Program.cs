@@ -49,6 +49,12 @@ internal static class Program
             if (options.TryGetValue("publish-dir", out var publish))
                 VerifyPe(Path.Combine(publish, "dejavu.exe"), File.ReadAllBytes(Path.Combine(publish, "dejavu.exe")), expected);
             if (options.TryGetValue("release-dir", out var release)) VerifyRelease(release, version, expected);
+            if (options.TryGetValue("reconstructed-package", out var reconstructed))
+            {
+                var original = Path.Combine(Required(options, "release-dir"), $"dejavu-desktop-{version}-full.nupkg");
+                VerifyEquivalentPackage(original, reconstructed, output);
+                VerifyFullPackage(reconstructed, "delta-reconstructed/", version, expected);
+            }
             if (options.TryGetValue("installed-root", out var installed))
             {
                 foreach (var relative in new[] { "dejavu.exe", "Update.exe", "current/dejavu.exe" })
@@ -209,20 +215,67 @@ internal static class Program
         Require(versioned.SequenceEqual(stable), "Stable Setup alias differs from the versioned Setup.");
         VerifyPe("dejavu-desktop-win-Setup.exe", versioned, expected);
         VerifyPe("dejavu-Setup.exe", stable, expected);
-        using (var package = ZipFile.OpenRead(Path.Combine(directory, $"dejavu-desktop-{version}-full.nupkg")))
-        {
-            var setupIcon = ReadEntry(package, "setup.ico");
-            Require(ReadIco(setupIcon).Zip(expected).All(pair => SameFrame(pair.First, pair.Second)) && ReadIco(setupIcon).Count == expected.Count,
-                "The nupkg setup.ico does not contain the approved frames.");
-            Results.Add(new { kind = "nupkg-setup-ico", name = "setup.ico", sha256 = Sha(setupIcon) });
-            var nuspec = XDocument.Parse(System.Text.Encoding.UTF8.GetString(ReadEntry(package, "dejavu-desktop.nuspec")));
-            Require(nuspec.Descendants().Single(element => element.Name.LocalName == "version").Value == version, "nupkg version does not match the release.");
-            foreach (var name in new[] { "lib/app/dejavu.exe", "lib/app/dejavu_ExecutionStub.exe", "lib/app/Squirrel.exe" })
-                VerifyPe("nupkg/" + name, ReadEntry(package, name), expected);
-        }
+        VerifyFullPackage(Path.Combine(directory, $"dejavu-desktop-{version}-full.nupkg"), "nupkg/", version, expected);
         using var portable = ZipFile.OpenRead(Path.Combine(directory, "dejavu-desktop-win-Portable.zip"));
         foreach (var name in new[] { "dejavu.exe", "Update.exe", "current/dejavu.exe" })
             VerifyPe("portable/" + name, ReadEntry(portable, name), expected);
+    }
+
+    private static void VerifyFullPackage(string path, string prefix, string version, List<IconFrame> expected)
+    {
+        using var package = ZipFile.OpenRead(path);
+        var setupIcon = ReadEntry(package, "setup.ico");
+        var frames = ReadIco(setupIcon);
+        Require(frames.Count == expected.Count && frames.Zip(expected).All(pair => SameFrame(pair.First, pair.Second)),
+            prefix + "setup.ico does not contain the approved frames.");
+        Results.Add(new { kind = "nupkg-setup-ico", name = prefix + "setup.ico", sha256 = Sha(setupIcon) });
+        var nuspec = XDocument.Parse(System.Text.Encoding.UTF8.GetString(ReadEntry(package, "dejavu-desktop.nuspec")));
+        Require(nuspec.Descendants().Single(element => element.Name.LocalName == "version").Value == version, prefix + "version does not match the release.");
+        foreach (var name in new[] { "lib/app/dejavu.exe", "lib/app/dejavu_ExecutionStub.exe", "lib/app/Squirrel.exe" })
+            VerifyPe(prefix + name, ReadEntry(package, name), expected);
+    }
+
+    private static void VerifyEquivalentPackage(string original, string reconstructed, string output)
+    {
+        var expected = PackageEntries(original);
+        var actual = PackageEntries(reconstructed);
+        Require(expected.Keys.SequenceEqual(actual.Keys), "Delta reconstruction has missing, extra or renamed ZIP entries.");
+        foreach (var (name, fingerprint) in expected)
+            Require(fingerprint == actual[name], "Delta reconstruction differs in ZIP entry type, length or SHA256: " + name);
+        var report = new
+        {
+            schemaVersion = 1, success = true,
+            originalArchiveSha256 = Sha(File.ReadAllBytes(original)), reconstructedArchiveSha256 = Sha(File.ReadAllBytes(reconstructed)),
+            comparedEntries = expected.Count,
+            comparison = "Exact case-sensitive ZIP entry paths, directory/file type, uncompressed length and every entry SHA256; duplicate/unsafe/symlink entries rejected. ZIP container byte equality is not assumed because Velopack recompresses it.",
+            entries = expected.Select(item => new { path = item.Key, item.Value.IsDirectory, item.Value.Length, sha256 = item.Value.Sha256 })
+        };
+        File.WriteAllText(Path.Combine(output, "delta-package-content-comparison.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+        Results.Add(new { kind = "delta-reconstruction-all-entry-equivalence", name = Path.GetFileName(reconstructed), entries = expected.Count });
+        Console.WriteLine($"Windows delta reconstruction: {expected.Count} ZIP entry paths/types/lengths/SHA256 identical, 0 mismatched");
+    }
+
+    private static SortedDictionary<string, PackageEntryFingerprint> PackageEntries(string path)
+    {
+        using var zip = ZipFile.OpenRead(path);
+        var result = new SortedDictionary<string, PackageEntryFingerprint>(StringComparer.Ordinal);
+        var uniqueWindowsPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entry in zip.Entries)
+        {
+            var name = entry.FullName;
+            var isDirectory = name.EndsWith('/') || (entry.ExternalAttributes & 0x10) != 0 || ((entry.ExternalAttributes >> 16) & 0xf000) == 0x4000;
+            var normalized = name.TrimEnd('/');
+            Require(name.Length > 0 && !name.Contains('\\') && !name.Contains(':') && !name.StartsWith('/') &&
+                normalized.Split('/').All(part => part.Length > 0 && part is not "." and not ".."), "Unsafe ZIP entry in delta comparison.");
+            Require(((entry.ExternalAttributes >> 16) & 0xf000) != 0xa000, "Symbolic ZIP entry in delta comparison.");
+            Require(uniqueWindowsPaths.Add(normalized), "Duplicate or case-colliding ZIP entry in delta comparison: " + name);
+            Require(!isDirectory || entry.Length == 0, "A ZIP directory entry unexpectedly contains data.");
+            using var data = entry.Open();
+            var hash = Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
+            result.Add(name, new PackageEntryFingerprint(isDirectory, entry.Length, hash));
+        }
+        Require(result.Count > 0, "Cannot compare an empty delta reconstruction.");
+        return result;
     }
 
     private static byte[] ReadEntry(ZipArchive zip, string name)
@@ -336,4 +389,5 @@ internal static class Program
     private static uint U32(byte[] bytes, int offset) => BinaryPrimitives.ReadUInt32LittleEndian(bytes.AsSpan(offset, 4));
     private sealed record IconFrame(int Size, ushort Planes, ushort BitCount, byte[] Bytes);
     private sealed record Resource(List<uint> Path, byte[] Bytes);
+    private sealed record PackageEntryFingerprint(bool IsDirectory, long Length, string Sha256);
 }

@@ -66,6 +66,24 @@ match its own recorded source/frame hashes, dimensions, transparency and approve
 palette. Smoke generation never overwrites the committed production assets, and
 generated smoke assets cannot be substituted for packaged-artifact verification.
 
+For version 0.9.7, both workflows seed delta generation with the explicit public
+0.9.6 full package after checking its published SHA256; they do not consult
+`latest`. After successful packaging, only that exact runner-temp baseline package
+and its feed entries are removed before checksums/artifact upload; the public 0.9.6
+release is untouched. Upgrade acceptance requires the resulting 0.9.7 delta. The actually
+installed 0.9.6 updater runs its real `patch --old --delta --output` command, using
+the installed baseline package cache only after matching the public checksum.
+The reconstructed ZIP must contain exactly the same case-sensitive entry paths,
+directory/file types, uncompressed lengths and entry SHA256 values as the verified
+original full package; duplicate, unsafe and symbolic entries fail acceptance.
+Every reconstructed PE icon is checked again, and the reconstructed package is
+the one actually applied. Original/reconstructed ZIP container hashes are recorded
+separately because Velopack recompresses the archive and byte equality is not assumed.
+
+Later versions retain the fixed 0.9.6-to-target **full-package** logo migration
+regression; its report explicitly does not claim to verify a future delta built
+against another baseline. Such a delta needs a separately selected/verified base.
+
 Upstream contracts used by this gate:
 
 - [Silent install behavior](https://docs.velopack.io/packaging/operating-systems/windows)

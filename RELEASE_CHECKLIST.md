@@ -13,6 +13,7 @@
 - [x] 독립 runner에 공개 0.9.6을 실제 설치하고 구형 아이콘을 확인한 뒤, 새 실제 패키지의 Update.exe apply --norestart 실행. 기존 바로가기와 앱/stub/updater가 모두 새 로고로 바뀌는지 확인. 태그 workflow도 초안에서 재다운로드한 실제 파일로 이 검사를 수행한다.
 - [x] 설치된 실제 EXE의 controller-free `--validate-brand` 실행: 48개 창·11개 트레이·13개 고정 브랜드색 검사와 runtime PNG/JSON 검증. 실제 사용자 인증·공급자·설정 저장은 사용하지 않는다.
 - [x] 성공한 사전 CI의 원본 및 실제 설치 앱의 Settings/시작 안내/상세 화면, shell-selected 바로가기 PNG를 내려받아 육안 확인.
+- [ ] 공개 0.9.6 full과 후보 delta의 해시를 확인하고 실제 updater로 복원. 원본 full과 모든 ZIP entry/type/비압축 SHA-256이 같음을 확인한 복원 패키지를 실제 적용하여 로고 이관 재검사.
 - [ ] 태그 workflow는 초안만 작성. 실제 업로드 파일을 다시 내려받아 PE icon/체크섬/버전/설치 증거와 검사한 패키지 hash 일치를 확인한 뒤 별도 최종 공개.
 - [ ] 0.9.7 공통 버전/태그 대상 및 Mac build >45, Mac 서명·업데이트 피드·공개 파일 해시 검증.
 

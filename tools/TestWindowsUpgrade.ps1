@@ -63,6 +63,50 @@ $before = foreach ($name in @('dejavu.exe', 'Update.exe', 'current\dejavu.exe'))
 }
 $beforeShortcutHash = (Get-FileHash -LiteralPath $shortcutPath -Algorithm SHA256).Hash.ToLowerInvariant()
 
+$deltaReport = [ordered]@{ performed = $false; reason = 'Only the 0.9.7 logo migration has a pinned 0.9.6 delta baseline; this target uses the original full package.' }
+$reconstructedPackage = $null
+if ($Version -eq '0.9.7') {
+    $deltaName = "dejavu-desktop-$Version-delta.nupkg"
+    $deltaPath = Join-Path $releaseRoot $deltaName
+    $deltaChecksums = @($candidateChecksums | Where-Object { $_ -match ('^([0-9a-fA-F]{64})\s+' + [regex]::Escape($deltaName) + '$') })
+    if ($deltaChecksums.Count -ne 1 -or -not (Test-Path -LiteralPath $deltaPath) -or
+        (Get-FileHash -LiteralPath $deltaPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne ($deltaChecksums[0] -split '\s+')[0].ToLowerInvariant()) {
+        throw 'The 0.9.7 candidate must contain a delta matching its published candidate checksum.'
+    }
+    $baselineFullName = "dejavu-desktop-$BaselineVersion-full.nupkg"
+    $baselineFullChecksums = @(Get-Content -LiteralPath (Join-Path $baselineRoot 'SHA256SUMS.txt') | Where-Object { $_ -match ('^([0-9a-fA-F]{64})\s+' + [regex]::Escape($baselineFullName) + '$') })
+    if ($baselineFullChecksums.Count -ne 1) { throw 'The public baseline has no unique full-package checksum.' }
+    $baselineFull = Join-Path $installationRoot "packages\$baselineFullName"
+    $baselineSource = 'actual installed packages cache'
+    if (-not (Test-Path -LiteralPath $baselineFull)) {
+        gh release download "v$BaselineVersion" --repo taeminHan/dejavu --pattern $baselineFullName --dir $baselineRoot
+        if ($LASTEXITCODE -ne 0) { throw 'The public baseline full package could not be downloaded.' }
+        $baselineFull = Join-Path $baselineRoot $baselineFullName
+        $baselineSource = 'explicit public release fallback'
+    }
+    $baselineFullHash = (Get-FileHash -LiteralPath $baselineFull -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($baselineFullHash -ne ($baselineFullChecksums[0] -split '\s+')[0].ToLowerInvariant()) { throw 'The installed baseline cache differs from the public full package.' }
+    $reconstructedPackage = Join-Path $evidenceRoot "reconstructed-$Version-full.nupkg"
+    # Use the actual installed 1.2.0 updater, before preparing the new updater,
+    # in the same order as the production SDK's delta-download/prepare sequence.
+    $patcher = Start-Process -FilePath (Join-Path $installationRoot 'Update.exe') -ArgumentList @('--silent', 'patch', '--old', ('"' + $baselineFull + '"'),
+        '--delta', ('"' + $deltaPath + '"'), '--output', ('"' + $reconstructedPackage + '"')) -PassThru
+    if (-not $patcher.WaitForExit(120000)) { $patcher.Kill($true); throw 'The real baseline updater delta reconstruction timed out.' }
+    if ($patcher.ExitCode -ne 0) { throw "The baseline updater delta reconstruction failed with $($patcher.ExitCode)." }
+    dotnet run --project (Join-Path $projectRoot 'tools\WindowsReleaseProbe\WindowsReleaseProbe.csproj') -c Release -- `
+        --source-root $projectRoot --release-dir $releaseRoot --version $Version --reconstructed-package $reconstructedPackage `
+        --output (Join-Path $evidenceRoot 'delta-reconstruction')
+    if ($LASTEXITCODE -ne 0) { throw 'The reconstructed package differs from the verified original or failed actual icon acceptance.' }
+    $deltaReport = [ordered]@{
+        performed = $true; method = 'Installed baseline Update.exe --silent patch --old --delta --output'
+        baselinePackageSource = $baselineSource; baselineFullSha256 = $baselineFullHash
+        deltaPackage = $deltaName; deltaSha256 = (Get-FileHash -LiteralPath $deltaPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        originalFullSha256 = (Get-FileHash -LiteralPath (Join-Path $releaseRoot "dejavu-desktop-$Version-full.nupkg") -Algorithm SHA256).Hash.ToLowerInvariant()
+        reconstructedFullSha256 = (Get-FileHash -LiteralPath $reconstructedPackage -Algorithm SHA256).Hash.ToLowerInvariant()
+        contentComparison = 'Every ZIP entry path/type/uncompressed length/SHA256 matches; unsafe, symlink and duplicate entries rejected; reconstructed PE icons verified independently.'
+    }
+}
+
 # Verify the exact candidate before allowing its updater to execute.
 dotnet run --project (Join-Path $projectRoot 'tools\WindowsReleaseProbe\WindowsReleaseProbe.csproj') -c Release -- `
     --source-root $projectRoot --release-dir $releaseRoot --version $Version --output (Join-Path $evidenceRoot 'candidate-before-apply')
@@ -74,6 +118,12 @@ $stagedPackage = Join-Path $packagesRoot $packageName
 Copy-Item -LiteralPath (Join-Path $releaseRoot $packageName) -Destination $stagedPackage
 if ((Get-FileHash -LiteralPath $stagedPackage -Algorithm SHA256).Hash -ne
     (Get-FileHash -LiteralPath (Join-Path $releaseRoot $packageName) -Algorithm SHA256).Hash) { throw 'The staged package differs from the verified candidate.' }
+if ($null -ne $reconstructedPackage) {
+    # Actually apply the reconstructed bytes, not a silent fallback to original full.
+    Copy-Item -LiteralPath $reconstructedPackage -Destination $stagedPackage -Force
+    if ((Get-FileHash -LiteralPath $stagedPackage -Algorithm SHA256).Hash -ne
+        (Get-FileHash -LiteralPath $reconstructedPackage -Algorithm SHA256).Hash) { throw 'The staged package differs from the verified delta reconstruction.' }
+}
 
 # The production SDK's DownloadUpdatesAsync finally block extracts Squirrel.exe
 # to root Update.exe before applying. Reproduce that public, credential-free
@@ -106,6 +156,7 @@ $after = foreach ($name in @('dejavu.exe', 'Update.exe', 'current\dejavu.exe')) 
     baselineInstallerSha256 = (Get-FileHash -LiteralPath $baselineSetup -Algorithm SHA256).Hash.ToLowerInvariant()
     appliedPackage = $packageName; appliedPackageSha256 = (Get-FileHash -LiteralPath $stagedPackage -Algorithm SHA256).Hash.ToLowerInvariant()
     method = 'Real Velopack 1.2.0 Update.exe --silent apply --norestart; SDK-equivalent updater preparation'
+    deltaReconstruction = $deltaReport
     before = @($before); after = @($after); beforeShortcutSha256 = $beforeShortcutHash
     afterShortcutSha256 = (Get-FileHash -LiteralPath $shortcutPath -Algorithm SHA256).Hash.ToLowerInvariant()
     scope = 'Real existing-installation package apply and icon/shortcut/native-resource acceptance; no account/provider access or normal app start. Not automatic-update GUI or physical-DPI acceptance.'

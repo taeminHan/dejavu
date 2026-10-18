@@ -138,19 +138,30 @@ jobs:
           "release_dir=$(Join-Path $outputRoot 'dejavu-velopack-releases')" >> $env:GITHUB_OUTPUT
 
       - name: Download previous Velopack release
-        continue-on-error: true
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          vpk download github `
-            --repoUrl "https://github.com/${{ github.repository }}" `
-            --token "${{ secrets.GITHUB_TOKEN }}" `
-            --outputDir "${{ steps.paths.outputs.release_dir }}" `
-            --channel win `
-            --pre "${{ steps.version.outputs.prerelease }}"
+          if ("${{ steps.version.outputs.value }}" -eq '0.9.7') {
+            ./tools/InitializeWindowsReleaseBaseline.ps1 `
+              -ReleaseDirectory "${{ steps.paths.outputs.release_dir }}" `
+              -CacheDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-pinned-delta-baseline')
+          } else {
+            vpk download github `
+              --repoUrl "https://github.com/${{ github.repository }}" `
+              --token "${{ secrets.GITHUB_TOKEN }}" `
+              --outputDir "${{ steps.paths.outputs.release_dir }}" `
+              --channel win `
+              --pre "${{ steps.version.outputs.prerelease }}"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Warning 'Previous release unavailable; a full-only package will be created.'
+              exit 0
+            }
+          }
 
       - name: Build Velopack release
         shell: pwsh
-        run: ./tools/BuildRelease.ps1 -Version "${{ steps.version.outputs.value }}" -OutputRoot "${{ steps.paths.outputs.output_root }}"
+        run: ./tools/BuildRelease.ps1 -Version "${{ steps.version.outputs.value }}" -OutputRoot "${{ steps.paths.outputs.output_root }}" -RemovePinnedBaseline:("${{ steps.version.outputs.value }}" -eq '0.9.7')
 
       - name: Verify actual Windows installation and Start Menu logo
         shell: pwsh
@@ -257,6 +268,10 @@ jobs:
             "dejavu-desktop-${{ steps.version.outputs.value }}-full.nupkg",
             'dejavu-desktop-win-Portable.zip', 'dejavu-desktop-win-Setup.exe',
             'dejavu-Setup.exe', 'RELEASES', 'releases.win.json')
+          $deltaName = "dejavu-desktop-${{ steps.version.outputs.value }}-delta.nupkg"
+          if (Test-Path -LiteralPath (Join-Path "${{ steps.paths.outputs.release_dir }}" $deltaName)) {
+            $requiredWindowsAssets += $deltaName
+          }
           foreach ($name in $requiredWindowsAssets) {
             $built = Join-Path "${{ steps.paths.outputs.release_dir }}" $name
             $uploaded = Join-Path $publishedDir $name

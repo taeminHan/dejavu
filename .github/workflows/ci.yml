@@ -60,9 +60,17 @@ jobs:
         run: dotnet tool install --global vpk --version 1.2.0
       - name: Build actual Windows release candidate
         shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $outputRoot = Join-Path $env:RUNNER_TEMP 'dejavu-release-candidate'
-          ./tools/BuildRelease.ps1 -OutputRoot $outputRoot
+          $version = ([xml](Get-Content ./ClaudeUsageTray.csproj -Raw)).Project.PropertyGroup.Version
+          if ($version -eq '0.9.7') {
+            ./tools/InitializeWindowsReleaseBaseline.ps1 `
+              -ReleaseDirectory (Join-Path $outputRoot 'dejavu-velopack-releases') `
+              -CacheDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-pinned-delta-baseline')
+          }
+          ./tools/BuildRelease.ps1 -OutputRoot $outputRoot -RemovePinnedBaseline:($version -eq '0.9.7')
       - name: Verify actual Windows installation and Start Menu logo
         shell: pwsh
         run: |

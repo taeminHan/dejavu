@@ -233,6 +233,8 @@ CI saves `windows-release-candidate` and `windows-release-acceptance` artifacts.
 
 The tag workflow also attaches `Windows-release-verification.zip` to the draft, redownloads its actual Windows release files and verifies their resources and hashes against the package that passed installation. Its separate `windows-upgrade` job then exercises that actual downloaded draft package. **Wait for the whole workflow, including upgrade acceptance**, before final artifact/PNG review and explicit publication. Physical Windows 11 DPI, pinned icon/cache refresh, screen-reader and in-app automatic-update GUI acceptance remain explicitly separate.
 
+Velopack 1.2.0 regenerates `RELEASES` and `releases.win.json` when uploading. Their BOM, line endings and JSON formatting are not binary-package identity: verify the feed's exact version/package/file/type and actual SHA1/SHA256/size, while retaining byte-identical checks for installers, Portable, full and delta binaries. The 0.9.7 draft recovery workflow preserves the original product tag, checks out that exact product separately from validation control code, completes the actual draft's checksums and repeats real fresh installation and delta migration on separate disposable Windows runners. It never publishes; the earlier failed run remains part of the audit trail.
+
 ## Common failure modes
 
 | Symptom | First checks |

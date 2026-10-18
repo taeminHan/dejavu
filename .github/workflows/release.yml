@@ -267,7 +267,7 @@ jobs:
           $requiredWindowsAssets = @(
             "dejavu-desktop-${{ steps.version.outputs.value }}-full.nupkg",
             'dejavu-desktop-win-Portable.zip', 'dejavu-desktop-win-Setup.exe',
-            'dejavu-Setup.exe', 'RELEASES', 'releases.win.json')
+            'dejavu-Setup.exe')
           $deltaName = "dejavu-desktop-${{ steps.version.outputs.value }}-delta.nupkg"
           if (Test-Path -LiteralPath (Join-Path "${{ steps.paths.outputs.release_dir }}" $deltaName)) {
             $requiredWindowsAssets += $deltaName
@@ -280,6 +280,9 @@ jobs:
               throw "An uploaded Windows artifact differs from the package that passed installation: $name"
             }
           }
+          ./tools/TestWindowsUpdateFeeds.ps1 -ReleaseDirectory $publishedDir `
+            -Version "${{ steps.version.outputs.value }}" `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-uploaded-feed-verification')
 
           $checksumsPath = Join-Path $publishedDir "SHA256SUMS.txt"
           if (Test-Path -LiteralPath $checksumsPath) {

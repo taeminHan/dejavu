@@ -108,6 +108,10 @@ jobs:
   upgrade:
     needs: fresh
     runs-on: windows-latest
+    # GitHub requires push access to read an unpublished release, even though
+    # this job only downloads it and never changes or publishes the release.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:

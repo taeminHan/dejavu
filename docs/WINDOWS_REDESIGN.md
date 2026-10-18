@@ -1,6 +1,6 @@
 # Windows redesign implementation
 
-Updated: 2026-10-17. Windows implementation. The user explicitly authorized the 0.9.7 brand migration, omission audit and publication after actual packaged-asset verification. This does not authorize implementation of unrelated remaining theme/motion milestones. See `RELEASE_CHECKLIST.md` for validation scope; browser previews and automated tree probes are not installed-app acceptance.
+Updated: 2026-10-18. Windows implementation. The user explicitly authorized the 0.9.7 brand migration, omission audit and publication after actual packaged-asset verification. This does not authorize implementation of unrelated remaining theme/motion milestones. See `RELEASE_CHECKLIST.md` for validation scope; browser previews and automated tree probes are not installed-app acceptance.
 
 ## Milestone 1: native Settings shell and identity
 
@@ -10,7 +10,7 @@ Implemented in WPF, not only the HTML reference:
 - Service, placement, density, row and graph controls belong to Display. Existing saved settings and controller events are unchanged.
 - Connection cards and login/install actions move out of Privacy into Connections. Long descriptions and buttons stack instead of overlapping.
 - Fixed navigation meaning and vector icons across all existing themes. Theme-dependent palette/row treatment remains; no persisted enum or presentation-name migration yet.
-- Familiar Paradox vector appears in the Settings header without accent recoloring. Packaged application/tray icons and other windows still use their existing assets.
+- Familiar Paradox vector appears in the Settings header without accent recoloring. This initial milestone did not migrate packaged/tray icons or other windows; the 0.9.7 follow-up below completes those identity paths.
 - A 920 x 700 DIP default and 800 x 600 minimum window, explicit two-column setting rows and wrapping descriptions. Vertical scrolling handles smaller content viewports; horizontal overflow is disabled.
 - Inline update loading/results are stacked below their description. Existing automatic/manual update and install behavior is unchanged.
 - Accessible names for pickers, caption controls and color swatches, and shared button/navigation/picker focus states.

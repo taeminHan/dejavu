@@ -2,19 +2,21 @@
 
 `0.9.7`는 제품 소유자의 명시적 요청에 따라 Windows 제품 아이콘과 추가 브랜드 누락을 수정하고, 실제 배포 파일 검증 후 공개합니다. 무료 배포 방침을 유지하며 Windows 공인 코드 서명·macOS Developer ID/공증을 받은 제품이라고 표시하지 않습니다. 아래 수동 검증과 신뢰 배포의 미완료 항목은 그대로 남깁니다.
 
-## 0.9.7 release validation scope — 2026-10-17
+## 0.9.7 release validation scope — 2026-10-18
 
 - 제품 로고: canonical SVG → 앱 ICO/트레이 단색 ICO → 앱/창/설치/실행 stub/바로가기 아이콘. 각 ICO는 16/20/24/32/40/48/64/128/256px를 포함한다.
 - 추가 누락 수정: 시작 안내·상세 사용량·업데이트 헤더의 옛 제품 글리프와 위젯의 미지정 창 아이콘. 테마별 제품 글리프 메타데이터를 제거하고, 시작 안내 합성 캡처의 바깥 여백 잘림도 고친다.
 - 사용자 설정, Percentage/Hidden 선택, Orbit/Paper Ink와 위젯 기하를 유지한다. macOS 기능 코드는 변경하지 않고 기존 통합 릴리즈 방식으로 버전만 맞춘다.
-- [ ] 전체 Windows 빌드/XAML/504 위젯/1512 작업표시줄/166 전이/Orbit/Retro/설정/수집 회귀 검사.
-- [ ] 승인된 SVG와 production SVG 일치, manifest의 ICO 27개 frame/해시, 실제 full/portable/설치 EXE/stub의 PE icon 리소스 일치 검사.
-- [ ] 격리된 Windows runner의 실제 무인 설치, 생성된 Start Menu 바로가기 target/IconLocation 및 Apps & Features DisplayIcon 검증.
-- [ ] 독립 runner에 공개 0.9.6을 실제 설치하고 구형 아이콘을 확인한 뒤, 새 실제 패키지의 Update.exe apply --norestart 실행. 기존 바로가기와 앱/stub/updater가 모두 새 로고로 바뀌는지 확인. 태그 workflow도 초안에서 재다운로드한 실제 파일로 이 검사를 수행한다.
-- [ ] 설치된 실제 EXE의 controller-free `--validate-brand` 실행: 48개 창·단색 트레이 크기/밝기·고정 브랜드색과 runtime PNG/JSON 검증. 실제 사용자 인증·공급자·설정 저장은 사용하지 않는다.
-- [ ] 성공한 사전 CI의 패키지/원본 및 shell-selected 아이콘 PNG를 내려받아 육안 확인.
+- [x] 전체 Windows 빌드/XAML/504 위젯/1512 작업표시줄/166 전이/Orbit/Retro/설정/수집 회귀 검사.
+- [x] 승인된 SVG와 production SVG 일치, manifest의 ICO 27개 frame/해시, 실제 full/portable/설치 EXE/stub의 PE icon 리소스 일치 검사.
+- [x] 격리된 Windows runner의 실제 무인 설치, 생성된 Start Menu 바로가기 target/IconLocation 및 Apps & Features DisplayIcon 검증.
+- [x] 독립 runner에 공개 0.9.6을 실제 설치하고 구형 아이콘을 확인한 뒤, 새 실제 패키지의 Update.exe apply --norestart 실행. 기존 바로가기와 앱/stub/updater가 모두 새 로고로 바뀌는지 확인. 태그 workflow도 초안에서 재다운로드한 실제 파일로 이 검사를 수행한다.
+- [x] 설치된 실제 EXE의 controller-free `--validate-brand` 실행: 48개 창·11개 트레이·13개 고정 브랜드색 검사와 runtime PNG/JSON 검증. 실제 사용자 인증·공급자·설정 저장은 사용하지 않는다.
+- [x] 성공한 사전 CI의 원본 및 실제 설치 앱의 Settings/시작 안내/상세 화면, shell-selected 바로가기 PNG를 내려받아 육안 확인.
 - [ ] 태그 workflow는 초안만 작성. 실제 업로드 파일을 다시 내려받아 PE icon/체크섬/버전/설치 증거와 검사한 패키지 hash 일치를 확인한 뒤 별도 최종 공개.
 - [ ] 0.9.7 공통 버전/태그 대상 및 Mac build >45, Mac 서명·업데이트 피드·공개 파일 해시 검증.
+
+사전 근거: [CI 39081921663](https://github.com/taeminHan/dejavu/actions/runs/39081921663), source `1871918`. Windows 새 설치와 공개 0.9.6 → 0.9.7 실제 updater package apply가 별도 runner에서 통과했다. 양쪽 shell 비교는 승인 원본과 base 아이콘 차이 0px, Windows 화살표 합성 결과와 실제 바로가기 차이 0px, 마스킹 0px이다. 태그 산출물은 이 사전 후보와 별도로 다시 검증해야 한다.
 
 ### Additional omission audit
 

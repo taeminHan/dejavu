@@ -13,11 +13,13 @@
 - [x] 독립 runner에 공개 0.9.6을 실제 설치하고 구형 아이콘을 확인한 뒤, 새 실제 패키지의 Update.exe apply --norestart 실행. 기존 바로가기와 앱/stub/updater가 모두 새 로고로 바뀌는지 확인. 태그 workflow도 초안에서 재다운로드한 실제 파일로 이 검사를 수행한다.
 - [x] 설치된 실제 EXE의 controller-free `--validate-brand` 실행: 48개 창·11개 트레이·13개 고정 브랜드색 검사와 runtime PNG/JSON 검증. 실제 사용자 인증·공급자·설정 저장은 사용하지 않는다.
 - [x] 성공한 사전 CI의 원본 및 실제 설치 앱의 Settings/시작 안내/상세 화면, shell-selected 바로가기 PNG를 내려받아 육안 확인.
-- [ ] 공개 0.9.6 full과 후보 delta의 해시를 확인하고 실제 updater로 복원. 원본 full과 모든 ZIP entry/type/비압축 SHA-256이 같음을 확인한 복원 패키지를 실제 적용하여 로고 이관 재검사.
+- [x] 공개 0.9.6 full과 후보 delta의 해시를 확인하고 실제 updater로 복원. 원본 full과 모든 ZIP entry/type/비압축 SHA-256이 같음을 확인한 복원 패키지를 실제 적용하여 로고 이관 재검사. [CI 39153791685](https://github.com/taeminHan/dejavu/actions/runs/39153791685), source `a1cb1fd`: ZIP 9개 항목 일치, 실제 적용·기존 바로가기 검사 통과.
 - [ ] 태그 workflow는 초안만 작성. 실제 업로드 파일을 다시 내려받아 PE icon/체크섬/버전/설치 증거와 검사한 패키지 hash 일치를 확인한 뒤 별도 최종 공개.
 - [ ] 0.9.7 공통 버전/태그 대상 및 Mac build >45, Mac 서명·업데이트 피드·공개 파일 해시 검증.
 
 사전 근거: [CI 39081921663](https://github.com/taeminHan/dejavu/actions/runs/39081921663), source `1871918`. Windows 새 설치와 공개 0.9.6 → 0.9.7 실제 updater package apply가 별도 runner에서 통과했다. 양쪽 shell 비교는 승인 원본과 base 아이콘 차이 0px, Windows 화살표 합성 결과와 실제 바로가기 차이 0px, 마스킹 0px이다. 태그 산출물은 이 사전 후보와 별도로 다시 검증해야 한다.
+
+태그 산출물 근거: `v0.9.7`은 `d4a236a`, Mac build46이다. [첫 태그 run 39154314403](https://github.com/taeminHan/dejavu/actions/runs/39154314403)은 실제 Windows 새 설치와 Mac 검증을 통과했지만 업로드 시 Velopack이 다시 직렬화한 `RELEASES`의 BOM/개행 바이트 비교에서 중단했다. 공개하지 않은 초안과 제품 태그는 변경하지 않는다. 내려받은 실제 8개 PE의 72개 아이콘 frame, fresh 검사 record 8개와 설치된 3종 PE의 교차 비교 6개는 모두 일치했다. Mac 실제 ZIP의 ad-hoc 서명·arm64·0.9.7/build46·Ed25519와 Windows full/delta 피드의 SHA1/SHA256/크기도 독립 검사로 통과했다. 통합 체크섬과 실제 초안 파일의 새 설치·차등 업데이트는 별도 수동 검증 workflow가 완료한 뒤 최종 공개해야 한다. 첫 실패 run을 전체 성공으로 표시하지 않는다.
 
 ### Additional omission audit
 

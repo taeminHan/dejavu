@@ -1,0 +1,165 @@
+name: Verify existing 0.9.7 draft
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fresh:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    outputs:
+      checksum_sha256: ${{ steps.checksums.outputs.sha256 }}
+    steps:
+      - name: Check out verification controls from the dispatched main commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          path: control
+      - name: Check out immutable product tag
+        uses: actions/checkout@v6
+        with:
+          ref: v0.9.7
+          path: product
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.401"
+      - name: Guard exact tag and unpublished draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ("${{ github.ref }}" -ne 'refs/heads/main') { throw 'Run this fixed recovery workflow from main only.' }
+          $expected = 'd4a236aef30b9332cd873f6b8dc62e745b58decf'
+          $actual = git -C product rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $actual -ne $expected) { throw 'The immutable 0.9.7 product tag differs from the audited commit.' }
+          $release = gh release view v0.9.7 --repo "${{ github.repository }}" --json isDraft,tagName,targetCommitish | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $release.isDraft -ne $true -or $release.tagName -ne 'v0.9.7' -or $release.targetCommitish -ne $expected) {
+            throw 'Only the existing unpublished 0.9.7 draft may be verified.'
+          }
+      - name: Download actual draft assets and verify inventory
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-download'
+          New-Item -ItemType Directory -Path $download | Out-Null
+          gh release download v0.9.7 --repo "${{ github.repository }}" --dir $download
+          if ($LASTEXITCODE -ne 0) { throw 'Actual draft assets could not be downloaded.' }
+          $expected = @('appcast-macos.xml', 'dejavu-desktop-0.9.7-delta.nupkg', 'dejavu-desktop-0.9.7-full.nupkg',
+            'dejavu-desktop-win-Portable.zip', 'dejavu-desktop-win-Setup.exe', 'Dejavu-macOS-arm64.dmg',
+            'Dejavu-macOS-arm64.zip', 'dejavu-Setup.exe', 'RELEASES', 'releases.win.json',
+            'SHA256SUMS-macOS.txt', 'Windows-release-verification.zip')
+          $actual = @(Get-ChildItem -LiteralPath $download -File | Where-Object Name -ne 'SHA256SUMS.txt' | Select-Object -ExpandProperty Name)
+          if (Compare-Object $expected $actual -CaseSensitive) { throw 'The draft contains missing or unexpected assets.' }
+      - name: Verify uploaded feed records and actual packaged icons
+        shell: pwsh
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-download'
+          ./control/tools/TestWindowsUpdateFeeds.ps1 -ReleaseDirectory $download -Version '0.9.7' `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-evidence/feeds')
+          dotnet run --project product/tools/WindowsReleaseProbe/WindowsReleaseProbe.csproj -c Release -- `
+            --source-root "${{ github.workspace }}/product" --release-dir $download --version '0.9.7' `
+            --output (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-evidence/package-icons')
+          if ($LASTEXITCODE -ne 0) { throw 'Actual uploaded PE/archive icon acceptance failed.' }
+      - name: Complete and round-trip-check draft checksum manifest
+        id: checksums
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-download'
+          $lines = @(Get-ChildItem -LiteralPath $download -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
+            "$((Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
+          })
+          if ($lines.Count -ne 12) { throw 'The fixed draft must have exactly 12 assets before the unified checksum manifest.' }
+          $manifest = Join-Path $download 'SHA256SUMS.txt'
+          [IO.File]::WriteAllText($manifest, (($lines -join "`n") + "`n"), [Text.UTF8Encoding]::new($false))
+          $draft = gh release view v0.9.7 --repo "${{ github.repository }}" --json isDraft --jq '.isDraft'
+          if ($LASTEXITCODE -ne 0 -or $draft -ne 'true') { throw 'Never replace a public release checksum manifest.' }
+          gh release upload v0.9.7 $manifest --repo "${{ github.repository }}" --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'The draft checksum manifest could not be completed.' }
+          $verify = Join-Path $env:RUNNER_TEMP 'dejavu-097-checksum-roundtrip'
+          New-Item -ItemType Directory -Path $verify | Out-Null
+          gh release download v0.9.7 --repo "${{ github.repository }}" --pattern SHA256SUMS.txt --dir $verify
+          if ($LASTEXITCODE -ne 0) { throw 'The uploaded checksum manifest could not be downloaded.' }
+          $hash = (Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash
+          if ($hash -ne (Get-FileHash -LiteralPath (Join-Path $verify 'SHA256SUMS.txt') -Algorithm SHA256).Hash) { throw 'The checksum round trip differs.' }
+          "sha256=$($hash.ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          Copy-Item -LiteralPath $manifest -Destination (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-evidence/SHA256SUMS.txt')
+      - name: Install actual downloaded setup and run immutable product acceptance
+        shell: pwsh
+        run: |
+          ./product/tools/TestWindowsRelease.ps1 `
+            -ReleaseDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-download') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-evidence/installed') -Version '0.9.7'
+      - name: Save actual draft fresh-install acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: draft-097-fresh-acceptance
+          path: ${{ runner.temp }}/dejavu-097-draft-evidence/
+          if-no-files-found: error
+          retention-days: 30
+
+  upgrade:
+    needs: fresh
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: v0.9.7
+          path: product
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.401"
+      - name: Guard unchanged product tag and unpublished draft
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $actual = git -C product rev-parse HEAD
+          if ($LASTEXITCODE -ne 0 -or $actual -ne 'd4a236aef30b9332cd873f6b8dc62e745b58decf') { throw 'The product tag changed.' }
+          $draft = gh release view v0.9.7 --repo "${{ github.repository }}" --json isDraft --jq '.isDraft'
+          if ($LASTEXITCODE -ne 0 -or $draft -ne 'true') { throw 'The release must remain unpublished until all acceptance finishes.' }
+      - name: Download the same actual draft assets accepted by the fresh job
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $download = Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-download'
+          New-Item -ItemType Directory -Path $download | Out-Null
+          gh release download v0.9.7 --repo "${{ github.repository }}" --dir $download
+          if ($LASTEXITCODE -ne 0) { throw 'Actual draft assets could not be downloaded for upgrade acceptance.' }
+          $manifest = Join-Path $download 'SHA256SUMS.txt'
+          if ((Get-FileHash -LiteralPath $manifest -Algorithm SHA256).Hash.ToLowerInvariant() -ne "${{ needs.fresh.outputs.checksum_sha256 }}") {
+            throw 'The draft checksum identity changed after fresh-install acceptance.'
+          }
+          foreach ($line in Get-Content -LiteralPath $manifest) {
+            if ($line -notmatch '^(?<hash>[0-9a-fA-F]{64})  (?<name>.+)$') { throw 'Invalid checksum manifest entry.' }
+            $name = $Matches.name
+            $expectedHash = $Matches.hash
+            if ([IO.Path]::GetFileName($name) -cne $name -or
+                (Get-FileHash -LiteralPath (Join-Path $download $name) -Algorithm SHA256).Hash -ine $expectedHash) {
+              throw 'A downloaded draft asset differs from the bytes accepted by the fresh job.'
+            }
+          }
+      - name: Apply actual downloaded delta through the immutable product verifier
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./product/tools/TestWindowsUpgrade.ps1 `
+            -ReleaseDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-download') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-097-draft-upgrade-evidence') -Version '0.9.7'
+      - name: Save actual draft delta-upgrade acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: draft-097-upgrade-acceptance
+          path: ${{ runner.temp }}/dejavu-097-draft-upgrade-evidence/
+          if-no-files-found: error
+          retention-days: 30

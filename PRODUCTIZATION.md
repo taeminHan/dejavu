@@ -1,8 +1,8 @@
 # dejavu productization status
 
-기준 버전: `0.9.6` (2026-10-13)
+기준 버전: `0.9.7` (2026-10-17)
 
-이번 릴리스는 macOS 연결·인증 위치 선택·네이티브 화면 개선과 Windows 수집·테마 오류 수정을 포함합니다. macOS Claude 이전 로그인 재사용 후 사용량 수신은 사용자가 확인했습니다. 아래 P0 항목이 해결되기 전에는 공인 서명되거나 Apple 공증된 설치 프로그램으로 표시하지 않습니다.
+이번 릴리스는 Windows 앱·트레이·설치 파일·바로가기와 제품 헤더 로고 통일 및 실제 패키지/설치 결과의 아이콘 검증을 포함합니다. macOS 기능은 0.9.6과 같고 통합 릴리즈 버전만 맞춥니다. 아래 P0 항목이 해결되기 전에는 공인 서명되거나 Apple 공증된 설치 프로그램으로 표시하지 않습니다.
 
 ## Release priorities
 
@@ -32,6 +32,8 @@
 
 ## Implemented in this release
 
+- Windows Familiar Paradox product identity across packaged EXE/setup/stubs/shortcuts, theme-independent product headers and light/dark/high-contrast-aware tray marks; percentage/hidden preferences retained.
+- Fail-closed packaged-resource and isolated Windows installation/shortcut acceptance, with a draft-only release workflow and a separate final publication decision after downloaded-asset review.
 - macOS menu-bar-first native settings/details, official login flows, explicit previous Claude sign-in reuse and independent extended-access consent.
 - macOS cancellation-safe identity switching, bounded refresh recovery, consent-revoking local reset and observed updater availability.
 - Windows authoritative Codex bucket parsing, malformed-Claude-credential Desktop fallback, timeout-bounded Codex cancellation drain, corrected theme resources and consistent accent defaults.

@@ -25,7 +25,7 @@ Selected identity: **Familiar Paradox / 모순의 프레임**. A familiar frame 
 - Untiled vector: `design/prototype/brand-exploration/frame-mark.svg`.
 - Monochrome tray/status silhouette: `design/prototype/brand-exploration/frame-mono.svg`.
 - Forest/sage is the identity treatment, not a compulsory UI accent. Themes do not recolor the full-color tile.
-- Selected vectors do not automatically replace `assets/dejavu.ico`, installed shortcuts or Mac asset catalogs. Native conversion/packaging/small-size verification require explicit implementation.
+- Windows 0.9.7 explicitly migrates `assets/dejavu.ico`, tray assets, product headers and installed shortcut icon sources to the selected vectors. See `ICON_SYSTEM.md` for generation/provenance and `RELEASE_CHECKLIST.md` for executed acceptance; selecting a vector alone is not migration evidence. Mac functionality is unchanged in this Windows follow-up.
 - Provider identities and action icons stay separate; see [ICON_SYSTEM.md](ICON_SYSTEM.md).
 
 ## Windows themes

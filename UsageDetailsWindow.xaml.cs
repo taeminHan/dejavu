@@ -7,7 +7,11 @@ namespace ClaudeUsageTray;
 
 public partial class UsageDetailsWindow : Window
 {
-    internal UsageDetailsWindow() => InitializeComponent();
+    internal UsageDetailsWindow()
+    {
+        InitializeComponent();
+        Icon = BrandIcon.ApplicationImage;
+    }
 
     internal event EventHandler? RefreshRequested;
     internal event EventHandler? SettingsRequested;
@@ -104,7 +108,7 @@ public partial class UsageDetailsWindow : Window
         DetailsFooter.BorderThickness = new Thickness(0, 1, 0, 0);
         DetailsThemeBadge.Width = DetailsThemeBadge.Height = 34;
         DetailsThemeBadge.CornerRadius = ResourceCornerRadius("BadgeCornerRadius");
-        DetailsThemeBadge.BorderThickness = new Thickness(1);
+        DetailsThemeBadge.BorderThickness = new Thickness(0);
         ServiceDivider.Height = 1;
         ServiceDivider.Margin = new Thickness(0, 18, 0, 14);
 
@@ -195,7 +199,6 @@ public partial class UsageDetailsWindow : Window
                 DetailsThemeBadge.Width = 26;
                 DetailsThemeBadge.Height = 34;
                 DetailsThemeBadge.CornerRadius = new CornerRadius(0);
-                DetailsThemeBadge.BorderThickness = new Thickness(0, 0, 1, 0);
                 DetailsBrandText.Text = "dejavu 사용 기록";
                 ClaudeSectionTitle.Text = "I. CLAUDE";
                 CodexSectionTitle.Text = "II. CODEX";

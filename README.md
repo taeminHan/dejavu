@@ -7,13 +7,13 @@ Windows 11에서 Claude와 Codex 사용량을 항상 표시하는 네이티브 �
 
 ### 리센느 화이팅
 
-배포 버전은 `0.9.6`입니다. Windows는 Velopack, macOS는 Sparkle 기반 앱 내 업데이트를 지원합니다. 배포 검증 현황은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
+배포 버전은 `0.9.7`입니다. Windows는 Velopack, macOS는 Sparkle 기반 앱 내 업데이트를 지원합니다. 배포 검증 현황은 [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md)에 정리되어 있습니다.
 
-[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [Windows 0.9.6 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.6/dejavu-Setup.exe) · [macOS 0.9.6 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.6/Dejavu-macOS-arm64.dmg) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
+[공식 웹사이트](https://taemtaem.dev/dejavu/) · [사용 설명서](https://taemtaem.dev/dejavu/guide/) · [Windows 0.9.7 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.7/dejavu-Setup.exe) · [macOS 0.9.7 다운로드](https://github.com/taeminHan/dejavu/releases/download/v0.9.7/Dejavu-macOS-arm64.dmg) · [문제 신고](https://github.com/taeminHan/dejavu/issues) · [MIT 라이선스](LICENSE)
 
 ## Code signing policy
 
-Windows 공인 코드 서명은 [SignPath.io](https://signpath.io/)와 [SignPath Foundation](https://signpath.org/) 연동 전입니다. `0.9.6` Windows 배포 파일은 아직 공인 서명되지 않았으며, macOS는 ad-hoc 서명·Apple 미공증 배포입니다. 서명 대상, 승인 절차, 프로젝트 역할과 검증 방법은 [코드 서명 정책](CODE_SIGNING_POLICY.md)에 공개합니다.
+Windows 공인 코드 서명은 [SignPath.io](https://signpath.io/)와 [SignPath Foundation](https://signpath.org/) 연동 전입니다. `0.9.7` Windows 배포 파일은 아직 공인 서명되지 않았으며, macOS는 ad-hoc 서명·Apple 미공증 배포입니다. 서명 대상, 승인 절차, 프로젝트 역할과 검증 방법은 [코드 서명 정책](CODE_SIGNING_POLICY.md)에 공개합니다.
 
 - Claude: 5시간, 주간 전체, 계정에 제공되는 주간 Fable 사용률
 - Codex: 5시간 및 주간 사용률, 다음 초기화 시각
@@ -52,7 +52,7 @@ GitHub Releases의 `dejavu-Setup.exe`를 실행하면 현재 사용자 계정에
 
 기존 Inno Setup 기반 `0.9.0-rc.1` 사용자는 첫 Velopack 버전만 설치 프로그램으로 한 번 다시 설치해야 합니다. 그 이후 버전부터는 앱 안에서 업데이트됩니다. Windows 설정의 **설치된 앱**에서 dejavu를 제거하면 앱·바로가기·시작프로그램 등록뿐 아니라 `%LocalAppData%\dejavu`의 설정, 위젯 위치, 캐시와 진단 파일도 함께 삭제됩니다. Claude Code와 Codex의 로그인 정보 및 해당 프로그램의 데이터는 삭제하지 않습니다.
 
-`0.9.6` Windows는 공인 코드 서명 전 배포이므로 SmartScreen의 게시자 경고가 표시될 수 있습니다. macOS 최초 실행은 시스템 설정의 **개인정보 보호 및 보안 → 확인 없이 열기** 승인이 필요할 수 있습니다. 배포 파일은 함께 제공되는 `SHA256SUMS.txt`와 대조할 수 있습니다.
+`0.9.7` Windows는 공인 코드 서명 전 배포이므로 SmartScreen의 게시자 경고가 표시될 수 있습니다. macOS 최초 실행은 시스템 설정의 **개인정보 보호 및 보안 → 확인 없이 열기** 승인이 필요할 수 있습니다. 배포 파일은 함께 제공되는 `SHA256SUMS.txt`와 대조할 수 있습니다.
 
 macOS는 Apple Silicon·macOS 14 이상을 지원합니다. 메뉴 막대에서 사용량을 확인하고 선택형 플로팅 오버레이를 켜거나 끌 수 있습니다. 이전 Dejavu에서 완료한 Claude 로그인은 **설정 → 연결 → Claude 확장 접근 → 인증 위치 → 이전 Dejavu 로그인**으로 재사용합니다. 인증 위치 선택은 확장 접근 동의를 자동 활성화하지 않습니다. 시스템 위젯의 무료 ad-hoc App Group 공유는 보장하지 않습니다.
 

@@ -140,6 +140,7 @@ internal sealed class DesktopApplicationController : IDisposable
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
         SystemEvents.SessionSwitch += OnSessionSwitch;
         SystemEvents.TimeChanged += OnSystemTimeChanged;
+        SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
         // The network nudge is optional. With a broken or restricted Winsock stack the add accessor
         // can throw (SocketException or NetworkInformationException) while starting its listener;
         // resume, unlock and the transient retries still recover, so startup must not fail on it.
@@ -256,8 +257,9 @@ internal sealed class DesktopApplicationController : IDisposable
     private void ConfigureTray()
     {
         _trayIcon.Text = "dejavu · 사용량 확인 중";
-        _trayIcon.Icon = Forms.SystemInformation.SmallIconSize.Width > 16
-            ? Drawing.SystemIcons.Application : Drawing.SystemIcons.Information;
+        _generatedIcon = _settings.TrayIconStyle == TrayIconStyle.Percentage
+            ? CreatePercentageIcon(null) : CreateMarkIcon();
+        _trayIcon.Icon = _generatedIcon;
         _trayIcon.Visible = _settings.TrayIconStyle != TrayIconStyle.Hidden;
 
         var menu = new Forms.ContextMenuStrip();
@@ -1249,10 +1251,19 @@ internal sealed class DesktopApplicationController : IDisposable
         var icon = _settings.TrayIconStyle == TrayIconStyle.Percentage
             ? CreatePercentageIcon(selected?.Percent)
             : CreateMarkIcon();
-        _trayIcon.Icon = icon;
+        var previousIcon = _generatedIcon;
+        try
+        {
+            _trayIcon.Icon = icon;
+            _generatedIcon = icon;
+        }
+        catch
+        {
+            icon.Dispose();
+            throw;
+        }
+        previousIcon?.Dispose();
         _trayIcon.Visible = true;
-        _generatedIcon?.Dispose();
-        _generatedIcon = icon;
         var providers = new List<string>();
         if (showClaude) providers.Add($"Claude {Format(_state.Snapshot?.Weekly)}");
         if (showCodex) providers.Add($"Codex {Format(_state.CodexSnapshot?.DisplayLimit)}");
@@ -1261,7 +1272,23 @@ internal sealed class DesktopApplicationController : IDisposable
     }
 
     private void OnDisplaySettingsChanged(object? sender, EventArgs e)
-        => QueueWidgetTopmostRepair("display_settings_changed", reposition: true);
+    {
+        QueueWidgetTopmostRepair("display_settings_changed", reposition: true);
+        QueueTrayIdentityRefresh();
+    }
+
+    private void OnUserPreferenceChanged(object sender, UserPreferenceChangedEventArgs e) => QueueTrayIdentityRefresh();
+
+    private void QueueTrayIdentityRefresh()
+    {
+        if (_disposed || _application.Dispatcher.HasShutdownStarted) return;
+        _application.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            // Percentage and Hidden remain the user's existing choices. Only product-mark mode
+            // needs a new light/dark/high-contrast asset after a Windows appearance change.
+            if (!_disposed && _settings.TrayIconStyle == TrayIconStyle.ClaudeMark) UpdateTrayIcon();
+        }));
+    }
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
     {
@@ -1465,18 +1492,7 @@ internal sealed class DesktopApplicationController : IDisposable
     private static string Truncate(string value, int maximum) => value.Length <= maximum ? value : value[..maximum];
 
     private static Drawing.Icon CreateMarkIcon()
-    {
-        using var bitmap = new Drawing.Bitmap(32, 32);
-        using var graphics = Drawing.Graphics.FromImage(bitmap);
-        graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        graphics.Clear(Drawing.Color.Transparent);
-        using var background = new Drawing.SolidBrush(Drawing.Color.FromArgb(109, 142, 255));
-        graphics.FillEllipse(background, 2, 2, 28, 28);
-        using var pen = new Drawing.Pen(Drawing.Color.White, 2.2f);
-        graphics.DrawArc(pen, 8, 8, 16, 16, -80, 285);
-        graphics.DrawLine(pen, 16, 16, 22, 11);
-        return CloneIcon(bitmap);
-    }
+        => BrandIcon.CreateTrayIconForSystem(Forms.SystemInformation.SmallIconSize.Width);
 
     private static Drawing.Icon CreatePercentageIcon(double? percent)
     {
@@ -1513,6 +1529,7 @@ internal sealed class DesktopApplicationController : IDisposable
         SystemEvents.PowerModeChanged -= OnPowerModeChanged;
         SystemEvents.SessionSwitch -= OnSessionSwitch;
         SystemEvents.TimeChanged -= OnSystemTimeChanged;
+        SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
         if (_networkChangeSubscribed)
         {
             try { NetworkChange.NetworkAvailabilityChanged -= OnNetworkAvailabilityChanged; }

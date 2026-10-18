@@ -15,9 +15,9 @@
                     MouseLeftButtonDown="OnTitleBarMouseDown">
                 <Grid Margin="18,0,10,0">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border x:Name="UpdateThemeBadge" Width="28" Height="28" CornerRadius="{DynamicResource BadgeCornerRadius}" Background="{DynamicResource AccentSoftBrush}">
-                            <TextBlock Text="↑" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border x:Name="UpdateThemeBadge" Width="28" Height="28" Background="Transparent">
+                            <Image x:Name="UpdateBrandMark" Source="{StaticResource DejavuBrandImage}" Stretch="Uniform"
+                                   AutomationProperties.Name="Dejavu 로고" />
                         </Border>
                         <TextBlock x:Name="UpdateBrandText" Text="dejavu 업데이트" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>

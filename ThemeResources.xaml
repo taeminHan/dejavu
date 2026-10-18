@@ -56,7 +56,6 @@
     <Thickness x:Key="CardBorderThickness">1</Thickness>
     <Thickness x:Key="SettingsRowPadding">0,15</Thickness>
     <sys:Double x:Key="UsageProgressHeight">4</sys:Double>
-    <sys:String x:Key="ThemeMarkText">◒</sys:String>
     <sys:Boolean x:Key="RetroPixelEnabled">False</sys:Boolean>
     <SolidColorBrush x:Key="RetroHighlightBrush" Color="#88FFFFFF" />
 
@@ -65,6 +64,10 @@
     <DrawingImage x:Key="DejavuBrandImage">
         <DrawingImage.Drawing>
             <DrawingGroup>
+                <!-- Preserve the SVG's full 64 x 64 viewBox, including its one-unit tile inset. -->
+                <GeometryDrawing Brush="Transparent">
+                    <GeometryDrawing.Geometry><RectangleGeometry Rect="0,0,64,64" /></GeometryDrawing.Geometry>
+                </GeometryDrawing>
                 <GeometryDrawing Brush="#DDE2D2">
                     <GeometryDrawing.Geometry><RectangleGeometry Rect="1,1,62,62" RadiusX="15" RadiusY="15" /></GeometryDrawing.Geometry>
                 </GeometryDrawing>

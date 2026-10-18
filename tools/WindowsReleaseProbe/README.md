@@ -32,8 +32,11 @@ The gate checks:
 Windows runners. It silently installs the real Setup into a new runner-temp
 directory, reads the real installer-created Start Menu shortcut and uninstall
 registration, verifies all installed PE frames, and asks the shell to resolve the
-actual shortcut icon. The shell image is compared with the approved size, allowing
-only two premultiplied-alpha channel levels for raster round-tripping.
+actual shortcut icon. The shell's underlying app image is compared with the approved
+size; its OS-owned link-arrow overlay is then composited through the read-only system
+image list and compared with the full actual shortcut image. Both comparisons check
+every pixel, allowing only two premultiplied-alpha channel levels for raster
+round-tripping. No pixels are masked and Windows' shortcut arrow is not removed.
 
 The pinned Velopack 1.2.0 implementation creates Start Menu shortcuts targeting
 `current/dejavu.exe`, with no arguments and icon index zero. `current` is a stable

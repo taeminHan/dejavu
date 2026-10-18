@@ -165,40 +165,82 @@ public static class DejavuShortcutShellIcon {
     }
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     public static extern IntPtr SHGetFileInfo(string path, uint attributes, ref FileInfo info, uint size, uint flags);
+    [DllImport("comctl32.dll")]
+    public static extern IntPtr ImageList_GetIcon(IntPtr imageList, int index, uint flags);
     [DllImport("user32.dll")]
     public static extern bool DestroyIcon(IntPtr icon);
 }
 '@
+function Get-IconBitmap([IntPtr]$Handle) {
+    $icon = [Drawing.Icon]::FromHandle($Handle)
+    try { return $icon.ToBitmap() } finally { $icon.Dispose() }
+}
+function Get-DifferentVisiblePixels([Drawing.Bitmap]$Expected, [Drawing.Bitmap]$Actual) {
+    if ($Expected.Width -ne $Actual.Width -or $Expected.Height -ne $Actual.Height) { throw 'The shell icon dimensions differ from the expected image.' }
+    $different = 0
+    for ($y = 0; $y -lt $Expected.Height; $y++) {
+        for ($x = 0; $x -lt $Expected.Width; $x++) {
+            $a = $Expected.GetPixel($x, $y)
+            $b = $Actual.GetPixel($x, $y)
+            # Allow only native premultiplied-alpha round-trip quantization.
+            # Every pixel participates; the shortcut-arrow area is not masked.
+            if ([Math]::Abs([int]$a.A - [int]$b.A) -gt 2 -or
+                [Math]::Abs(($a.R * $a.A / 255.0) - ($b.R * $b.A / 255.0)) -gt 2 -or
+                [Math]::Abs(($a.G * $a.A / 255.0) - ($b.G * $b.A / 255.0)) -gt 2 -or
+                [Math]::Abs(($a.B * $a.A / 255.0) - ($b.B * $b.A / 255.0)) -gt 2) { $different++ }
+        }
+    }
+    return $different
+}
 $shellInfo = New-Object DejavuShortcutShellIcon+FileInfo
-$result = [DejavuShortcutShellIcon]::SHGetFileInfo($shortcutPath, 0, [ref]$shellInfo,
-    [Runtime.InteropServices.Marshal]::SizeOf($shellInfo), 0x100)
-if ($result -eq [IntPtr]::Zero -or $shellInfo.Icon -eq [IntPtr]::Zero) { throw 'The shell could not resolve the installed shortcut icon.' }
+# ICON | SYSICONINDEX | OVERLAYINDEX. Windows adds its standard link-arrow
+# overlay to a real .lnk; it is not part of the product artwork. The returned
+# image list is shared, read-only, and must NEVER be destroyed or modified.
+$imageList = [DejavuShortcutShellIcon]::SHGetFileInfo($shortcutPath, 0, [ref]$shellInfo,
+    [Runtime.InteropServices.Marshal]::SizeOf($shellInfo), 0x4140)
+if ($imageList -eq [IntPtr]::Zero -or $shellInfo.Icon -eq [IntPtr]::Zero) { throw 'The shell could not resolve the installed shortcut icon.' }
+$baseHandle = [IntPtr]::Zero
+$compositeHandle = [IntPtr]::Zero
 try {
-    $resolvedIcon = [Drawing.Icon]::FromHandle($shellInfo.Icon)
-    $resolvedBitmap = $resolvedIcon.ToBitmap()
+    $baseIndex = $shellInfo.Index -band 0x00FFFFFF
+    $overlayIndex = ($shellInfo.Index -shr 24) -band 0xFF
+    if ($overlayIndex -lt 1 -or $overlayIndex -gt 15) { throw 'The actual shortcut did not report a valid Windows overlay slot.' }
+    # ILD_TRANSPARENT retrieves the exact underlying brand; INDEXTOOVERLAYMASK
+    # asks the native image list to apply the OS-owned overlay for comparison.
+    $baseHandle = [DejavuShortcutShellIcon]::ImageList_GetIcon($imageList, $baseIndex, 1)
+    $compositeHandle = [DejavuShortcutShellIcon]::ImageList_GetIcon($imageList, $baseIndex, (1 -bor ($overlayIndex -shl 8)))
+    if ($baseHandle -eq [IntPtr]::Zero -or $compositeHandle -eq [IntPtr]::Zero) { throw 'The shell base/overlay icon could not be retrieved.' }
+    $resolvedBitmap = Get-IconBitmap $shellInfo.Icon
+    $baseBitmap = Get-IconBitmap $baseHandle
+    $compositeBitmap = Get-IconBitmap $compositeHandle
     try {
         $resolvedBitmap.Save((Join-Path $evidenceRoot 'installed-start-menu-shell-icon.png'), [Drawing.Imaging.ImageFormat]::Png)
-        $referencePath = Join-Path $evidenceRoot ("approved-app-$($resolvedBitmap.Width).png")
+        $baseBitmap.Save((Join-Path $evidenceRoot 'installed-start-menu-shell-base.png'), [Drawing.Imaging.ImageFormat]::Png)
+        $compositeBitmap.Save((Join-Path $evidenceRoot 'installed-start-menu-shell-expected-with-overlay.png'), [Drawing.Imaging.ImageFormat]::Png)
+        $referencePath = Join-Path $evidenceRoot ("approved-app-$($baseBitmap.Width).png")
         if (-not (Test-Path -LiteralPath $referencePath)) { throw 'The shell selected an unsupported app icon size.' }
         $reference = [Drawing.Bitmap]::new($referencePath)
         try {
-            if ($reference.Width -ne $resolvedBitmap.Width -or $reference.Height -ne $resolvedBitmap.Height) { throw 'The shell icon size differs from the approved frame.' }
-            $different = 0
-            for ($y = 0; $y -lt $reference.Height; $y++) {
-                for ($x = 0; $x -lt $reference.Width; $x++) {
-                    $a = $reference.GetPixel($x, $y)
-                    $b = $resolvedBitmap.GetPixel($x, $y)
-                    # Premultiplied alpha round-tripping can change edge channels by one.
-                    if ([Math]::Abs([int]$a.A - [int]$b.A) -gt 2 -or
-                        [Math]::Abs(($a.R * $a.A / 255.0) - ($b.R * $b.A / 255.0)) -gt 2 -or
-                        [Math]::Abs(($a.G * $a.A / 255.0) - ($b.G * $b.A / 255.0)) -gt 2 -or
-                        [Math]::Abs(($a.B * $a.A / 255.0) - ($b.B * $b.A / 255.0)) -gt 2) { $different++ }
-                }
-            }
-            if ($different -gt 0) { throw "The actual Start Menu shell icon has $different pixels that do not match the approved frame." }
+            $baseDifferent = Get-DifferentVisiblePixels $reference $baseBitmap
+            $compositeDifferent = Get-DifferentVisiblePixels $compositeBitmap $resolvedBitmap
+            [ordered]@{
+                schemaVersion = 1; success = ($baseDifferent -eq 0 -and $compositeDifferent -eq 0)
+                baseIndex = $baseIndex; overlayIndex = $overlayIndex
+                width = $baseBitmap.Width; height = $baseBitmap.Height
+                baseVersusApprovedDifferentPixels = $baseDifferent
+                actualShortcutVersusWindowsCompositeDifferentPixels = $compositeDifferent
+                maskedPixels = 0; premultipliedChannelTolerance = 2
+                scope = 'Exact product base icon plus Windows-owned shortcut overlay; shared shell image list is read-only.'
+            } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidenceRoot 'installed-start-menu-shell-comparison.json') -Encoding utf8NoBOM
+            if ($baseDifferent -gt 0) { throw "The actual shell base icon has $baseDifferent pixels different from the approved frame." }
+            if ($compositeDifferent -gt 0) { throw "The actual shortcut icon has $compositeDifferent pixels different from the native Windows overlay composite." }
         } finally { $reference.Dispose() }
-    } finally { $resolvedBitmap.Dispose() }
-} finally { [void][DejavuShortcutShellIcon]::DestroyIcon($shellInfo.Icon) }
+    } finally { $resolvedBitmap.Dispose(); $baseBitmap.Dispose(); $compositeBitmap.Dispose() }
+} finally {
+    if ($baseHandle -ne [IntPtr]::Zero) { [void][DejavuShortcutShellIcon]::DestroyIcon($baseHandle) }
+    if ($compositeHandle -ne [IntPtr]::Zero) { [void][DejavuShortcutShellIcon]::DestroyIcon($compositeHandle) }
+    [void][DejavuShortcutShellIcon]::DestroyIcon($shellInfo.Icon)
+}
 
 Write-Host 'Windows installed release acceptance: real silent installation, pinned Velopack Start Menu target, resolved shell icon, all PE frames and provider-free native brand validation passed.'
 Write-Host "Evidence: $evidenceRoot"

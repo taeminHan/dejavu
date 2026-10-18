@@ -116,7 +116,9 @@ public partial class SettingsWindow : Window
         Focus();
     }
 
-    private void LoadValues()
+    private void LoadValues() => LoadValuesCore(includeConnectionDetection: true);
+
+    private void LoadValuesCore(bool includeConnectionDetection)
     {
         _loading = true;
         ThemeCombo.SelectedItem = Find<ThemePreference>(ThemeCombo, _settings.Theme);
@@ -141,9 +143,21 @@ public partial class SettingsWindow : Window
         UpdateChannelText.Text = currentVersion.Contains('-', StringComparison.Ordinal) ? "릴리스 후보 채널" : "안정 채널";
         AboutVersionText.Text = $"버전 {currentVersion}";
         UpdateStatusLabels();
-        UpdateClaudeConnectionUi();
-        UpdateCodexConnectionUi();
+        if (includeConnectionDetection)
+        {
+            UpdateClaudeConnectionUi();
+            UpdateCodexConnectionUi();
+        }
         _loading = false;
+    }
+
+    // Initialize a controller-free native preview without showing a window or
+    // discovering installed providers or consulting the Windows startup setting.
+    internal void LoadPreviewValues()
+    {
+        if (StartupStateProvider is not null)
+            throw new InvalidOperationException("Settings preview requires no startup provider.");
+        LoadValuesCore(includeConnectionDetection: false);
     }
 
     internal void UpdateClaudeConnectionState(ApplicationState state)

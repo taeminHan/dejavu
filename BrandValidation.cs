@@ -112,6 +112,7 @@ internal static class BrandValidation
                 };
                 try
                 {
+                    ((SettingsWindow)windows[0].Window).LoadPreviewValues();
                     ((UsageDetailsWindow)windows[2].Window).UpdateState(state, settings);
                     ((UpdateWindow)windows[3].Window).ApplyTheme(theme);
                     foreach (var item in windows)
@@ -181,6 +182,12 @@ internal static class BrandValidation
                 // Rendering only root.RenderSize would cut off Onboarding's right/bottom.
                 var bitmap = new RenderTargetBitmap((int)Math.Ceiling(size.Width),
                     (int)Math.Ceiling(size.Height), 96, 96, PixelFormats.Pbgra32);
+                // Off-screen root rendering does not include Window.Background.
+                var background = new DrawingVisual();
+                using (var drawing = background.RenderOpen())
+                    drawing.DrawRectangle(window.Background ?? System.Windows.Media.Brushes.Transparent,
+                        null, new Rect(size));
+                bitmap.Render(background);
                 bitmap.Render(root);
                 SaveBitmap(bitmap, name);
             }

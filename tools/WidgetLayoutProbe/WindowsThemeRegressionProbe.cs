@@ -124,6 +124,11 @@ internal static partial class Program
         // Root Margin becomes a visual offset; retain its full arranged canvas.
         var bitmap = new RenderTargetBitmap((int)Math.Ceiling(root.RenderSize.Width + root.Margin.Left + root.Margin.Right),
             (int)Math.Ceiling(root.RenderSize.Height + root.Margin.Top + root.Margin.Bottom), 96, 96, PixelFormats.Pbgra32);
+        var background = new DrawingVisual();
+        using (var drawing = background.RenderOpen())
+            drawing.DrawRectangle(window.Background ?? System.Windows.Media.Brushes.Transparent,
+                null, new Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
+        bitmap.Render(background);
         bitmap.Render(root);
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(bitmap));

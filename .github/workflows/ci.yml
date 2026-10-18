@@ -71,6 +71,9 @@ jobs:
               -CacheDirectory (Join-Path $env:RUNNER_TEMP 'dejavu-pinned-delta-baseline')
           }
           ./tools/BuildRelease.ps1 -OutputRoot $outputRoot -RemovePinnedBaseline:($version -eq '0.9.7')
+          ./tools/TestWindowsUpdateFeeds.ps1 `
+            -ReleaseDirectory (Join-Path $outputRoot 'dejavu-velopack-releases') -Version $version `
+            -OutputDirectory (Join-Path $outputRoot 'windows-feed-verification')
       - name: Verify actual Windows installation and Start Menu logo
         shell: pwsh
         run: |
@@ -87,6 +90,7 @@ jobs:
           path: |
             ${{ runner.temp }}/dejavu-generated-brand-evidence/
             ${{ runner.temp }}/dejavu-release-candidate/windows-icon-verification/
+            ${{ runner.temp }}/dejavu-release-candidate/windows-feed-verification/
             ${{ runner.temp }}/dejavu-installed-evidence/
           if-no-files-found: error
           retention-days: 7

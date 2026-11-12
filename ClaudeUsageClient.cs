@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace ClaudeUsageTray;
 
@@ -35,23 +37,32 @@ internal sealed class ClaudeUsageClient
     // This path is used by Claude Code today, but it is not documented as a public
     // third-party integration contract. Keep the dependency isolated here.
     private const string UsageUrl = "https://api.anthropic.com/api/oauth/usage";
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(12) };
+    private const int MaximumCredentialBytes = 256 * 1024;
+    private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false })
+    {
+        Timeout = TimeSpan.FromSeconds(12),
+        MaxResponseContentBufferSize = 1024 * 1024
+    };
+    private static readonly Regex VersionedFable = new(@"\AFable [0-9]+(?:\.[0-9]+)*\z",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
     private readonly Func<string?> _findCredentialPath;
     private readonly Func<UsageSnapshot?> _readDesktopSnapshot;
-    private readonly Func<bool> _hasDesktopHistory;
+    private readonly Func<bool> _isDesktopInstalled;
+    private readonly HttpClient _http;
 
     public ClaudeUsageClient() : this(
         ClaudeEnvironmentDetector.FindCredentialPath,
         static () => ClaudeDesktopUsageReader.TryReadRecent(out var snapshot) ? snapshot : null,
-        static () => ClaudeDesktopUsageReader.HasHistoryFile) { }
+        static () => ClaudeDesktopUsageReader.IsInstalled) { }
 
     // Internal seams keep synthetic regression checks away from the user's credential/history paths.
     internal ClaudeUsageClient(Func<string?> findCredentialPath, Func<UsageSnapshot?> readDesktopSnapshot,
-        Func<bool> hasDesktopHistory)
+        Func<bool> isDesktopInstalled, HttpClient? http = null)
     {
         _findCredentialPath = findCredentialPath;
         _readDesktopSnapshot = readDesktopSnapshot;
-        _hasDesktopHistory = hasDesktopHistory;
+        _isDesktopInstalled = isDesktopInstalled;
+        _http = http ?? Http;
     }
 
     public static bool HasCredentialFile() => ClaudeEnvironmentDetector.FindCredentialPath() is not null;
@@ -63,12 +74,13 @@ internal sealed class ClaudeUsageClient
         {
             return await GetClaudeCodeUsageAsync(cancellationToken);
         }
-        catch (Exception exception) when (exception is ClaudeLoginRequiredException or ClaudeTokenExpiredException)
+        catch (Exception exception) when (exception is ClaudeLoginRequiredException or ClaudeTokenExpiredException
+            or ClaudeCredentialReadException or HttpRequestException { StatusCode: HttpStatusCode.Forbidden })
         {
             cancellationToken.ThrowIfCancellationRequested();
             if (_readDesktopSnapshot() is { } desktopSnapshot) return desktopSnapshot;
             if (exception is ClaudeLoginRequiredException && _findCredentialPath() is null &&
-                _hasDesktopHistory())
+                _isDesktopInstalled())
                 throw new ClaudeDesktopHistoryStaleException();
             throw;
         }
@@ -80,18 +92,12 @@ internal sealed class ClaudeUsageClient
         var credentialPath = _findCredentialPath();
         if (credentialPath is null) throw new ClaudeLoginRequiredException();
 
-        byte[] credentialPayload;
-        await using (var credentialStream = new FileStream(
-                         credentialPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
-                         bufferSize: 4096, useAsync: true))
-        {
-            using var memory = new MemoryStream();
-            await credentialStream.CopyToAsync(memory, cancellationToken);
-            credentialPayload = memory.ToArray();
-        }
-
         // Do not hold Claude's credential file open while parsing or making the network request.
-        var accessToken = ParseCredential(credentialPayload);
+        var credentialFingerprint = CredentialFingerprint(credentialPath);
+        var credentialPayload = await ReadCredentialAsync(credentialPath, cancellationToken);
+        string accessToken;
+        try { accessToken = ParseCredential(credentialPayload.AsMemory(0, credentialPayload.Length - 1)); }
+        finally { CryptographicOperations.ZeroMemory(credentialPayload); }
         cancellationToken.ThrowIfCancellationRequested();
 
         using var request = new HttpRequestMessage(HttpMethod.Get, UsageUrl);
@@ -101,9 +107,14 @@ internal sealed class ClaudeUsageClient
 
         // Buffer the small body inside SendAsync so the 12 s HttpClient timeout also covers it; a body
         // that stalls after the headers would otherwise hold the refresh gate indefinitely.
-        using var response = await Http.SendAsync(request, cancellationToken);
-        if (response.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+        using var response = await _http.SendAsync(request, cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            // Claude can rotate its token while the usage request is in flight.
+            if (CredentialFingerprint(_findCredentialPath()) != credentialFingerprint)
+                throw new ClaudeCredentialReadException();
             throw new ClaudeLoginRequiredException();
+        }
         if (response.StatusCode == HttpStatusCode.TooManyRequests)
         {
             // Retry-After is either a delay or an HTTP date; the controller clamps the result.
@@ -119,6 +130,34 @@ internal sealed class ClaudeUsageClient
         await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var usageDocument = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
         return ParseUsage(usageDocument.RootElement);
+    }
+
+    private static async Task<byte[]> ReadCredentialAsync(string path, CancellationToken cancellationToken)
+    {
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
+            bufferSize: 1, useAsync: true);
+        var length = stream.Length;
+        if (length is <= 0 or > MaximumCredentialBytes) throw new ClaudeCredentialReadException();
+        var payload = new byte[(int)length + 1];
+        try
+        {
+            // Leave one extra byte to detect growth; never allocate based on later writes.
+            var read = await stream.ReadAtLeastAsync(payload.AsMemory(), payload.Length, false, cancellationToken);
+            if (read != length) throw new ClaudeCredentialReadException();
+            return payload;
+        }
+        catch
+        {
+            CryptographicOperations.ZeroMemory(payload);
+            throw;
+        }
+    }
+
+    private static (string Path, long Length, DateTime WriteUtc)? CredentialFingerprint(string? path)
+    {
+        if (path is null) return null;
+        var file = new FileInfo(path);
+        return file.Exists ? (path, file.Length, file.LastWriteTimeUtc) : null;
     }
 
     private static string ParseCredential(ReadOnlyMemory<byte> payload)
@@ -143,10 +182,13 @@ internal sealed class ClaudeUsageClient
 
             return token.GetString()!;
         }
-        catch (Exception exception) when (exception is JsonException or ArgumentOutOfRangeException)
+        catch (JsonException)
         {
-            // Only malformed authentication data becomes a login problem/Desktop fallback. File I/O
-            // and usage-response errors stay outside this boundary and retain their transient status.
+            // A partially written credential file is a transient read error, not a lost login.
+            throw new ClaudeCredentialReadException();
+        }
+        catch (ArgumentOutOfRangeException)
+        {
             throw new ClaudeLoginRequiredException();
         }
     }
@@ -158,7 +200,7 @@ internal sealed class ClaudeUsageClient
             ReadArrayLimit(root, "session") ?? ReadLegacyLimit(root, "five_hour"),
             ReadArrayLimit(root, "weekly_all") ?? ReadLegacyLimit(root, "seven_day"),
             // Other model limits are not aliases for Fable. Missing Fable stays null.
-            ReadScopedLimit(root, "Fable") ?? ReadLegacyLimit(root, "seven_day_fable"));
+            ReadScopedFable(root) ?? ReadLegacyLimit(root, "seven_day_fable"));
     }
 
     private static bool HasUsableRefreshToken(JsonElement oauth)
@@ -166,8 +208,9 @@ internal sealed class ClaudeUsageClient
         if (!oauth.TryGetProperty("refreshToken", out var refreshNode) || refreshNode.ValueKind != JsonValueKind.String ||
             string.IsNullOrWhiteSpace(refreshNode.GetString())) return false;
         return !oauth.TryGetProperty("refreshTokenExpiresAt", out var refreshExpiresNode) ||
-               refreshExpiresNode.ValueKind != JsonValueKind.Number ||
-               !refreshExpiresNode.TryGetInt64(out var refreshExpiresAt) ||
+               refreshExpiresNode.ValueKind == JsonValueKind.Null ||
+               refreshExpiresNode.ValueKind == JsonValueKind.Number &&
+               refreshExpiresNode.TryGetInt64(out var refreshExpiresAt) &&
                DateTimeOffset.FromUnixTimeMilliseconds(refreshExpiresAt) > DateTimeOffset.UtcNow;
     }
 
@@ -176,41 +219,55 @@ internal sealed class ClaudeUsageClient
         if (!root.TryGetProperty("limits", out var limits) || limits.ValueKind != JsonValueKind.Array) return null;
         foreach (var item in limits.EnumerateArray())
         {
-            if (item.TryGetProperty("kind", out var kindNode) && kindNode.GetString() == kind)
+            if (item.ValueKind == JsonValueKind.Object && item.TryGetProperty("kind", out var kindNode) &&
+                kindNode.ValueKind == JsonValueKind.String && kindNode.GetString() == kind)
                 return ReadModernLimit(item);
         }
         return null;
     }
 
-    private static UsageLimit? ReadScopedLimit(JsonElement root, string displayName)
+    private static UsageLimit? ReadScopedFable(JsonElement root)
     {
         if (!root.TryGetProperty("limits", out var limits) || limits.ValueKind != JsonValueKind.Array) return null;
+        JsonElement versioned = default;
+        var ambiguous = false;
         foreach (var item in limits.EnumerateArray())
         {
-            if (!item.TryGetProperty("kind", out var kindNode) || kindNode.GetString() != "weekly_scoped" ||
-                !item.TryGetProperty("scope", out var scope) ||
-                !scope.TryGetProperty("model", out var model) ||
-                !model.TryGetProperty("display_name", out var nameNode) ||
-                !string.Equals(nameNode.GetString(), displayName, StringComparison.OrdinalIgnoreCase)) continue;
-            return ReadModernLimit(item);
+            if (item.ValueKind != JsonValueKind.Object ||
+                !item.TryGetProperty("kind", out var kindNode) || kindNode.ValueKind != JsonValueKind.String ||
+                kindNode.GetString() != "weekly_scoped" ||
+                !item.TryGetProperty("scope", out var scope) || scope.ValueKind != JsonValueKind.Object ||
+                !scope.TryGetProperty("model", out var model) || model.ValueKind != JsonValueKind.Object ||
+                !model.TryGetProperty("display_name", out var nameNode) || nameNode.ValueKind != JsonValueKind.String)
+                continue;
+            var name = nameNode.GetString()!;
+            if (name.Equals("Fable", StringComparison.OrdinalIgnoreCase)) return ReadModernLimit(item);
+            if (!VersionedFable.IsMatch(name)) continue;
+            if (versioned.ValueKind != JsonValueKind.Undefined) ambiguous = true;
+            versioned = item;
         }
-        return null;
+        return !ambiguous && versioned.ValueKind == JsonValueKind.Object ? ReadModernLimit(versioned) : null;
     }
 
-    private static UsageLimit? ReadModernLimit(JsonElement item)
-    {
-        if (!item.TryGetProperty("percent", out var node) || !node.TryGetDouble(out var percent)) return null;
-        return new UsageLimit(percent, ReadReset(item));
-    }
+    private static UsageLimit? ReadModernLimit(JsonElement item) => ReadLimit(item, "percent");
 
     private static UsageLimit? ReadLegacyLimit(JsonElement root, string name)
     {
-        if (!root.TryGetProperty(name, out var item) || item.ValueKind != JsonValueKind.Object ||
-            !item.TryGetProperty("utilization", out var node) || !node.TryGetDouble(out var percent)) return null;
-        return new UsageLimit(percent, ReadReset(item));
+        return root.TryGetProperty(name, out var item) && item.ValueKind == JsonValueKind.Object
+            ? ReadLimit(item, "utilization") : null;
+    }
+
+    private static UsageLimit? ReadLimit(JsonElement item, string field)
+    {
+        if (!item.TryGetProperty(field, out var node) || node.ValueKind == JsonValueKind.Null) return null;
+        if (node.ValueKind != JsonValueKind.Number || !node.TryGetDouble(out var percent) || !double.IsFinite(percent))
+            throw new InvalidOperationException("Claude usage percentage has an invalid format.");
+        return new UsageLimit(Math.Clamp(percent, 0, 100), ReadReset(item));
     }
 
     private static DateTimeOffset? ReadReset(JsonElement item) =>
         item.TryGetProperty("resets_at", out var node) && node.ValueKind == JsonValueKind.String &&
         DateTimeOffset.TryParse(node.GetString(), out var reset) ? reset : null;
 }
+
+internal sealed class ClaudeCredentialReadException : IOException;

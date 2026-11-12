@@ -17,7 +17,7 @@ The project intentionally depends on local and non-public integration surfaces. 
 | `ApplicationState.cs` | Immutable combined Claude/Codex state delivered to every view. |
 | `ClaudeEnvironmentDetector.cs` | Finds Claude Code credentials and executables; launches official login or setup pages after a user action. |
 | `ClaudeUsageClient.cs` | Reads a Claude Code credential snapshot, queries Anthropic usage, parses 5-hour, weekly and Fable limits, then falls back to Desktop history when login is unavailable. |
-| `ClaudeDesktopUsageReader.cs` | Reads and caches recent `%AppData%\Claude\plan-usage-history.json` snapshots without holding Claude files open. |
+| `ClaudeDesktopUsageReader.cs` | Reads and caches recent `plan-usage-history.json` snapshots from the active Windows Claude Desktop data directory without holding Claude files open. |
 | `CodexUsageClient.cs` | Finds a runnable Codex executable, starts its local `app-server`, reads rate limits and starts the official ChatGPT browser login. |
 | `TraySettings.cs` | Settings schema, validation, legacy migration, atomic persistence and service-visibility policy. |
 | `AppDiagnostics.cs` | Writes a credential-free status snapshot for support diagnostics. |
@@ -58,26 +58,27 @@ Views must not call provider clients directly or infer provider availability fro
 
 Claude source selection is deliberately asymmetric:
 
-1. Unless `DEJAVU_CLAUDE_SOURCE=desktop`, locate a non-empty credential file in `CLAUDE_CONFIG_DIR\.credentials.json` or `%UserProfile%\.claude\.credentials.json`.
-2. Copy the credential file to memory under `FileShare.ReadWrite | FileShare.Delete`, close it, then parse the OAuth access token.
-3. Query `https://api.anthropic.com/api/oauth/usage`. This is used by Claude Code but is not a documented third-party API contract.
-4. `ClaudeUsageClient.ParseUsage` parses session, weekly-all and scoped Fable limits from an in-memory response. Legacy response names remain supported for compatibility. Fable accepts only a `weekly_scoped` entry whose model display name is `Fable` (case-insensitive), or `seven_day_fable`; never substitute `seven_day_opus` or `seven_day_sonnet`. An absent Fable limit remains `null`, not a fabricated zero or another model's percentage.
-5. If credentials are missing, expired, unauthorized or malformed, try a recent Claude Desktop history snapshot. Without one, the outcome is classified as follows (`ReadClaudeAsync`):
+1. Unless `DEJAVU_CLAUDE_SOURCE=desktop`, look for `.credentials.json` in the explicit absolute `CLAUDE_CONFIG_DIR`, otherwise in `%UserProfile%\.claude`. If the startup process did not inherit the setting, read the persisted Windows user or machine setting into Dejavu's process environment so a user-triggered CLI login uses the same profile. An explicit profile never falls back to a different CLI account.
+2. Copy at most 256 KiB of credential data to memory under `FileShare.ReadWrite | FileShare.Delete`, close it, parse the OAuth access token, then clear the copied bytes. Dejavu does not retain or renew the login; Claude manages its original session.
+3. Query `https://api.anthropic.com/api/oauth/usage` without following redirects and with a 1 MiB response buffer limit. This is used by Claude Code but is not a documented third-party API contract.
+4. `ClaudeUsageClient.ParseUsage` parses session, weekly-all and scoped Fable limits. For Fable, prefer the family entry named `Fable`, then a single unambiguous versioned name such as `Fable 5.2`, then `seven_day_fable`. Never substitute another model or add distinct version buckets. An absent or null limit is unavailable. The regular `resets_at` timestamp does not describe a reset offer.
+5. If the CLI credential is missing, expired, rejected, or being rewritten, or the usage endpoint denies access, try a recent Claude Desktop history snapshot. Without one, the outcome is classified as follows (`ReadClaudeAsync`):
 
    | Outcome | Provider status, message and `ClaudeIssue` |
    |---|---|
    | Access token expired and a refresh token is present (only its presence is checked; `refreshTokenExpiresAt`, when present, must be in the future) | `Error`, `Claude 토큰 갱신 대기`, `TokenRefreshPending`. Claude Code renews the token the next time it runs; Dejavu never refreshes or writes it. |
-   | No credential file, and Desktop history exists without a recent sample (Desktop closed or idle) | `Error`, `Claude Desktop 기록 대기`, `DesktopHistoryStale` |
-   | No credential file and no Desktop history; or malformed credentials, an expired token without a refresh token, or HTTP 401/403 | `LoginRequired`, `Claude 로그인 필요` |
+   | No credential file, and an existing Desktop data directory has no recent sample | `Error`, `Claude Desktop 기록 대기`, `DesktopHistoryStale` |
+   | No credential file and no Desktop data directory; or a credential with no usable login, an expired token without a refresh token, or HTTP 401 with unchanged credentials | `LoginRequired`, `Claude 로그인 필요` |
+   | Empty/partial credential read or HTTP 401 during credential rotation | `Error`, `Claude 확인 실패` with automatic retry |
    | HTTP 429 | `RateLimited`, `Claude 자동 재시도`, with `RetryAt` (see refresh step 8) |
    | Connection failure without a status code | `Offline`, `Claude 오프라인` |
    | 12 s `HttpClient` timeout (headers and the buffered body) | `Offline`, `Claude 응답 지연` |
    | HTTP 5xx/529 | `Error`, `Claude 서버 오류` |
-   | Other non-success status (the endpoint changed) | `Error`, `Claude 사용량 응답 변경` |
+   | Other non-success status including HTTP 403 | `Error`, `Claude 사용량 응답 변경` |
    | Any other failure, for example a partial credential read | `Error`, `Claude 확인 실패` |
 
    Only `LoginRequired` is presented as a login problem. `ClaudeIssue` is a non-positional `ApplicationState` property, so the 10-parameter constructor the layout probe reflects is unchanged.
-6. Desktop history is accepted only when its captured time is within 40 minutes (`ClaudeDesktopUsageReader.MaximumSampleAge`); Desktop writes a sample about every 15 minutes while it runs, often a little late, so a shorter window flips a running Desktop between available and stale. It supplies 5-hour and weekly percentages but not Fable or reset timestamps, and the provider message names the sample time (`Claude Desktop 기록 HH:mm`).
+6. The first existing Desktop data directory wins: `%LocalAppData%\Claude-Data\claude_pzs8sxrjxfjjc`, the previous MSIX `%LocalAppData%\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude`, then `%AppData%\Claude`. Dejavu reads only `plan-usage-history.json` and does not reuse a previous directory's values when the active source changes. The 40-minute freshness window allows for delayed writes; stale data does not imply logout. Desktop history supplies 5-hour and weekly percentages without Fable, reset timestamps or reset offers.
 
 Claude Code executable discovery checks `CLAUDE_CODE_PATH`, common native/npm paths, Claude Desktop bundled Claude Code, then `PATH`. Login is launched only from an explicit user action. Never write to or delete Claude files.
 

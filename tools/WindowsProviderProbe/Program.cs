@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Reflection;
 using System.Text.Json;
 using ClaudeUsageTray;
@@ -17,6 +18,7 @@ internal sealed class ProviderProbe
     {
         ParseCodexCases();
         await RunCaseAsync("Claude credential fallback", CheckClaudeCredentialsAsync);
+        await RunCaseAsync("Claude saved connection recovery", CheckClaudeConnectionRecoveryAsync);
         await RunCaseAsync("Codex successful read", CheckSuccessfulReadAsync);
         await RunCaseAsync("Codex cancel before start", CheckCancelledBeforeStartAsync);
         await RunCaseAsync("Codex cancelled drain", () => CheckCancelledDrainAsync("drain"));
@@ -97,8 +99,10 @@ internal sealed class ProviderProbe
             var client = new ClaudeUsageClient(() => path, () => desktop, () => true);
             Check(ReferenceEquals(await client.GetUsageAsync(), desktop), "malformed credential uses Desktop " + index);
             client = new ClaudeUsageClient(() => path, () => null, () => false);
-            Check(await ThrowsAsync<ClaudeLoginRequiredException>(() => client.GetUsageAsync()),
-                "malformed credential login classification " + index);
+            Check(index == 0
+                    ? await ThrowsAsync<ClaudeCredentialReadException>(() => client.GetUsageAsync())
+                    : await ThrowsAsync<ClaudeLoginRequiredException>(() => client.GetUsageAsync()),
+                "credential error classification " + index);
         }
 
         // The old unguarded credential parse throws JsonException rather than reaching fallback.
@@ -124,9 +128,87 @@ internal sealed class ProviderProbe
         var cancelledClient = new ClaudeUsageClient(() => { sourceRead = true; return path; }, () => desktop, () => true);
         Check(await ThrowsAsync<OperationCanceledException>(() => cancelledClient.GetUsageAsync(cancelled.Token)) && !sourceRead,
             "cancelled Claude read touches no source and never falls back");
-        using var malformedUsage = JsonDocument.Parse("{\"seven_day_fable\":{\"utilization\":null}}");
+        using var malformedUsage = JsonDocument.Parse("{\"seven_day_fable\":{\"utilization\":\"invalid\"}}");
         Check(Throws<InvalidOperationException>(() => ClaudeUsageClient.ParseUsage(malformedUsage.RootElement)),
             "malformed usage response is not relabeled as authentication");
+    }
+
+    private async Task CheckClaudeConnectionRecoveryAsync()
+    {
+        using var fixture = new ProbeFixture("claude-restart");
+        var profile = Path.Combine(fixture.DirectoryPath, "configured");
+        Directory.CreateDirectory(profile);
+        var path = ClaudeEnvironmentDetector.ResolveCredentialPath(profile, fixture.DirectoryPath)!;
+        Check(path == Path.Combine(profile, ".credentials.json") &&
+              ClaudeEnvironmentDetector.ResolveCredentialPath("relative", fixture.DirectoryPath) is null,
+            "explicit CLI profile does not fall back to a different account");
+        Check(ClaudeEnvironmentDetector.ResolveCredentialPath(null, fixture.DirectoryPath) ==
+              Path.Combine(fixture.DirectoryPath, ".claude", ".credentials.json"),
+            "unset profile uses standard Windows login location");
+
+        var roots = ClaudeDesktopUsageReader.DataDirectories(Path.Combine(fixture.DirectoryPath, "Roaming"),
+            Path.Combine(fixture.DirectoryPath, "Local"));
+        Directory.CreateDirectory(roots[1]);
+        var legacy = Path.Combine(roots[1], "plan-usage-history.json");
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        await File.WriteAllTextAsync(legacy, $$$"""{"samples":[{"t":{{{now}}},"u":{"fh":14,"sd":32}}]}""");
+        var desktopReader = new ClaudeDesktopUsageReader.HistoryReader(roots);
+        Check(desktopReader.TryReadRecent(out var desktop) && desktop.Weekly?.Percent == 32 &&
+              desktop.Source == ClaudeUsageSource.ClaudeDesktop, "previous MSIX location reconnects");
+        Directory.CreateDirectory(roots[0]);
+        Check(!desktopReader.TryReadRecent(out _), "active migrated directory does not reuse previous profile");
+        var migrated = Path.Combine(roots[0], "plan-usage-history.json");
+        await File.WriteAllTextAsync(migrated, $$$"""
+            {"samples":[{"t":{{{now}}},"u":{"fh":null,"sd":47}},{"t":9223372036854775807,"u":{"sd":90}}]}
+            """);
+        Check(new ClaudeDesktopUsageReader.HistoryReader(roots).TryReadRecent(out desktop) &&
+              desktop.FiveHour is null && desktop.Weekly?.Percent == 47,
+            "fresh reader finds migrated history and ignores invalid timestamps");
+        Check(desktopReader.TryReadRecent(out _), "running reader picks up migrated source");
+        File.Delete(migrated);
+        Check(!desktopReader.TryReadRecent(out _), "deleted history does not reuse cached usage");
+
+        const string saved = """{"claudeAiOauth":{"accessToken":"synthetic-only"}}""";
+        await File.WriteAllTextAsync(path, saved);
+        using var http = new HttpClient(new ClaudeUsageHandler(request =>
+        {
+            Check(request.RequestUri == new Uri("https://api.anthropic.com/api/oauth/usage") &&
+                  request.Headers.Authorization?.Scheme == "Bearer", "saved login uses the fixed usage endpoint");
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"seven_day":{"utilization":37}}""")
+            };
+        }));
+        ClaudeUsageClient Create(HttpClient transport) => new(() => path, () => null, () => false, transport);
+        Check((await Create(http).GetUsageAsync()).Weekly?.Percent == 37 &&
+              (await Create(http).GetUsageAsync()).Weekly?.Percent == 37,
+            "new client reuses saved CLI login without an auth action");
+        await File.WriteAllTextAsync(path, "");
+        Check(await ThrowsAsync<ClaudeCredentialReadException>(() => Create(http).GetUsageAsync()),
+            "empty credential during a write stays a transient error");
+        using (var oversized = File.Create(path)) oversized.SetLength(256 * 1024 + 1);
+        Check(await ThrowsAsync<ClaudeCredentialReadException>(() => Create(http).GetUsageAsync()),
+            "credential reader rejects oversized input without a request");
+        await File.WriteAllTextAsync(path, saved);
+        using var rotated = new HttpClient(new ClaudeUsageHandler(_ =>
+        {
+            File.AppendAllText(path, " ");
+            return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        }));
+        Check(await ThrowsAsync<ClaudeCredentialReadException>(() => Create(rotated).GetUsageAsync()),
+            "401 during credential rotation waits for the next read");
+        using var unauthorized = new HttpClient(new ClaudeUsageHandler(_ => new(HttpStatusCode.Unauthorized)));
+        Check(await ThrowsAsync<ClaudeLoginRequiredException>(() => Create(unauthorized).GetUsageAsync()),
+            "401 for unchanged login still asks for authentication");
+        using var forbidden = new HttpClient(new ClaudeUsageHandler(_ => new(HttpStatusCode.Forbidden)));
+        Check(await ThrowsAsync<HttpRequestException>(() => Create(forbidden).GetUsageAsync()),
+            "usage endpoint access denial is not treated as logout");
+    }
+
+    private sealed class ClaudeUsageHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken) => Task.FromResult(respond(request));
     }
 
     private async Task CheckSuccessfulReadAsync()

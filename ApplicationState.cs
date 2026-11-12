@@ -16,7 +16,7 @@ internal enum ClaudeIssue
     None,
     // The access token expired and Claude Code renews it the next time it runs.
     TokenRefreshPending,
-    // No Claude Code login and Claude Desktop history has no recent sample (Desktop closed or idle).
+    // No Claude Code credential and an existing Claude Desktop data directory has no recent sample.
     DesktopHistoryStale
 }
 

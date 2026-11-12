@@ -11,18 +11,28 @@ internal static class ClaudeDesktopUsageReader
     internal static readonly TimeSpan MaximumSampleAge = TimeSpan.FromMinutes(40);
     private static readonly TimeSpan MaximumFutureSkew = TimeSpan.FromMinutes(2);
     private const long MaximumHistoryBytes = 16 * 1024 * 1024;
-    private static readonly object CacheLock = new();
-    private static HistoryFingerprint? _cachedFingerprint;
-    private static UsageSnapshot? _cachedSnapshot;
+    private const string HistoryFileName = "plan-usage-history.json";
+    private const string PackageFamily = "Claude_pzs8sxrjxfjjc";
+    private static readonly HistoryReader History = new(DataDirectories(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)));
 
-    private static string ClaudeDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Claude");
+    internal static string[] DataDirectories(string roaming, string local)
+    {
+        var directories = new List<string>();
+        if (Path.IsPathFullyQualified(local))
+        {
+            directories.Add(Path.Combine(local, "Claude-Data", PackageFamily.ToLowerInvariant()));
+            directories.Add(Path.Combine(local, "Packages", PackageFamily, "LocalCache", "Roaming", "Claude"));
+        }
+        if (Path.IsPathFullyQualified(roaming)) directories.Add(Path.Combine(roaming, "Claude"));
+        return [.. directories];
+    }
 
-    internal static string HistoryPath => Path.Combine(ClaudeDirectory, "plan-usage-history.json");
-    internal static bool IsInstalled => Directory.Exists(ClaudeDirectory);
-    internal static bool HasHistoryFile => File.Exists(HistoryPath);
+    internal static bool IsInstalled => History.ActiveDirectory is not null;
 
     internal static bool HasRecentUsage() => TryReadRecent(out _);
+    internal static bool TryReadRecent(out UsageSnapshot snapshot) => History.TryReadRecent(out snapshot);
 
     internal static bool OpenDesktop()
     {
@@ -37,61 +47,99 @@ internal static class ClaudeDesktopUsageReader
         }
     }
 
-    internal static bool TryReadRecent(out UsageSnapshot snapshot)
+    internal sealed class HistoryReader(string[] directories)
     {
-        lock (CacheLock)
+        private readonly object _cacheLock = new();
+        private HistoryFingerprint? _cachedFingerprint;
+        private UsageSnapshot? _cachedSnapshot;
+        internal string? ActiveDirectory => directories.FirstOrDefault(Directory.Exists);
+
+        internal bool TryReadRecent(out UsageSnapshot snapshot)
         {
-            snapshot = null!;
-            try
+            lock (_cacheLock)
             {
-                var file = new FileInfo(HistoryPath);
-                if (!file.Exists) return TryUseCachedSnapshot(out snapshot);
-                var fingerprint = new HistoryFingerprint(file.LastWriteTimeUtc.Ticks, file.Length);
-                if (_cachedFingerprint == fingerprint) return TryUseCachedSnapshot(out snapshot);
-                if (file.Length is <= 0 or > MaximumHistoryBytes) return TryUseCachedSnapshot(out snapshot);
+                snapshot = null!;
+                // Prefer the current data directory even before it produces a sample. A leftover
+                // file from before an app migration can belong to a different login.
+                var directory = ActiveDirectory;
+                var path = directory is null ? null : Path.Combine(directory, HistoryFileName);
+                if (path is null || !File.Exists(path))
+                {
+                    _cachedFingerprint = null;
+                    _cachedSnapshot = null;
+                    return false;
+                }
+                try
+                {
+                    var file = new FileInfo(path);
+                    var fingerprint = new HistoryFingerprint(path, file.LastWriteTimeUtc.Ticks, file.Length);
+                    if (_cachedFingerprint == fingerprint) return TryUseCachedSnapshot(path, out snapshot);
+                    if (file.Length is <= 0 or > MaximumHistoryBytes) return TryUseCachedSnapshot(path, out snapshot);
 
-                var payload = ReadHistorySnapshot(file.Length);
-                if (!TryParse(payload, out var parsed)) return TryUseCachedSnapshot(out snapshot);
+                    var payload = ReadHistorySnapshot(path);
+                    if (!TryParse(payload, out var parsed)) return TryUseCachedSnapshot(path, out snapshot);
 
-                _cachedFingerprint = fingerprint;
-                _cachedSnapshot = parsed;
-                snapshot = parsed;
+                    _cachedFingerprint = fingerprint;
+                    _cachedSnapshot = parsed;
+                    snapshot = parsed;
+                    return true;
+                }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+                {
+                    return TryUseCachedSnapshot(path, out snapshot);
+                }
+            }
+        }
+
+        private bool TryUseCachedSnapshot(string path, out UsageSnapshot snapshot)
+        {
+            if (_cachedFingerprint?.Path == path &&
+                _cachedSnapshot?.CapturedAt is { } capturedAt && IsRecent(capturedAt))
+            {
+                snapshot = _cachedSnapshot;
                 return true;
             }
-            catch
-            {
-                return TryUseCachedSnapshot(out snapshot);
-            }
+
+            snapshot = null!;
+            return false;
         }
     }
 
-    private static byte[] ReadHistorySnapshot(long expectedLength)
+    private static byte[] ReadHistorySnapshot(string path)
     {
         // Close Claude's file before JSON parsing. This keeps the shared read handle
         // alive only for the small copy and avoids interfering with a replace/write.
         using var stream = new FileStream(
-            HistoryPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
+            path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete,
             bufferSize: 4096, options: FileOptions.SequentialScan);
-        if (stream.Length is <= 0 or > MaximumHistoryBytes) throw new InvalidDataException();
-        using var memory = new MemoryStream((int)Math.Min(expectedLength, MaximumHistoryBytes));
-        stream.CopyTo(memory);
-        return memory.ToArray();
+        var length = stream.Length;
+        if (length is <= 0 or > MaximumHistoryBytes) throw new InvalidDataException();
+        var payload = new byte[(int)length];
+        stream.ReadExactly(payload);
+        if (stream.ReadByte() != -1) throw new IOException();
+        return payload;
     }
 
     private static bool TryParse(ReadOnlyMemory<byte> payload, out UsageSnapshot snapshot)
     {
         snapshot = null!;
         using var document = JsonDocument.Parse(payload);
-        if (!document.RootElement.TryGetProperty("samples", out var samples) ||
+        if (document.RootElement.ValueKind != JsonValueKind.Object ||
+            !document.RootElement.TryGetProperty("samples", out var samples) ||
             samples.ValueKind != JsonValueKind.Array) return false;
 
         long latestTimestamp = long.MinValue;
+        var now = DateTimeOffset.UtcNow;
+        var earliest = (now - MaximumSampleAge).ToUnixTimeMilliseconds();
+        var latest = (now + MaximumFutureSkew).ToUnixTimeMilliseconds();
         double? fiveHour = null;
         double? weekly = null;
         foreach (var sample in samples.EnumerateArray())
         {
-            if (!sample.TryGetProperty("t", out var timestampNode) ||
+            if (sample.ValueKind != JsonValueKind.Object ||
+                !sample.TryGetProperty("t", out var timestampNode) || timestampNode.ValueKind != JsonValueKind.Number ||
                 !timestampNode.TryGetInt64(out var timestamp) || timestamp <= latestTimestamp ||
+                timestamp < earliest || timestamp > latest ||
                 !sample.TryGetProperty("u", out var usage) || usage.ValueKind != JsonValueKind.Object) continue;
 
             latestTimestamp = timestamp;
@@ -101,24 +149,10 @@ internal static class ClaudeDesktopUsageReader
 
         if (latestTimestamp == long.MinValue || fiveHour is null && weekly is null) return false;
         var capturedAt = DateTimeOffset.FromUnixTimeMilliseconds(latestTimestamp);
-        if (!IsRecent(capturedAt)) return false;
-
         snapshot = new UsageSnapshot(
             ToLimit(fiveHour), ToLimit(weekly), Fable: null,
             Source: ClaudeUsageSource.ClaudeDesktop, CapturedAt: capturedAt);
         return true;
-    }
-
-    private static bool TryUseCachedSnapshot(out UsageSnapshot snapshot)
-    {
-        if (_cachedSnapshot?.CapturedAt is { } capturedAt && IsRecent(capturedAt))
-        {
-            snapshot = _cachedSnapshot;
-            return true;
-        }
-
-        snapshot = null!;
-        return false;
     }
 
     private static bool IsRecent(DateTimeOffset capturedAt)
@@ -128,11 +162,12 @@ internal static class ClaudeDesktopUsageReader
     }
 
     private static double? ReadPercent(JsonElement usage, string propertyName) =>
-        usage.TryGetProperty(propertyName, out var node) && node.TryGetDouble(out var value)
+        usage.TryGetProperty(propertyName, out var node) && node.ValueKind == JsonValueKind.Number &&
+        node.TryGetDouble(out var value) && double.IsFinite(value)
             ? Math.Clamp(value, 0, 100) : null;
 
     private static UsageLimit? ToLimit(double? percent) =>
         percent is null ? null : new UsageLimit(percent.Value, ResetsAt: null);
 
-    private readonly record struct HistoryFingerprint(long LastWriteUtcTicks, long Length);
+    private readonly record struct HistoryFingerprint(string Path, long LastWriteUtcTicks, long Length);
 }

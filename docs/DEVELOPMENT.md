@@ -12,6 +12,7 @@ This guide is the reproducible workflow for maintainers and coding agents. Read 
 - Claude Desktop/Claude Code and Codex Desktop/CLI only when exercising their respective integration paths
 
 The app is self-contained when published, but development builds require the SDK. Do not add credentials, local AppData files, diagnostics or certificates to the repository.
+The Windows project pins its bundled runtime to [the .NET 10.0.15 security update](https://github.com/dotnet/core/blob/main/release-notes/10.0/10.0.15/10.0.15.md). Use SDK 10.0.404 or a newer .NET 10 servicing SDK when available. Check package advisories with `dotnet list ClaudeUsageTray.csproj package --vulnerable --include-transitive`.
 
 ## Repository orientation
 
@@ -142,7 +143,9 @@ Run the pure production-parser regression probe before changing Claude response 
 dotnet run --project .\tools\ClaudeUsageParserProbe\ClaudeUsageParserProbe.csproj -c Release
 ```
 
-Expected: `Claude usage parser: 20 checked, 0 failures`. It uses synthetic JSON only and does not launch the app/controller, read credentials, history or settings, or make HTTP requests. Cases cover legacy/modern Fable, zero usage, reset timestamps, precedence, absent/null Fable with Opus/Sonnet present, preserved 5-hour/weekly values and unchanged malformed-response rejection. Other model limits must never be relabeled as Fable. This is parser evidence, not live provider or UI acceptance.
+Expected: `Claude usage parser: 27 checked, 0 failures`. It uses synthetic JSON only and does not launch the app/controller, read credentials, history or settings, or make HTTP requests. Cases cover legacy and modern Fable, a single versioned Fable name, ambiguity between versions, reset timestamps, weekly usage without a five-hour window, null optional values and invalid percentages. Other model limits must never be relabeled as Fable. This is parser evidence, not live provider or UI acceptance.
+
+On 2026-11-12, Anthropic's [limit reset guide](https://support.claude.com/en/articles/17007452-what-is-a-limit-reset) documented five-hour, weekly and Fable reset offers. The [Claude Code status line](https://code.claude.com/docs/en/statusline) documents usage percentages and ordinary reset times, plus a separate spend limit for Claude apps gateways. Neither it nor the known Windows usage payload supplies a verified reset-offer count. Treat this as unavailable; do not infer it from a percentage drop or use a browser session. If a read-only source is confirmed, expose offers only in expanded details.
 
 1. Claude Code credential available: verify 5-hour, weekly and account-provided Fable values.
 2. `DEJAVU_CLAUDE_SOURCE=desktop`: verify recent Desktop 5-hour/weekly values and unavailable Fable/reset data.
@@ -157,7 +160,7 @@ Expected: `Claude usage parser: 20 checked, 0 failures`. It uses synthetic JSON 
 dotnet run --project .\tools\WindowsProviderProbe\WindowsProviderProbe.csproj -c Release
 ```
 
-예상: `Windows provider regression: 72 checked, 0 failures`. 다중 버킷의 우선순위, malformed 인증의 Desktop fallback, 취소 전 자식 미실행, 진행 중 요청의 완료 표식 보존, 원래 호출자 취소 전달과 실제 15초 timeout을 검사한다. 이전 연결 토큰 패턴이 pending pipe를 즉시 취소하는지는 실행 환경별 결과를 별도로 출력하며, 관찰되지 않은 실패를 재현했다고 주장하지 않는다.
+예상: `Windows provider regression: 87 checked, 0 failures`. 합성 파일과 HTTP 응답으로 새 앱 인스턴스의 저장된 CLI 로그인 및 Desktop 기록 재사용, MSIX 경로 이동, 토큰 교체 중 오류와 실제 인증 실패 구분을 검사한다. Codex 다중 버킷, 진행 중 요청 완료 후 취소, 15초 timeout도 검증한다. 실제 Windows 재부팅 검증은 별도로, Claude에 로그인된 PC에서 재로그인 없이 사용량이 돌아오는지 확인한다. Desktop 기록이 만료됐다면 Claude Desktop 사용 후 새 기록이 들어올 때까지 기록 대기로 표시되는지 확인한다.
 
 기본 WPF layout probe에는 `Windows theme resource matrix: 36 checked, 0 failures`와 `Windows accent defaults: 5 checked`도 포함된다. 사용자 설정 저장 없이 실제 WPF 상세·시작 안내·업데이트 화면의 배경색과 새 기본값/이전 저장색/기본값 복원을 검사한다.
 

@@ -70,8 +70,8 @@ Use this checklist when changing lifecycle, refresh, authentication, updates, pe
 - The only system hook is the out-of-context foreground WinEvent hook that exists while the in-taskbar placement is enabled. Windows delivers foreground notifications for every process, including Claude Desktop, to Dejavu's own thread; Dejavu never acts on a Claude window: it never activates, moves, reorders or messages one, or reads its title. The only reads of the foreground window are the local process id, class name, style, zoom state, monitor and rectangle queries of fullscreen detection.
 - Claude Desktop integration is read-only. Never write to or delete files under Claude's AppData or package directories.
 - Copy `plan-usage-history.json` under a fully shared read handle, close it immediately, and parse the memory snapshot afterward.
-- Cache a valid Desktop snapshot by file timestamp and length so unchanged history is not reopened every refresh.
-- Copy Claude Code credentials to memory and close the file before JSON parsing or network access.
+- Cache a valid Desktop snapshot by path, file timestamp and length so unchanged history is not reopened every refresh. A missing file or different active source invalidates the previous history value.
+- Copy Claude Code credentials to bounded memory, close the file before JSON parsing or network access, and clear the copied bytes after parsing. A partial rewrite or a 401 concurrent with credential rotation is retried as a read failure. A 403 on the usage endpoint alone does not mean Claude Code signed out.
 - Launching `claude://` or Claude Code authentication is allowed only after an explicit user action.
 - When investigating a reported conflict, distinguish Claude `APPCRASH` from `MoAppHang`, correlate timestamps, and verify whether the WER report names Dejavu as a waiting or loaded process before claiming causation.
 

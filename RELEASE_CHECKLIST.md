@@ -1,5 +1,11 @@
 # Public release checklist
 
+## 0.9.8 release validation scope — 2026-11-12
+
+- Windows 변경: .NET 10.0.15, 저장된 Claude CLI 프로필과 Desktop 사용 기록 재검색, 일시적 인증 파일 오류 및 선택적 사용량 필드 처리.
+- Windows 빌드와 레이아웃, 제공자 87건, Claude 파서 27건을 검증한다. 실제 계정으로 Windows를 재부팅하는 수동 검증은 별도로 남긴다.
+- 기존 통합 릴리즈로 macOS의 배포 버전을 맞춘다. 태그 CI의 새 설치와 실제 다운로드한 초안 패키지 업그레이드, 업로드 자산의 해시·피드와 브랜드 PNG를 확인한 뒤 공개한다.
+
 `0.9.7`는 제품 소유자의 명시적 요청에 따라 Windows 제품 아이콘과 추가 브랜드 누락을 수정하고, 실제 배포 파일 검증 후 공개합니다. 무료 배포 방침을 유지하며 Windows 공인 코드 서명·macOS Developer ID/공증을 받은 제품이라고 표시하지 않습니다. 아래 수동 검증과 신뢰 배포의 미완료 항목은 그대로 남깁니다.
 
 ## 0.9.7 release validation scope — 2026-10-18

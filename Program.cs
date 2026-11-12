@@ -66,6 +66,7 @@ internal static class Program
             var previewServices = ParsePreview<ServiceDisplayMode>("services");
             var previewProgress = ParsePreviewSwitch("progress");
             var previewPlacement = ParsePreview<WidgetPlacement>("placement");
+            ClaudeEnvironmentDetector.RestorePersistedProfileOverride();
             using var controller = new DesktopApplicationController(
                 application, startWithSettings, startWithOnboarding, startWithDetails,
                 previewTheme, previewDensity, previewLayout, previewServices, previewProgress, previewPlacement);

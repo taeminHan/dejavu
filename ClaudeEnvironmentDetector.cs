@@ -11,6 +11,7 @@ internal sealed record ClaudeEnvironment(string? ExecutablePath, string? Credent
 internal static class ClaudeEnvironmentDetector
 {
     private const string SetupUrl = "https://docs.anthropic.com/en/docs/claude-code/getting-started";
+    private const string ConfigDirectoryVariable = "CLAUDE_CONFIG_DIR";
 
     public static ClaudeEnvironment Detect() => new(FindExecutable(), FindCredentialPath());
 
@@ -19,15 +20,33 @@ internal static class ClaudeEnvironmentDetector
         if (string.Equals(Environment.GetEnvironmentVariable("DEJAVU_CLAUDE_SOURCE"), "desktop",
                 StringComparison.OrdinalIgnoreCase)) return null;
 
-        foreach (var path in CredentialCandidates())
+        var path = ResolveCredentialPath(Environment.GetEnvironmentVariable(ConfigDirectoryVariable),
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+        return path is not null && File.Exists(path) ? path : null;
+    }
+
+    // An updater or startup process can inherit an environment from before the user set this
+    // override. Recover only the directory setting, so the reader and an explicit login use
+    // the same profile. This changes neither the registry nor Claude's files.
+    internal static void RestorePersistedProfileOverride()
+    {
+        if (!OperatingSystem.IsWindows() || Environment.GetEnvironmentVariable(ConfigDirectoryVariable) is not null)
+            return;
+        try
         {
-            try
-            {
-                if (File.Exists(path) && new FileInfo(path).Length > 0) return path;
-            }
-            catch { }
+            var configured = Environment.GetEnvironmentVariable(ConfigDirectoryVariable, EnvironmentVariableTarget.User)
+                             ?? Environment.GetEnvironmentVariable(ConfigDirectoryVariable, EnvironmentVariableTarget.Machine);
+            if (!string.IsNullOrWhiteSpace(configured))
+                Environment.SetEnvironmentVariable(ConfigDirectoryVariable, configured, EnvironmentVariableTarget.Process);
         }
-        return null;
+        catch (System.Security.SecurityException) { }
+    }
+
+    internal static string? ResolveCredentialPath(string? configured, string userProfile)
+    {
+        if (!string.IsNullOrWhiteSpace(configured))
+            return Path.IsPathFullyQualified(configured) ? Path.Combine(configured, ".credentials.json") : null;
+        return Path.IsPathFullyQualified(userProfile) ? Path.Combine(userProfile, ".claude", ".credentials.json") : null;
     }
 
     public static string? FindExecutable()
@@ -65,15 +84,6 @@ internal static class ClaudeEnvironmentDetector
     }
 
     public static void OpenSetupPage() => Process.Start(new ProcessStartInfo(SetupUrl) { UseShellExecute = true });
-
-    private static IEnumerable<string> CredentialCandidates()
-    {
-        var configured = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR");
-        if (!string.IsNullOrWhiteSpace(configured)) yield return Path.Combine(configured, ".credentials.json");
-
-        var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        yield return Path.Combine(profile, ".claude", ".credentials.json");
-    }
 
     private static IEnumerable<string> ExecutableCandidates()
     {

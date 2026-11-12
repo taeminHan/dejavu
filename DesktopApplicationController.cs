@@ -785,7 +785,13 @@ internal sealed class DesktopApplicationController : IDisposable
         {
             // Desktop closed or idle; its next sample is picked up by the periodic refresh.
             _claudeRetryDueTick = null;
-            return new ProviderResult<UsageSnapshot>(UsageStatus.Error, CarryClaude(_state.Snapshot),
+            // The active history no longer has a fresh sample. Keep the layout but clear Desktop
+            // values even if a previously selected directory had a sample within the age limit.
+            var previous = _state.Snapshot;
+            var snapshot = previous?.Source == ClaudeUsageSource.ClaudeDesktop
+                ? previous with { FiveHour = null, Weekly = null, Fable = null }
+                : CarryClaude(previous);
+            return new ProviderResult<UsageSnapshot>(UsageStatus.Error, snapshot,
                 "Claude Desktop 기록 대기", Issue: ClaudeIssue.DesktopHistoryStale);
         }
         catch (ClaudeLoginRequiredException)

@@ -3,7 +3,8 @@ param(
     [string]$Version = "",
     [string]$OutputRoot = "",
     [switch]$DownloadPrevious,
-    [switch]$RemovePinnedBaseline
+    [switch]$RemovePinnedBaseline,
+    [switch]$StageReleaseAssets
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,7 +16,6 @@ if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
 $outputRoot = [System.IO.Path]::GetFullPath($OutputRoot)
 $publishDirectory = Join-Path $outputRoot "dejavu-velopack-publish"
 $releaseDirectory = Join-Path $outputRoot "dejavu-velopack-releases"
-$checksumsPath = Join-Path $releaseDirectory "SHA256SUMS.txt"
 $releaseNotesPath = Join-Path $outputRoot "dejavu-release-notes.md"
 $packId = "dejavu-desktop"
 $projectFile = Join-Path $projectRoot "ClaudeUsageTray.csproj"
@@ -153,6 +153,59 @@ $missingArtifacts = $requiredArtifactNames | Where-Object {
 if ($missingArtifacts) {
     throw "Velopack did not create required artifacts: $($missingArtifacts -join ', ')"
 }
+
+$runnerRoot = if ([string]::IsNullOrWhiteSpace($env:RUNNER_TEMP)) { '' } else {
+    [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\') + '\'
+}
+$stageForRunner = $env:GITHUB_ACTIONS -eq 'true' -and $env:RUNNER_OS -eq 'Windows' -and
+    -not [string]::IsNullOrEmpty($runnerRoot) -and
+    $releaseDirectory.StartsWith($runnerRoot, [StringComparison]::OrdinalIgnoreCase)
+if ($StageReleaseAssets -or $stageForRunner) {
+    # Delta creation needs the old full package next to the new binaries. Upload
+    # from a clean directory so Velopack cannot publish or index that seed again.
+    $uploadDirectory = Join-Path $outputRoot "dejavu-velopack-upload"
+    if (Test-Path -LiteralPath $uploadDirectory) {
+        throw "The release upload directory must be new: '$uploadDirectory'."
+    }
+    New-Item -ItemType Directory -Path $uploadDirectory | Out-Null
+    foreach ($name in ($currentArtifactNames + 'assets.win.json')) {
+        $source = Join-Path $releaseDirectory $name
+        if (Test-Path -LiteralPath $source -PathType Leaf) {
+            Copy-Item -LiteralPath $source -Destination $uploadDirectory
+        }
+    }
+    $feedPath = Join-Path $uploadDirectory 'releases.win.json'
+    $feed = Get-Content -LiteralPath $feedPath -Raw | ConvertFrom-Json
+    $feed.Assets = @($feed.Assets | Where-Object { $_.Version -ceq $Version })
+    $feed | ConvertTo-Json -Depth 20 -Compress | Set-Content -LiteralPath $feedPath -Encoding utf8NoBOM
+    $legacyPath = Join-Path $uploadDirectory 'RELEASES'
+    $fullName = [regex]::Escape("$packId-$Version-full.nupkg")
+    $legacy = @(Get-Content -LiteralPath $legacyPath | Where-Object { $_ -cmatch "\s$fullName\s" })
+    Set-Content -LiteralPath $legacyPath -Value $legacy -Encoding utf8NoBOM
+    & (Join-Path $PSScriptRoot 'TestWindowsUpdateFeeds.ps1') -ReleaseDirectory $uploadDirectory -Version $Version `
+        -OutputDirectory (Join-Path $outputRoot 'windows-staged-feed-verification')
+    if ($stageForRunner) {
+        # Keep the existing runner workflow's output path. The temporary seed
+        # and its feeds stay together in the preserved pack directory.
+        $packDirectory = Join-Path $outputRoot 'dejavu-velopack-pack-work'
+        foreach ($path in @($releaseDirectory, $uploadDirectory)) {
+            $resolved = (Resolve-Path -LiteralPath $path).ProviderPath
+            if (-not $resolved.StartsWith($runnerRoot, [StringComparison]::OrdinalIgnoreCase) -or
+                ((Get-Item -LiteralPath $resolved).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+                throw 'Release staging must use ordinary directories below RUNNER_TEMP.'
+            }
+        }
+        if (Test-Path -LiteralPath $packDirectory) {
+            throw "The preserved packaging directory must be new: '$packDirectory'."
+        }
+        Move-Item -LiteralPath $releaseDirectory -Destination $packDirectory
+        Move-Item -LiteralPath $uploadDirectory -Destination $releaseDirectory
+    } else {
+        $releaseDirectory = $uploadDirectory
+    }
+}
+
+$checksumsPath = Join-Path $releaseDirectory "SHA256SUMS.txt"
 $artifacts = Get-ChildItem -LiteralPath $releaseDirectory -File |
     Where-Object { $_.Name -in $currentArtifactNames } |
     Sort-Object Name
